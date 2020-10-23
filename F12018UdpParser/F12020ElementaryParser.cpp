@@ -1,0 +1,158 @@
+// Copyright 2018-2020 Andreas Jung
+// Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+#include "F12020ElementaryParser.h"
+
+#include <fstream>
+#include <type_traits>
+
+
+unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned len)
+{
+   if (len < sizeof(PacketHeader))
+      return len;
+
+   PacketHeader hdr;
+   memcpy(&hdr, pData, sizeof(PacketHeader));
+   if ((hdr.m_packetFormat != 2020) || (hdr.m_packetVersion != 1))
+      return len;
+
+   switch (hdr.m_packetId)
+   {
+   case 0:
+      memcpy(&motion, pData, sizeof(motion));
+      return sizeof(motion);
+      break;
+
+   case 1:
+      memcpy(&session, pData, sizeof(session));
+      return sizeof(session);
+      break;
+
+   case 2:
+      memcpy(&lap, pData, sizeof(lap));
+      return sizeof(lap);
+      break;
+
+   case 3:
+      memcpy(&event, pData, sizeof(event));
+
+      // Clear old Data when a new event starts
+      if (!strncmp((const char*)event.m_eventStringCode, "SSTA", 4))
+      {
+         motion = PacketMotionData{};
+         session = PacketSessionData{};
+         lap = PacketLapData{};
+         participants = PacketParticipantsData{};
+         setups = PacketCarSetupData{};
+         telemetry = PacketCarTelemetryData{};
+         status = PacketCarStatusData{};
+      }
+
+      return sizeof(event);
+      break;
+
+   case 4:
+      memcpy(&participants, pData, sizeof(participants));
+      return sizeof(participants);
+      break;
+
+   case 5:
+      memcpy(&setups, pData, sizeof(setups));
+      return sizeof(setups);
+      break;
+
+   case 6:
+      memcpy(&telemetry, pData, sizeof(telemetry));
+      return sizeof(telemetry);
+      break;
+
+   case 7:
+      memcpy(&status, pData, sizeof(status));
+      return sizeof(status);
+      break;
+   }
+   return len;
+}
+
+const char* IdToTrackName(unsigned i)
+{
+   switch (i)
+   {
+   default:
+      return "unknown";
+
+   case 0:
+      return "Melbourne";
+
+   case 1:
+      return "Paul Ricard";
+
+   case 2:
+      return "Shanghai";
+   case 3:
+      return "Sakhir";
+   case 4:
+      return "Catalunya";
+
+   case 5:
+      return "Monaco";
+
+   case 6:
+      return "Montreal";
+
+   case 7:
+      return "Silverstone";
+
+   case 8:
+      return "Hockenheim";
+
+   case 9:
+      return "Hungaroring";
+
+   case 10:
+      return "Spa";
+
+   case 11:
+      return "Monza";
+
+   case 12:
+      return "Signapore";
+
+   case 13:
+      return "Suzuka";
+
+   case 14:
+      return "Abu Dhabi";
+
+   case 15:
+      return "Texas";
+   case 16:
+      return "Brazil";
+
+   case 17:
+      return "Austria";
+
+   case 18:
+      return"Sochi";
+
+   case 19:
+      return "Mexico";
+
+   case 20:
+      return "Baku";
+
+   case 21:
+      return "SakhirShort";
+
+   case 22:
+      return "SilverstoneShort";
+
+   case 23:
+      return "TexasShort";
+
+   case 24:
+      return "SuzukaShort";
+   }
+}

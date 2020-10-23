@@ -1,0 +1,44 @@
+﻿<UserControl x:Class="adjsw.F12020.CarStatusView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:adjsw.F12020"
+             mc:Ignorable="d" 
+             Height="550" Width="425">
+    <Canvas>
+        <Canvas.Style>
+            <Style>
+                <Setter Property="TextBlock.FontSize" Value="20" />
+                <Setter Property="TextBlock.FontFamily" Value="Courier New"/>
+                <Setter Property="TextBlock.FontWeight" Value="Bold" />
+            </Style>
+        </Canvas.Style>
+        <TextBox x:FieldModifier="public" Name="txt_penalty" Canvas.Left="185" Canvas.Top="445" Background="Transparent">0 s</TextBox>
+        <Image x:Name="img_car" Source="img/formulacar.png" Height="222" Width="438" Canvas.Left="-12" Panel.ZIndex="-1" RenderTransformOrigin="0.5,0.5" Canvas.Top="108">
+            <Image.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform/>
+                    <SkewTransform/>
+                    <RotateTransform Angle="270"/>
+                    <TranslateTransform/>
+                </TransformGroup>
+            </Image.RenderTransform>
+        </Image>
+        <TextBox x:FieldModifier="public" Name="txt_tyre_fl" Width="40" Height="35" Canvas.Left="78" Canvas.Top="74" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">100</TextBox>
+        <TextBox x:FieldModifier="public" Name="txt_tyre_fr" Width="40" Height="35" Canvas.Left="298" Canvas.Top="74" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">100</TextBox>
+        <TextBox x:FieldModifier="public" Name="txt_tyre_rl" Width="40" Height="35" Canvas.Left="78" Canvas.Top="340" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100"/>
+        <TextBox x:FieldModifier="public" Name="txt_tyre_rr" Width="40" Height="35" Canvas.Left="298" Canvas.Top="340" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100"/>
+        <TextBox x:FieldModifier="public" Name="txt_wing_fl" Width="40" Height="25" Canvas.Left="149" Canvas.Top="17" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_wing_fr" Width="40" Height="25" Canvas.Left="225" Canvas.Top="17" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_engine" Width="64" Height="70" Canvas.Left="176" Canvas.Top="256" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_fl_surface" Width="70" Height="35" Canvas.Left="4" Canvas.Top="54" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_fl_inner" Width="70" Height="35" Canvas.Left="4" Canvas.Top="98" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_fr_surface" Width="70" Height="35" Canvas.Left="347" Canvas.Top="54" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_fr_inner" Width="70" Height="35" Canvas.Left="347" Canvas.Top="98" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_rl_surface" Width="70" Height="35" Canvas.Left="4" Canvas.Top="320" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_rl_inner" Width="70" Height="35" Canvas.Left="4" Canvas.Top="362" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_rr_surface" Width="70" Height="35" Canvas.Left="347" Canvas.Top="320" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+        <TextBox x:FieldModifier="public" x:Name="txt_temp_rr_inner" Width="70" Height="35" Canvas.Left="347" Canvas.Top="362" RenderTransformOrigin="0.203,1.215" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Text="100°C"/>
+    </Canvas>
+</UserControl>
