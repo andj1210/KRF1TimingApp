@@ -121,7 +121,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\F12018UdpParser\F12018UdpParser.vcxproj">
+    <ProjectReference Include="..\F12020UdpParser\F12020UdpParser.vcxproj">
       <Project>{d0196828-84b6-4467-aa72-aa368b9df85d}</Project>
       <Name>F12020UdpParser</Name>
     </ProjectReference>
