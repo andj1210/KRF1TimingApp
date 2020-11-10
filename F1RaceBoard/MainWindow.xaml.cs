@@ -1,23 +1,17 @@
-﻿using adjsw.F12020;
+﻿// Copyright 2018-2020 Andreas Jung
+// SPDX-License-Identifier: GPL-3.0-only
+
+using adjsw.F12020;
 using DesktopWPFAppLowLevelKeyboardHook;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace F1SessionDisplay
+namespace F1GameSessionDisplay
 {
     /// <summary>
     /// Interaktionslogik für MainWindow.xaml
@@ -25,6 +19,7 @@ namespace F1SessionDisplay
     public partial class MainWindow : Window
     {
         public string ip = "";
+        private int tickCtr = 75;
         public MainWindow()
         {
             InitializeComponent();
@@ -36,6 +31,14 @@ namespace F1SessionDisplay
             m_timer.Interval = TimeSpan.FromMilliseconds(100);
             m_grid.ItemsSource = m_driversList;
             m_timer.IsEnabled = true;
+
+            m_parser = new adjsw.F12020.F12020Parser("127.0.0.1", 20777);
+            m_parser.InsertTestData();
+            UpdateGrid();
+            UpdateCarStatus();
+            ToggleView();
+            Title = "F1-Game Session-Display for F1-2020 V0.2";
+            m_licTxt.Text = s_splashText;
         }
 
         private void ToggleView()
@@ -55,6 +58,14 @@ namespace F1SessionDisplay
 
         private void T_Tick(object sender, EventArgs e)
         {
+            if (tickCtr > 0)
+            {
+                --tickCtr;
+
+                if (tickCtr == 0)
+                    m_licBrd.Visibility = Visibility.Collapsed;
+            }
+
             if (null == m_parser)
             {
                 if (!String.IsNullOrEmpty(ip))
@@ -63,15 +74,29 @@ namespace F1SessionDisplay
                 }
                 else
                     m_parser = new adjsw.F12020.F12020Parser("127.0.0.1", 20777);
+
+                m_parser.InsertTestData();
             }
 
             while (m_parser.Work()) { }
 
-            m_UpdateGrid();
-            m_UpdateCarStatus();
+            m_grid.SessionSource = m_parser.SessionInfo;
+            UpdateGrid();
+            UpdateCarStatus();
+
+            if (m_parser.SessionInfo.Session == SessionType.Race)
+            {
+                if (!m_parser.SessionInfo.SessionFinshed)
+                    m_reportSaved = false;
+                else if (m_parser.SessionInfo.SessionFinshed && !m_reportSaved)
+                {
+                    //SaveReport();
+                    m_reportSaved = true;
+                }
+            }
         }
 
-        private void m_UpdateGrid()
+        private void UpdateGrid()
         {
             if (m_driversList.Count != m_parser.CountDrivers)
             {
@@ -99,10 +124,9 @@ namespace F1SessionDisplay
                         
                 }
             }
-            
         }
 
-        private void m_UpdateCarStatus()
+        private void UpdateCarStatus()
         {
             foreach (var driver in m_parser.Drivers)
             {
@@ -289,19 +313,78 @@ namespace F1SessionDisplay
         {
             if (args.KeyPressed == Key.S)
             {
-                //m_parser.Save();
             }
 
             if (args.KeyPressed == Key.Space)
                 ToggleView();
         }
 
+        // TODO
+        private void SaveReport()
+        {
+            StringBuilder sb = new StringBuilder();
+            var sep = "--------------------------------------------------------------";
+            var session = m_parser.SessionInfo;
+            var countDrivers = m_parser.CountDrivers;
+            var drivers = m_parser.Drivers;
+            var events = m_parser.EventList.Events;
+            string nl = "\r\n";
+
+            // header
+            sb.Append("Racereport by " + Title + nl);
+            sb.Append(session.EventTrack.ToString("g") +  " " + session.Session.ToString("g") + events[0].TimeCode + nl);
+            sb.Append(session.TotalLaps + " Laps" + nl);
+
+            // classification
+
+            // laptimes
+            sb.Append(nl + nl + nl + "------------------------------LAPS----------------------------" + nl);
+
+            for (int i = 0; i < countDrivers; ++i)
+            {
+                var driver = drivers[i];
+                sb.Append("Driver: " + driver.Name + nl + sep + nl);
+                for (int j = 0; j < driver.LapNr - 1; ++j)
+                {
+                    //sb.Append(string.Format("Lap{0,2} | ", j+1) 
+                }
+
+            }
+
+
+        }
+
+        private void m_licBrd_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            m_licBrd.Visibility = Visibility.Collapsed;
+        }
+
         private LowLevelKeyboardListener m_kbListener = new LowLevelKeyboardListener();
         private EventHandler<KeyPressedArgs> m_listenerHdl; // Needed elsewise error in KeyboardListener / some issue between GC + Native resources
-
-        private adjsw.F12020.F12020Parser m_parser = null;
-
+        private F12020Parser m_parser = null;
         private DispatcherTimer m_timer = new DispatcherTimer();
         private ObservableCollection<adjsw.F12020.DriverData> m_driversList = new ObservableCollection<adjsw.F12020.DriverData>();
+        private bool m_reportSaved = false;
+
+        private static string s_splashText =
+@"
+F1-Game Session-Display for F1-2020
+Copyright 2018-2020 Andreas Jung
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+--- For license details refer to the LICENSE.md file in the program folder ---
+";
+
     }
 }

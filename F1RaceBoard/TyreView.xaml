@@ -1,0 +1,18 @@
+﻿<UserControl x:Class="F1GameSessionDisplay.TyreView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:F1GameSessionDisplay"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Height="30" Width="35">
+        <Ellipse Width="30" Height="30" Stroke="Black" StrokeThickness="7" Fill="Transparent"></Ellipse>
+        <Ellipse x:Name="ellipse_tyremark" Width="26" Height="30" Stroke="Red" StrokeThickness="2">
+            <Ellipse.Clip>
+                <RectangleGeometry Rect="0,7,30,16"/>
+            </Ellipse.Clip>
+        </Ellipse>
+        <TextBlock x:Name="txt_blk_name" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Courier New" Margin="-0.5,0,0,0" FontWeight="Bold" Foreground="Red" FontSize="12">S</TextBlock>
+    </Grid>
+</UserControl>

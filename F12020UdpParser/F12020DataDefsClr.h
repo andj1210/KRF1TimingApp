@@ -1,10 +1,11 @@
 // Copyright 2018-2020 Andreas Jung
-// Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
-// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// SPDX-License-Identifier: GPL-3.0-only
 
 #pragma once
 using namespace System;
+using namespace System::Collections::Generic;
 #include <string.h>
+#include <list>
 
 namespace adjsw::F12020
 {
@@ -72,6 +73,224 @@ namespace adjsw::F12020
       Soft = 16,
       Medium = 17,
       Hard = 18
+   };
+
+   public enum class Track
+   {
+      Unknown = -1,
+      Melbourne = 0,
+      PaulRicard,
+      Shanghai,
+      Sakhir,
+      Catalunya,
+      Monaco,
+      Montreal,
+      Silverstone,
+      Hockenheim,
+      Hungaroring,
+      Spa,
+      Monza,
+      Singapore,
+      Suzuka,
+      AbuDhabi,
+      Texas,
+      Brazil,
+      Austria,
+      Sochi,
+      Mexico,
+      Baku,
+      SakhirShort,
+      SilverstoneShort,
+      TexasShort,
+      SuzukaShort,
+      Hanoi,
+      Zandvoort
+   };
+
+   public enum class SessionType
+   {
+      Unknown = 0,
+      P1,
+      P2,
+      P3,
+      ShortPractice,
+      Q1,
+      Q2,
+      Q3,
+      ShortQ,
+      OSQ,
+      Race,
+      Race2,
+      TimeTrial
+   };
+
+   public enum class DriverStatus
+   {
+      Garage,
+      OnTrack,
+      Pitlane,
+      Pitting,
+      DNF,
+      DSQ
+   };
+
+
+   public enum class EventType
+   {
+      SessionStarted,
+      SessionEnded,
+      FastestLap,
+      Retirement,
+      DRSenabled,
+      DRSdisabled,
+      TeamMateInPits,
+      ChequeredFlag,
+      RaceWinner,
+      PenaltyIssued,
+      SpeedTrapTriggered
+   };
+
+   public enum class PenaltyTypes
+   {
+      DriveThrough = 0,
+      StopGo,
+      GridPenalty,
+      PenaltyReminder,
+      TimePenalty,
+      Warning,
+      Disqualified,
+      RemovedFromFormationLap,
+      ParkedTooLongTimer,
+      TyreRegulations,
+      ThisLapInvalidated,
+      ThisAndNextLapInvalidated,
+      ThisLapInvalidatedWithoutReason,
+      ThisAndNextLapInvalidatedWithoutReason,
+      ThisAndPreviousLapInvalidated,
+      ThisAndPreviousLapInvalidatedWithoutReason,
+      Retired,
+      BlackFlagTimer
+   };
+
+   public enum class InfringementTypes
+   {
+      BlockingBySlowDriving = 0,
+      BlockinByWrongWayDriving,
+      ReversingOffTheStartLine,
+      BigCollision,
+      SmallCollision,
+      CollisionFailedToHandBackPositionSingle,
+      CollisionFailedToHandBackPositionMultiple,
+      CornerCuttingGainedTime,
+      CornerCuttingOvertakeSingle,
+      CornerCuttingOvertakeMultiple,
+      CrossedPitExitLane,
+      IgnoringBlueFlags,
+      IgnoringYellowFlags,
+      IgnoringDriveThrough,
+      TooManyDriveThroughs,
+      DriveThroughReminderServeWithinNLaps,
+      DriveThroughReminderServeThisLap,
+      PitLaneSpeeding,
+      ParkedForTooLong,
+      IgnoringTyreRegulations,
+      TooManyPenalties,
+      MultipleWarnings,
+      ApproachingDisqualification,
+      TyreRegulationsSelectSingle,
+      TyreRegulationsSelectMultiple,
+      LapInvalidatedCornerCutting,
+      LapInvalidatedRunningWide,
+      CornerCuttingRanWideGainedTimeMinor,
+      CornerCuttingRanWideGainedTimeSignificant,
+      CornerCuttingRanWideGainedTimeExtreme,
+      LapInvalidatedWallRiding,
+      LapInvalidatedFlashbackUsed,
+      LapInvalidatedResetToTrack,
+      BlockingThePitlane,
+      JumpStart,
+      SafetyCarToCarCollision,
+      SafetyCarIllegalOvertake,
+      SafetyCarExceedingAllowedPace,
+      VirtualSafetyCarExceedingAllowedPace,
+      FormationLapBelowAllowedSpeed,
+      RetiredMechanicalFailure,
+      RetiredTerminallyDamaged,
+      SafetyCarFallingTooFarBack,
+      BlackFlagTimer,
+      UnservedStopGoPenalty,
+      UnservedDriveThroughPenalty,
+      EngineComponentChange,
+      GearboxChange,
+      LeagueGridPenalty,
+      RetryPenalty,
+      IllegalTimeGain,
+      MandatoryPitstop
+   };
+
+
+   public ref class SessionEvent
+   {
+   public:
+      property DateTime TimeCode;
+      property EventType Type;
+      property int CarIndex;
+
+      // penalty info
+      property PenaltyTypes PenaltyType;
+      property InfringementTypes InfringementType;
+      property int OtherVehicleIdx;
+      property int TimeGained; // Time gained, or time spent doing action in seconds
+      property int LapNum;
+      property int PlacesGained;
+      property bool PenaltyServed; // not present in actual telemetry, deduced from race telemetry
+   };
+
+
+   public ref class SessionInfo : public System::ComponentModel::INotifyPropertyChanged
+   {
+   public:      
+      property Track EventTrack { Track get() { return m_track; } void set(Track val) { if (val != m_track) { m_track = val; NPC("EventTrack"); } } };
+
+      property SessionType Session { SessionType get() { return m_session; } void set(SessionType val) { if (val != m_session) { m_session = val; NPC("Session"); } } };
+      property bool SessionFinshed { bool get() { return m_sessionFinished; } void set(bool val) { if (val != m_sessionFinished) { m_sessionFinished = val; NPC("SessionFinshed"); } } };
+
+      // for training / qualifying
+      property int RemainingTime { int get() { return m_remainingSeconds; } void set(int val) { if (val != m_remainingSeconds) { m_remainingSeconds = val; NPC("RemainingTime"); } } };
+
+      // for race
+      property int TotalLaps { int get() { return m_totalLaps; } void set(int val) { if (val != m_totalLaps) { m_totalLaps = val; NPC("TotalLaps"); } } };
+      property int CurrentLap { int get() { return m_currentLap; } void set(int val) { if (val != m_currentLap) { m_currentLap = val; NPC("CurrentLap"); } } };
+
+      void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
+      virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
+
+   private:
+      Track m_track{ Track::Austria };
+      SessionType m_session{ SessionType::P1 };
+      bool m_sessionFinished{ false };
+      int m_remainingSeconds{ 0 };
+      int m_totalLaps{ 2 };
+      int m_currentLap{ 1 };      
+   };
+
+
+
+   public ref class SessionEventList : public System::ComponentModel::INotifyPropertyChanged
+   {
+   public:
+      SessionEventList()
+      {
+         m_events = gcnew List<SessionEvent^>();
+      }
+
+      property List<SessionEvent^>^ Events {  List<SessionEvent^>^ get() { return m_events; } void set(List<SessionEvent^>^ val) { m_events = val; NPC("Events"); } };
+
+      void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
+      virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
+
+   private:
+      List<SessionEvent^>^ m_events;
    };
 
    public ref class LapData
@@ -150,16 +369,21 @@ namespace adjsw::F12020
 
       void Reset()
       {
-         Name = "?";
+         Name = "";
+         m_driverNameNative[0] = 0;
          Pos = 0;
          LapNr = 1;
-         Laps = gcnew array<LapData^>(100);
+         Laps = gcnew array<LapData^>(100); // 100 Laps ought to be enough for anybody        
 
          for (int i = 0; i < Laps->Length; ++i)
             Laps[i] = gcnew LapData();
 
          IsPlayer = false;
          Present = false;
+         VisualTyres = gcnew List<F1VisualTyre>();
+         PitPenalties = gcnew List<SessionEvent^>();
+         m_lapTiresFitted = 1;
+         m_hasPitted = false;
       }
 
       void SetName(const char(&pName)[48])
@@ -179,9 +403,13 @@ namespace adjsw::F12020
       property String^ Name {String^ get() { return m_name; } void set(String^ val) { if (!String::Equals(val, m_name)) { m_name = val; NPC("Name"); } } };
       property bool IsPlayer {bool get() { return m_isPlayer; } void set(bool val) { if (val != m_isPlayer) { m_isPlayer = val; NPC("IsPlayer"); } } };
       property bool Present {bool get() { return m_present; } void set(bool val) { if (val != m_present) { m_present = val; NPC("Present"); } } };
+      property DriverStatus Status {DriverStatus get() { return m_status; } void set(DriverStatus val) { if (val != m_status) { m_status = val; NPC("Status"); } } };
       property F1Team Team {F1Team get() { return m_team; } void set(F1Team val) { if (val != m_team) { m_team = val; NPC("Team"); } } };
       property F1Tyre Tyre {F1Tyre get() { return m_tyre; } void set(F1Tyre val) { if (val != m_tyre) { m_tyre = val; NPC("Tyre"); } } };
       property F1VisualTyre VisualTyre {F1VisualTyre get() { return m_visualTyre; } void set(F1VisualTyre val) { if (val != m_visualTyre) { m_visualTyre = val; NPC("VisualTyre"); } } };
+      property List<F1VisualTyre>^ VisualTyres {List<F1VisualTyre>^ get() { return m_visualTyres; } void set(List<F1VisualTyre>^ val) { m_visualTyres = val; NPC("VisualTyres"); } };
+      property List<SessionEvent^>^ PitPenalties {List<SessionEvent^>^ get() { return m_otherPenalties; } void set(List<SessionEvent^>^ val) { m_otherPenalties = val; NPC("PitPenalties"); } };
+      property int TyreAge {int get() { return m_tyreAge; } void set(int val) { if (val != m_tyreAge) { m_tyreAge = val; NPC("TyreAge"); } } };
       property float TyreDamage {float get() { return m_tyreDamage; } void set(float val) { if (val != m_tyreDamage) { m_tyreDamage = val; NPC("TyreDamage"); } } };
       property int Pos {int get() { return m_pos; } void set(int val) { if (val != m_pos) { m_pos = val; NPC("Pos"); } } };
       property int LapNr {int get() { return m_lapNr; } void set(int val) { if (val != m_lapNr) { m_lapNr = val; NPC("LapNr"); } } };
@@ -193,28 +421,34 @@ namespace adjsw::F12020
 
       property CarDetail^ WearDetail {CarDetail^ get() { return m_carDetail; } void set(CarDetail^ val) { m_carDetail = val; } };
 
+      void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
 
+      int m_lapTiresFitted{ 1 }; // for tyre age, which is not directly available in non complete telemetry.
+      int m_hasPitted{ 0 }; // for tyre age, which is not directly available in non complete telemetry.
+
    private:
-      void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
+      
       char* m_driverNameNative = nullptr;
 
       String^ m_name;
+      DriverStatus m_status;
       bool m_isPlayer;
       bool m_present;
       F1Team m_team;
       F1Tyre m_tyre;
       F1VisualTyre m_visualTyre;
-      float m_tyreDamage;
+      List<F1VisualTyre>^ m_visualTyres;
+      List<SessionEvent^>^ m_otherPenalties; // all penalties except time penalties, which can´t be served in the pits
+      int m_tyreAge;
+      float m_tyreDamage; // TODO Remove, not included for Online Mutiplayer when telemetry = basic
       int m_pos;
       int m_lapNr;
       int m_penaltySeconds;      
       float m_carDamage;
-
       array<LapData^>^ m_laps;
       float m_timedeltaToPlayer;
       float m_lastTimedeltaToPlayer;
       CarDetail^ m_carDetail;
-
    };
 }
