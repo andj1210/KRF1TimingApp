@@ -1,0 +1,14 @@
+V0.20
+- Updated Raceboard appearance
+- Added Pit penaties in raceboard
+   - SG = Stop + Go (5 sec)
+   - DT = Drive Through
+   - served penalties in parenthesis
+
+- Removed tyrewear from raceboard
+- Added Tyre history to raceboard
+- Added Tyre age to raceboard
+- Change license to GPL V3
+
+V0.10
+- Initial Version for F1 2020

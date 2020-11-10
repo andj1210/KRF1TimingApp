@@ -1,15 +1,16 @@
 ﻿// Copyright 2018-2020 Andreas Jung
-// Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
-// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+// SPDX-License-Identifier: GPL-3.0-only
 
+using F1GameSessionDisplay;
 using System;
 using System.Globalization;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
 
 namespace adjsw.F12020
 {
-    public class DeltaTimeConverter : IMultiValueConverter
+    public class PositionConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -18,24 +19,10 @@ namespace adjsw.F12020
             if (null == dat)
                 return "?";
 
-            if (dat.IsPlayer)
-                return " --- ";
-
-            if (!dat.Present)
-                return "EXIT";
-
-            if (dat.TimedeltaToPlayer > 99.9)
-            {
-                return "+99.9";
-            }
-            else if (dat.TimedeltaToPlayer < -99.9)
-            {
-                return "-99.9";
-            }
+            if (dat.Pos < 10)
+                return " " + dat.Pos + "|";
             else
-            {
-                return dat.TimedeltaToPlayer.ToString("+00.0;-00.0");
-            }            
+                return "" + dat.Pos + "|";
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
@@ -44,7 +31,90 @@ namespace adjsw.F12020
         }
     }
 
-    public class TyreDamageConverter : IMultiValueConverter
+    public class RaceEventTextConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[0] as SessionInfo;
+
+            if (null == dat)
+                return "?";
+
+            String text = "";
+            text += dat.EventTrack.ToString("g");
+            text += " ";
+            text += dat.Session.ToString("g");
+            
+
+            switch (dat.Session)
+            {
+                case SessionType.Unknown:
+                    break;
+                case SessionType.P1:
+                    text += "(";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.P2:
+                    text += "(";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.P3:
+                    text += "(";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.ShortPractice:
+                    text += "(";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.Q1:
+                    text += "(";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.Q2:
+                    text += " (";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.Q3:
+                    text += " (";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.ShortQ:
+                    text += " (";
+                    text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
+                    text += ")";
+                    break;
+                case SessionType.OSQ:
+                    break;
+                case SessionType.Race:
+                case SessionType.Race2:
+                    text += " - Lap ";
+                    text += dat.CurrentLap;
+                    text += " / ";
+                    text += dat.TotalLaps;
+                    break;
+                case SessionType.TimeTrial:
+                    break;
+            }
+
+            return text;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
+
+    public class PositionColorConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
@@ -52,143 +122,6 @@ namespace adjsw.F12020
 
             if (null == dat)
                 return "?";
-
-            float state = 1 - dat.TyreDamage;
-            state *= 100;
-
-            if (state > 100)
-                state = 100;
-
-            if (state < 0)
-                state = 0;
-
-            state += 0.5f;
-
-            return string.Format("{0,3:###}%", (int) state);
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    
-
-    public class PenaltyConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            var dat = values?[1] as DriverData;
-
-            if (null == dat)
-                return "?";
-            if (dat.PenaltySeconds > 0)
-                return "" + dat.PenaltySeconds;
-
-            return "";
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
-    }    
-
-    public class DeltaTimeColorConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            var dat = values?[1] as DriverData;
-
-            if (null == dat)
-                return Brushes.Red;
-
-            if (!dat.Present)
-                return Brushes.DarkGray;
-
-            if (dat.TimedeltaToPlayer > 0)
-            {
-                return Brushes.Red;
-            }
-            else if (dat.TimedeltaToPlayer < 0)
-                return Brushes.Green;
-
-            return Brushes.White;
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
-    }
-
-    public class LastTimeDeltaBgColorConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            var dat = values?[1] as DriverData;
-
-            if (null == dat)
-                return Brushes.DarkGray;
-
-            if (dat.TimedeltaToPlayer > dat.LastTimedeltaToPlayer)
-            {
-                return Brushes.Red;
-            }
-            else if (dat.TimedeltaToPlayer < dat.LastTimedeltaToPlayer)
-                return Brushes.Green;
-
-            return Brushes.DarkGray;
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
-    }    
-
-    public class DeltaTimeBgColorConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            var dat = values?[1] as DriverData;
-
-            if (null == dat)
-                return Brushes.White;
-
-            if (dat.IsPlayer)
-                return Brushes.DarkViolet;
-
-            /*
-            if (dat.TimedeltaToPlayer > 0)
-            {
-                return Brushes.Red;
-            }
-            else if (dat.TimedeltaToPlayer < 0)
-                return Brushes.Green;
-            */
-            return Brushes.Black;
-        }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-        {
-            throw new Exception("The method or operation is not implemented.");
-        }
-    }
-
-    public class NameColorConverter : IMultiValueConverter
-    {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-        {
-            var dat = values?[1] as DriverData;
-
-            if (null == dat)
-                return Brushes.Gray;
-
-            if (dat.IsPlayer)
-                return Brushes.DarkViolet;
-
 
             switch (dat.Team)
             {
@@ -229,6 +162,238 @@ namespace adjsw.F12020
             return Brushes.Gray;
         }
 
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+
+    public class DeltaTimeConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[2] as DriverData;
+
+            if (null == dat)
+                return "|?";
+
+            if (dat.IsPlayer)
+                return "| --- ";
+
+            if (!dat.Present)
+                return "| DNF ";
+
+            switch (dat.Status)
+            {
+                case DriverStatus.DNF:
+                case DriverStatus.DSQ:
+                    return "| DNF ";
+                case DriverStatus.Garage:
+                    return "GARAGE";
+
+                case DriverStatus.OnTrack:
+                    // show actual delta
+                    break;
+                case DriverStatus.Pitlane:
+                    return "|-PIT-";
+
+                case DriverStatus.Pitting:
+                    return "|-PIT-";
+            }
+
+            if (dat.TimedeltaToPlayer > 99.9)
+            {
+                return "|+99.9";
+            }
+            else if (dat.TimedeltaToPlayer < -99.9)
+            {
+                return "|-99.9";
+            }
+            else
+            {
+                return "|" + dat.TimedeltaToPlayer.ToString("+00.0;-00.0");
+            }
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class TyreAgeConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[1] as DriverData;
+
+            if (null == dat)
+                return "?";
+
+            if (dat.TyreAge < 10)
+                return " " + dat.TyreAge + "L";
+            else
+                return "" + dat.TyreAge + "L";
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    
+
+    public class PenaltyConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[1] as DriverData;
+
+            if (null == dat)
+                return "?";
+            if (dat.PenaltySeconds > 0)
+                return "" + dat.PenaltySeconds;
+
+            return "";
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class PitPenaltyConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[1] as DriverData;
+
+            if (null == dat)
+                return "";
+
+            string penaltyStr = "";
+
+            foreach (var penalty in dat.PitPenalties)
+            {
+                switch (penalty.PenaltyType)
+                {
+                    case PenaltyTypes.DriveThrough:
+                        if (!string.IsNullOrEmpty(penaltyStr))
+                            penaltyStr += ";";
+
+                        penaltyStr = penaltyStr + (penalty.PenaltyServed ? "(" : "") + "DT" + (penalty.PenaltyServed ? ")" : "");
+                        break;
+                    case PenaltyTypes.StopGo:
+                        if (!string.IsNullOrEmpty(penaltyStr))
+                            penaltyStr += ";";
+
+                        penaltyStr = penaltyStr + (penalty.PenaltyServed ? "(" : "") + "SG" + (penalty.PenaltyServed ? ")" : "");
+                        break;
+                    case PenaltyTypes.GridPenalty:
+                        if (!string.IsNullOrEmpty(penaltyStr))
+                            penaltyStr += ";";
+
+                        penaltyStr = penaltyStr + "GRD";
+                        break;
+                    case PenaltyTypes.Disqualified:
+                        if (!string.IsNullOrEmpty(penaltyStr))
+                            penaltyStr += ";";
+
+                        penaltyStr = penaltyStr + "DSQ";
+                        break;
+                    case PenaltyTypes.Retired:
+                        if (!string.IsNullOrEmpty(penaltyStr))
+                            penaltyStr += ";";
+
+                        penaltyStr = penaltyStr + "DNF";
+                        break;
+                }
+            }
+
+            return penaltyStr;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class DeltaTimeColorConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[1] as DriverData;
+
+            if (null == dat)
+                return Brushes.Red;
+
+            if (!dat.Present)
+                return Brushes.DarkGray;
+
+            if (dat.TimedeltaToPlayer > 0)
+            {
+                return Brushes.Red;
+            }
+            else if (dat.TimedeltaToPlayer < 0)
+                return Brushes.LightGreen;
+
+            return Brushes.White;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+    }
+
+    public class LastTimeDeltaBgColorConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[1] as DriverData;
+
+            if (null == dat)
+                return Brushes.Transparent;
+
+            float delta = dat.TimedeltaToPlayer - dat.LastTimedeltaToPlayer;
+
+            if (Math.Abs(delta) < 0.05f) // consider 0.050 sec or smaller as equal time
+                return Brushes.White;
+
+            else if (delta > 0)
+                return Brushes.Red;
+
+            else if (delta < 0)
+                return Brushes.LightGreen;
+
+            return Brushes.DarkGray;
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new Exception("The method or operation is not implemented.");
+        }
+    }    
+
+    public class DeltaTimeBgColorConverter : IMultiValueConverter
+    {
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[1] as DriverData;
+
+            if (null == dat)
+                return Brushes.Transparent;
+
+            if (dat.IsPlayer)
+                return Brushes.DarkViolet;
+
+            return Brushes.Transparent;
+        }
+
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
         {
             throw new Exception("The method or operation is not implemented.");
@@ -242,26 +407,36 @@ namespace adjsw.F12020
             var dat = values?[1] as DriverData;
 
             if (null == dat)
-                return "?";
+                return new TyreView(TyreView.OtherTyre);
 
-            switch (dat.VisualTyre)
+            WrapPanel wp = new WrapPanel();
+            foreach (F1VisualTyre tyre in dat.VisualTyres)
             {
-                case F1VisualTyre.Soft:
-                    return " S";
+                switch (tyre)
+                {
+                    case F1VisualTyre.Soft:
+                        wp.Children.Add(new TyreView(TyreView.SoftTyre));
+                        break;
 
-                case F1VisualTyre.Medium:
-                    return " M";
+                    case F1VisualTyre.Medium:
+                        wp.Children.Add(new TyreView(TyreView.MediumTyre));
+                        break;
 
-                case F1VisualTyre.Hard:
-                    return " H";
+                    case F1VisualTyre.Hard:
+                        wp.Children.Add(new TyreView(TyreView.HardTyre));
+                        break;
 
-                case F1VisualTyre.Intermediate:
-                    return " I";
+                    case F1VisualTyre.Intermediate:
+                        wp.Children.Add(new TyreView(TyreView.InterTyre));
+                        break;
 
-                case F1VisualTyre.Wet:
-                    return " W";
+                    case F1VisualTyre.Wet:
+                        wp.Children.Add(new TyreView(TyreView.WetTyre));
+                        break;
+                }
             }
-            return "?";
+
+            return wp;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
