@@ -5,6 +5,7 @@ using adjsw.F12020;
 using DesktopWPFAppLowLevelKeyboardHook;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
@@ -37,7 +38,7 @@ namespace F1GameSessionDisplay
             UpdateGrid();
             UpdateCarStatus();
             ToggleView();
-            Title = "F1-Game Session-Display for F1-2020 V0.2";
+            Title = "F1-Game Session-Display for F1-2020 V0.3";
             m_licTxt.Text = s_splashText;
         }
 
@@ -305,8 +306,8 @@ namespace F1GameSessionDisplay
                 }
             }
 
-            if (e.Key == Key.T)
-                ToggleView();
+            if (e.Key == Key.S)
+                SaveReport();
         }
 
         private void KbListener_KeyDown(object sender, KeyPressedArgs args)
@@ -332,7 +333,7 @@ namespace F1GameSessionDisplay
 
             // header
             sb.Append("Racereport by " + Title + nl);
-            sb.Append(session.EventTrack.ToString("g") +  " " + session.Session.ToString("g") + events[0].TimeCode + nl);
+            sb.Append(session.EventTrack.ToString("g") + " " + session.Session.ToString("g") + nl + events[0].TimeCode + nl);
             sb.Append(session.TotalLaps + " Laps" + nl);
 
             // classification
@@ -344,14 +345,82 @@ namespace F1GameSessionDisplay
             {
                 var driver = drivers[i];
                 sb.Append("Driver: " + driver.Name + nl + sep + nl);
+                sb.Append("|LAP | SECTOR1 | SECTOR2 | SECTOR3 | Lap Time | Penalties|" + nl);
+                sb.Append(sep + nl);
+
                 for (int j = 0; j < driver.LapNr - 1; ++j)
                 {
-                    //sb.Append(string.Format("Lap{0,2} | ", j+1) 
+                    var lap = driver.Laps[j];
+                    float sector3 = lap.Lap - (lap.Sector1 + lap.Sector2);
+                    int minutes = (int)lap.Lap / 60;
+                    float seconds = lap.Lap % 60.0f;
+                    int secondsInt = (int)seconds;
+                    int milliesInt = (int)((seconds - secondsInt) * 1000);
+
+                    sb.Append(string.Format("| {0,2} | {1,7:0.000} | {2,7:0.000} | {3,7:0.000} | {4}:{5:00}.{6:000} |",
+                        j + 1, lap.Sector1, lap.Sector2, sector3, minutes, secondsInt, milliesInt));
+
+                    foreach (var ev in driver.Laps[j].Incidents)
+                    {
+                        sb.Append(ev.PenaltyType.ToString("g") + ",");
+                    }
+                    sb.Append(nl);
                 }
+
+                sb.Append(sep + nl + nl + nl);
 
             }
 
+            // Inicdents
+            sb.Append(nl + nl + nl + "---------------------------INCIDENTS--------------------------" + nl);
+            sb.Append("LAP | INCIDENT" + nl);
 
+            foreach (var ev in events)
+            {
+                string driver = "N/A";
+                if (ev.CarIndex <= countDrivers)
+                {
+                    driver = drivers[ev.CarIndex].Name;
+                }
+                
+                string lapStr = string.Format(" {0,2} | ", ev.LapNum);
+                if (ev.LapNum == 0)
+                {
+                    lapStr = " -- |";
+                }
+
+
+                switch (ev.Type)
+                {
+                    case EventType.ChequeredFlag:
+                    case EventType.SessionStarted:
+                    case EventType.SessionEnded:
+                        sb.Append(lapStr + ev.Type.ToString("g") + nl);
+                        break;
+                    case EventType.FastestLap:
+                    case EventType.Retirement:                    
+                    case EventType.RaceWinner:
+                        sb.Append(lapStr + driver + ": " + ev.Type.ToString("g") + nl);
+                        break;
+
+
+                    case EventType.PenaltyIssued:
+                        sb.Append(lapStr + driver + ": " + ev.PenaltyType.ToString("g") + " for " + ev.InfringementType.ToString("g") + nl);
+                        break;
+
+                    case EventType.DRSenabled:
+                    case EventType.TeamMateInPits:
+                    case EventType.SpeedTrapTriggered:
+                    case EventType.DRSdisabled:
+                        // don´t care
+                        break;
+
+                }
+            }
+            sb.Append(sep + nl);
+
+
+            File.WriteAllText(DateTime.Now.ToString("ddMMyy_HHmmss") +  "_report.txt", sb.ToString());
         }
 
         private void m_licBrd_MouseDown(object sender, MouseButtonEventArgs e)
