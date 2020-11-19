@@ -6,10 +6,12 @@ using DesktopWPFAppLowLevelKeyboardHook;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Security.RightsManagement;
 using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
 namespace F1GameSessionDisplay
@@ -20,26 +22,32 @@ namespace F1GameSessionDisplay
     public partial class MainWindow : Window
     {
         public string ip = "";
-        private int tickCtr = 75;
+
         public MainWindow()
         {
             InitializeComponent();
 
+            Title = "F1-Game Session-Display for F1-2020 V0.3";
+
             m_listenerHdl += KbListener_KeyDown;
             m_kbListener.OnKeyPressed += m_listenerHdl;
             m_kbListener.HookKeyboard();
-            m_timer.Tick += T_Tick;
-            m_timer.Interval = TimeSpan.FromMilliseconds(100);
+
+            m_pollTimer.Tick += PollUpdates_Tick;
+            m_pollTimer.Interval = TimeSpan.FromMilliseconds(100);            
+            m_pollTimer.IsEnabled = true;
+
+            m_infoBoxTimer.Tick += m_InfoBoxTimer_Tick;
+
             m_grid.ItemsSource = m_driversList;
-            m_timer.IsEnabled = true;
 
             m_parser = new adjsw.F12020.F12020Parser("127.0.0.1", 20777);
             m_parser.InsertTestData();
             UpdateGrid();
             UpdateCarStatus();
             ToggleView();
-            Title = "F1-Game Session-Display for F1-2020 V0.3";
-            m_licTxt.Text = s_splashText;
+
+            ShowInfoBox(s_splashText, TimeSpan.FromSeconds(7));
         }
 
         private void ToggleView()
@@ -57,16 +65,8 @@ namespace F1GameSessionDisplay
             }
         }
 
-        private void T_Tick(object sender, EventArgs e)
+        private void PollUpdates_Tick(object sender, EventArgs e)
         {
-            if (tickCtr > 0)
-            {
-                --tickCtr;
-
-                if (tickCtr == 0)
-                    m_licBrd.Visibility = Visibility.Collapsed;
-            }
-
             if (null == m_parser)
             {
                 if (!String.IsNullOrEmpty(ip))
@@ -87,12 +87,17 @@ namespace F1GameSessionDisplay
 
             if (m_parser.SessionInfo.Session == SessionType.Race)
             {
-                if (!m_parser.SessionInfo.SessionFinshed)
-                    m_reportSaved = false;
-                else if (m_parser.SessionInfo.SessionFinshed && !m_reportSaved)
+                if (m_parser.Classification != null)
                 {
-                    //SaveReport();
-                    m_reportSaved = true;
+                    if (!m_sessionFinishNotificationShown)
+                    {
+                        ShowInfoBox("The Race has finished.\r\n Click in the window and hit\r\n---\"s\"---\r\nto save the race report.", TimeSpan.FromSeconds(10));
+                        m_sessionFinishNotificationShown = true;
+                    }
+                }
+                else
+                {
+                    m_sessionFinishNotificationShown = false;
                 }
             }
         }
@@ -115,14 +120,10 @@ namespace F1GameSessionDisplay
 
             foreach (var driver in m_parser.Drivers)
             {
-                //if (driver.Present)
+                if ((driver.Pos) > 0 && (driver.Pos <= 20))
                 {
-                    if ((driver.Pos) > 0 && (driver.Pos <= 20))
-                    {
-                        if ((driver.Pos - 1) < m_driversList.Count)
-                            m_driversList[driver.Pos - 1] = driver;
-                    }
-                        
+                    if ((driver.Pos - 1) < m_driversList.Count)
+                        m_driversList[driver.Pos - 1] = driver;
                 }
             }
         }
@@ -312,12 +313,24 @@ namespace F1GameSessionDisplay
 
         private void KbListener_KeyDown(object sender, KeyPressedArgs args)
         {
-            if (args.KeyPressed == Key.S)
-            {
-            }
-
             if (args.KeyPressed == Key.Space)
                 ToggleView();
+        }
+
+        private string To_H_MM_SS_mmm_String(double inputSeconds)
+        {
+            string str = "";
+            int hour = (int)inputSeconds / 3600;            
+            inputSeconds -= hour * 3600.0;
+            int minutes = (int)inputSeconds / 60;
+            int seconds = (int)inputSeconds % 60;
+            int milliseconds = (int) ((inputSeconds % 1) * 1000);
+
+            str += string.Format("{0,1}", hour);
+            str += string.Format(":{0,2:00}", minutes);
+            str += string.Format(":{0,2:00}", seconds);
+            str += string.Format(".{0:000}", milliseconds);
+            return str;
         }
 
         // TODO
@@ -331,15 +344,77 @@ namespace F1GameSessionDisplay
             var events = m_parser.EventList.Events;
             string nl = "\r\n";
 
+            if (events.Count == 0)
+            {
+                ShowInfoBox("Event Report not saved - no data!", TimeSpan.FromSeconds(3));
+                return;
+            }
+
             // header
             sb.Append("Racereport by " + Title + nl);
             sb.Append(session.EventTrack.ToString("g") + " " + session.Session.ToString("g") + nl + events[0].TimeCode + nl);
             sb.Append(session.TotalLaps + " Laps" + nl);
 
             // classification
+            sb.Append(nl + nl + nl + "---------------------------CLASSIFICATION----------------------" + nl);
+            if (m_parser.Classification == null)
+            {
+                sb.Append("No race result available" + nl);
+            }
+            else
+            {
+                int maxDriverNameLen = 4; // "Name"
+                ClassificationData winner = null;
+                foreach (var result in m_parser.Classification)
+                {
+                    if (result.Driver.Name.Length > maxDriverNameLen)
+                        maxDriverNameLen = result.Driver.Name.Length;
+
+                    if (result.Position == 1)
+                        winner = result;
+                }
+                // "|POS | Name | LAPS | Track Time  | PEN | Total Time |"
+                sb.Append("|POS |"); 
+                sb.Append(" ");
+                int addspaces1 = maxDriverNameLen - 4;
+                int addspaces2 = addspaces1 / 2 + addspaces1 % 2;
+                addspaces1 /= 2;
+                for (int i = 0; i< addspaces1; ++i)
+                    sb.Append(" ");
+                sb.Append("Name");
+                for (int i = 0; i < addspaces2; ++i)
+                    sb.Append(" ");
+
+                sb.Append(" | LAPS | Track Time  | PEN | Total Time |" + nl);
+                sb.Append("----------------------------------------------------------------------" + nl);
+
+                for (int i = 0; i < m_parser.Classification.Length; ++i)
+                {
+                    foreach (var result in m_parser.Classification)
+                    {
+                        if (result.Position != (i + 1))
+                            continue;
+
+                        sb.Append(string.Format("| {0,2} ", result.Position));
+                        sb.Append(string.Format("| {0,-"  + maxDriverNameLen + "} ", result.Driver.Name)); // todo align column width!
+                        sb.Append(string.Format("|  {0,2}  ", result.NumLaps));
+
+                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime));
+
+                        if (result.PenaltiesTime > 0)
+                           sb.Append(" | " + string.Format("{0,2}s ", result.PenaltiesTime));
+                        else
+                           sb.Append(" |     ");
+
+                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime + result.PenaltiesTime) + " |" + nl);
+                    }
+                }                
+            }
 
             // laptimes
             sb.Append(nl + nl + nl + "------------------------------LAPS----------------------------" + nl);
+            sb.Append(               "--***Warning*** Laptimes may have rounding issues of +/- 1ms--" + nl);
+            sb.Append(               "--------------------------------------------------------------" + nl + nl);
 
             for (int i = 0; i < countDrivers; ++i)
             {
@@ -419,21 +494,39 @@ namespace F1GameSessionDisplay
             }
             sb.Append(sep + nl);
 
-
-            File.WriteAllText(DateTime.Now.ToString("ddMMyy_HHmmss") +  "_report.txt", sb.ToString());
+            string filename = DateTime.Now.ToString("ddMMyy_HHmmss") + "_report.txt";
+            File.WriteAllText(filename, sb.ToString());
+            ShowInfoBox(filename + "\r\nThe race report has been saved.", TimeSpan.FromSeconds(3));
         }
 
-        private void m_licBrd_MouseDown(object sender, MouseButtonEventArgs e)
+        private void ShowInfoBox(string text, TimeSpan autoCloseTime)
         {
-            m_licBrd.Visibility = Visibility.Collapsed;
+            m_infoBoxTimer.Stop();
+            m_infoTxt.Text = text;
+            m_infoBox.Visibility = Visibility.Visible;
+            m_infoBoxTimer.Interval = autoCloseTime;
+            m_infoBoxTimer.Start();
+        }
+
+        private void m_infoBox_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            m_infoBoxTimer.Stop();
+            m_infoBox.Visibility = Visibility.Collapsed;
+        }
+
+        private void m_InfoBoxTimer_Tick(object sender, EventArgs e)
+        {
+            m_infoBoxTimer.Stop();
+            m_infoBox.Visibility = Visibility.Collapsed;
         }
 
         private LowLevelKeyboardListener m_kbListener = new LowLevelKeyboardListener();
         private EventHandler<KeyPressedArgs> m_listenerHdl; // Needed elsewise error in KeyboardListener / some issue between GC + Native resources
         private F12020Parser m_parser = null;
-        private DispatcherTimer m_timer = new DispatcherTimer();
+        private DispatcherTimer m_pollTimer = new DispatcherTimer();
+        private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
         private ObservableCollection<adjsw.F12020.DriverData> m_driversList = new ObservableCollection<adjsw.F12020.DriverData>();
-        private bool m_reportSaved = false;
+        private bool m_sessionFinishNotificationShown = false;
 
         private static string s_splashText =
 @"

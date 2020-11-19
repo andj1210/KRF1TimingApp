@@ -11,10 +11,9 @@
     <Window.Resources>
     </Window.Resources>
     <Grid Height="Auto">
-        <Border x:Name="m_licBrd" HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" BorderBrush="Black" BorderThickness="3" Panel.ZIndex="1" MouseDown="m_licBrd_MouseDown">
-            <TextBlock Margin="5" x:Name="m_licTxt"  Foreground="Black" FontSize="16" FontWeight="Bold">LICENSE</TextBlock>
+        <Border x:Name="m_infoBox" HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" BorderBrush="Black" BorderThickness="3" Panel.ZIndex="1" MouseDown="m_infoBox_MouseDown">
+            <TextBlock Margin="5" x:Name="m_infoTxt"  Foreground="Black" FontSize="16" FontWeight="Bold">LICENSE</TextBlock>
         </Border>
-        
         <local:CarStatusView HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="m_carStatus" Width="364"></local:CarStatusView>
         <localui:PersonalLeaderboard x:Name="m_grid" Visibility="Collapsed"></localui:PersonalLeaderboard>
     </Grid>

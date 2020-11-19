@@ -456,4 +456,18 @@ namespace adjsw::F12020
       float m_lastTimedeltaToPlayer;
       CarDetail^ m_carDetail;
    };
+
+   public ref class ClassificationData
+   {
+   public:
+      property DriverData^ Driver;
+      property int Position;        // Finishing position
+      property int NumLaps;         // Number of laps completed
+      property int GridPosition;    // Grid position of the car
+      property int Points;          // Number of points scored
+      property float BestLapTime;   // Best lap time of the session in seconds
+      property double TotalRaceTime;// Total race time in seconds without penalties
+      property int PenaltiesTime;   // Total penalties accumulated in seconds
+      property int NumPenalties;    // Number of penalties applied to this driver
+   };
 }
