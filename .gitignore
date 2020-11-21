@@ -5,3 +5,5 @@
 /.vs
 /F12020UdpParser/Release
 /F12020UdpParser/Debug
+/_dist/*.zip
+/*.zip

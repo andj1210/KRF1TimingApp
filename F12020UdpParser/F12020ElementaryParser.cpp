@@ -71,6 +71,11 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
       memcpy(&status, pData, sizeof(status));
       return sizeof(status);
       break;
+
+   case 8:
+      memcpy(&classification, pData, sizeof(classification));
+      return sizeof(classification);
+      break;
    }
    return len;
 }

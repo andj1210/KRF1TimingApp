@@ -1,3 +1,7 @@
+V0.30
+- Fixed players own penalty time not taken into account when calculating delta times
+- Added function to export race result in plain text file
+
 V0.20
 - Updated Raceboard appearance
 - Added Pit penaties in raceboard

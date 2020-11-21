@@ -300,6 +300,7 @@ namespace adjsw::F12020
       property float Sector2;
       property float Lap;
       property float LapsAccumulated;
+      property List<SessionEvent^>^ Incidents;
    };
 
    public ref class CarDetail
@@ -376,7 +377,11 @@ namespace adjsw::F12020
          Laps = gcnew array<LapData^>(100); // 100 Laps ought to be enough for anybody        
 
          for (int i = 0; i < Laps->Length; ++i)
+         {
             Laps[i] = gcnew LapData();
+            Laps[i]->Incidents = gcnew List<SessionEvent^>();
+         }
+            
 
          IsPlayer = false;
          Present = false;
@@ -450,5 +455,19 @@ namespace adjsw::F12020
       float m_timedeltaToPlayer;
       float m_lastTimedeltaToPlayer;
       CarDetail^ m_carDetail;
+   };
+
+   public ref class ClassificationData
+   {
+   public:
+      property DriverData^ Driver;
+      property int Position;        // Finishing position
+      property int NumLaps;         // Number of laps completed
+      property int GridPosition;    // Grid position of the car
+      property int Points;          // Number of points scored
+      property float BestLapTime;   // Best lap time of the session in seconds
+      property double TotalRaceTime;// Total race time in seconds without penalties
+      property int PenaltiesTime;   // Total penalties accumulated in seconds
+      property int NumPenalties;    // Number of penalties applied to this driver
    };
 }
