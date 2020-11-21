@@ -1,4 +1,4 @@
-# F1 Game Session Display
+# F1-Game Session-Display
 
 This repository contains a software to display the leaderboard and car status for the F1-2020 game on a second monitor by utilizing the game Telemetry output.
 
@@ -6,9 +6,11 @@ Initially I made this software for F1-2018 for my own use and now ported it to t
 As well I´m hoping to find some help with the visualization, WPF/xaml or graphics contributions very welcome.
 
 ### Installation
-I provide binaries in form of one DLL and one executable. They can be extracted to any directory.
+The binaries are provided in form of one DLL and one executable. They can be extracted to any directory.
 On a Windows 10 machine usually just the executable must be started and everything should be working.
-In case the program does not start, please install the Visual Studio C++ Redistributable (vx_redist.x86.exe) for Visual Studio 2015/2017/2019.
+In case the program does not start, please install the Visual Studio C++ Redistributable (vx_redist.x86.exe) for Visual Studio 2015/2017/2019:
+- [vx_redist.x86.exe](https://aka.ms/vs/16/release/vc_redist.x86.exe)
+
 Furthermore in the game the telemetry output must be enabled in mode "2020" to UDP port 20777.
 
 ### Functions
@@ -17,12 +19,16 @@ The program does currently only contain two different views.
 - The personal leader board
 - The car status view
 
+
 After the program has been started, the view can be changed with the space bar.
-The keystroke are also captured in background, i.e. also when the window has no focus.
+Space bar is also captured when the window is not active.
 
 Keymapping:
-F11   - change to fullscreen
-space - Toggle view (Car status / Leaderboard)
+- F11 - toggle fullscreen
+- s - save a race report as text file
+- space - Toggle view (Car status / Leaderboard), also captured when the window is not active (i.e. you are in game)
+
+**The window is updated automatically as soon as telemetry data from the game is received**
 
 #### The personal leader board
 The personal leader board displays the race leader board from perspective of the active player, meaning the deltas are relative to the player.
@@ -62,7 +68,15 @@ The pit penalties are seperated by ";". If a penalty is shown in parenthesis it 
 Additional "DNF" and "DSQ" are added to the column if a car retired / disqualified.
 
 #### The Car status
-Display the tyre and engine temperatures. Furthermore displays the tyre wear and wing damage. Behid the Rear wing the personal penalty time is shown. 
+Display the tyre and engine temperatures. Furthermore displays the tyre wear and wing damage. Behind the Rear wing the personal penalty time is shown.
+
+### Limitations
+- Human driver names are not available in the telemetry, therefore teamname + car number is shown as name.
+- The information during practice or qualifying is not particular useful, yet.
+- When the start of the session is not captured, the raceboard will show incorrect data (i.e. number of drivers, deltas, etc.)
+- The lap infos in racereport may contain rounding errors, so that sector 1-3 not always sum exactly the lap time
+- Gaps / Delta times are only updated once per sector
+- The data is focused on the driver participating in the race, no particular support for spectator mode
 
 ### Compilation
 The .sln file should compile out of the box with Visual Studio 2019.
