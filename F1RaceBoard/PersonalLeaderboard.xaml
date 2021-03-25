@@ -6,20 +6,23 @@
              xmlns:local="clr-namespace:adjsw.F12020"             
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <local:PositionConverter x:Key="PositionConverter"/>
+        <local:RaceEventTextConverter x:Key="RaceEventTextConverter"/>
+        <local:PositionColorConverter x:Key="PositionColorConverter"/>
+        <local:DeltaTimeColorConverter x:Key="DeltaTimeColorConverter"/>
+        <local:DeltaTimeBgColorConverter x:Key="DeltaTimeBgColorConverter"/>
+        <local:TyreConverter x:Key="TyreConverter"/>
+        <local:TyreColorConverter x:Key="TyreColorConverter"/>
+        <local:DeltaTimeConverter x:Key="DeltaTimeConverter"/>
+        <local:DeltaTimeLeaderConverter x:Key="DeltaTimeLeaderConverter"/>
+        <local:PenaltyConverter x:Key="PenaltyConverter"/>
+        <local:PitPenaltyConverter x:Key="PitPenaltyConverter"/>
+        <local:TyreAgeConverter x:Key="TyreAgeConverter"/>
+        <local:LastTimeDeltaBgColorConverter x:Key="LastTimeDeltaBgColorConverter"/>
+    </UserControl.Resources>
     <StackPanel Background="Transparent">
         <StackPanel.Resources>
-            <local:PositionConverter x:Key="PositionConverter"/>
-            <local:RaceEventTextConverter x:Key="RaceEventTextConverter"/>
-            <local:PositionColorConverter x:Key="PositionColorConverter"/>
-            <local:DeltaTimeColorConverter x:Key="DeltaTimeColorConverter"/>
-            <local:DeltaTimeBgColorConverter x:Key="DeltaTimeBgColorConverter"/>
-            <local:TyreConverter x:Key="TyreConverter"/>
-            <local:TyreColorConverter x:Key="TyreColorConverter"/>
-            <local:DeltaTimeConverter x:Key="DeltaTimeConverter"/>
-            <local:PenaltyConverter x:Key="PenaltyConverter"/>
-            <local:PitPenaltyConverter x:Key="PitPenaltyConverter"/>
-            <local:TyreAgeConverter x:Key="TyreAgeConverter"/>
-            <local:LastTimeDeltaBgColorConverter x:Key="LastTimeDeltaBgColorConverter"/>
         </StackPanel.Resources>
         <TextBlock FontSize="32" FontWeight="Bold" FontFamily="Courier New" Foreground="White" HorizontalAlignment="Center">Personal Raceboard</TextBlock>
         <TextBlock x:Name="m_textpanel" FontSize="32" FontWeight="Bold" FontFamily="Courier New" Foreground="White" HorizontalAlignment="Center">
@@ -35,10 +38,10 @@
             </TextBlock.Text>
         </TextBlock>
         <DataGrid RowHeight="35" x:Name="m_grid" RowBackground="#FF555555" AlternatingRowBackground="#FF404040" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="28" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="35" BorderThickness="0">
-            <DataGrid.Columns>                
+            <DataGrid.Columns>
                 <DataGridTemplateColumn Header="POS" Width="60">
                     <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>  
+                        <DataTemplate>
                             <TextBlock>
                                 <TextBlock.Text>
                                     <MultiBinding Converter="{StaticResource PositionConverter}">
@@ -55,7 +58,8 @@
                             </TextBlock>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>                
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Foreground="White"></DataGridTextColumn>
                 <DataGridTemplateColumn Header="Delta">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -74,6 +78,7 @@
                                             <Binding Path="TimedeltaToPlayer" />
                                             <Binding Path="Status" />
                                             <Binding Path="" />
+                                            <Binding Path="FastestLap" />
                                         </MultiBinding>
                                     </TextBlock.Text>
                                     <TextBlock.Foreground>
@@ -93,7 +98,21 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Foreground="White"></DataGridTextColumn>
+                <DataGridTemplateColumn Header="Leader" Width="150">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Foreground="White">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource DeltaTimeLeaderConverter}">
+                                        <Binding Path="TimedeltaToLeader" />
+                                        <Binding Path="Status" />
+                                        <Binding Path="" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Tyre" MinWidth="185">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

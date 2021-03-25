@@ -27,7 +27,7 @@ namespace F1GameSessionDisplay
         {
             InitializeComponent();
 
-            Title = "F1-Game Session-Display for F1-2020 V0.3";
+            Title = "F1-Game Session-Display for F1-2020 V0.4";
 
             m_listenerHdl += KbListener_KeyDown;
             m_kbListener.OnKeyPressed += m_listenerHdl;
@@ -41,13 +41,16 @@ namespace F1GameSessionDisplay
 
             m_grid.ItemsSource = m_driversList;
 
-            m_parser = new adjsw.F12020.F12020Parser("127.0.0.1", 20777);
+            m_parser = new adjsw.F12020.F12020UdpClrMapper("127.0.0.1", 20777);
             m_parser.InsertTestData();
             UpdateGrid();
             UpdateCarStatus();
             ToggleView();
 
             ShowInfoBox(s_splashText, TimeSpan.FromSeconds(7));
+
+            //m_CreateTestJsonMappingFile();
+            //m_LoadNameMappings();
         }
 
         private void ToggleView()
@@ -71,10 +74,10 @@ namespace F1GameSessionDisplay
             {
                 if (!String.IsNullOrEmpty(ip))
                 {
-                    m_parser = new adjsw.F12020.F12020Parser(ip, 20777);
+                    m_parser = new adjsw.F12020.F12020UdpClrMapper(ip, 20777);
                 }
                 else
-                    m_parser = new adjsw.F12020.F12020Parser("127.0.0.1", 20777);
+                    m_parser = new adjsw.F12020.F12020UdpClrMapper("127.0.0.1", 20777);
 
                 m_parser.InsertTestData();
             }
@@ -100,6 +103,27 @@ namespace F1GameSessionDisplay
                     m_sessionFinishNotificationShown = false;
                 }
             }
+
+            bool qualySession = false;
+            switch (m_parser.SessionInfo.Session)
+            {
+                case SessionType.P1:
+                case SessionType.P2:
+                case SessionType.P3:
+                case SessionType.ShortPractice:
+                case SessionType.Q1:
+                case SessionType.Q2:
+                case SessionType.Q3:
+                case SessionType.ShortQ:
+                    qualySession = true;
+                    break;
+
+                default:
+                case SessionType.OSQ: // this is not meant to show the fastest lap, since only 1 lap show sector deltas...
+                    qualySession = false;
+                    break;
+            }
+            m_grid.Quali = qualySession;
         }
 
         private void UpdateGrid()
@@ -309,6 +333,41 @@ namespace F1GameSessionDisplay
 
             if (e.Key == Key.S)
                 SaveReport();
+
+            if (e.Key == Key.L)
+                m_grid.LeaderVisible = !m_grid.LeaderVisible;
+
+            if (e.Key == Key.D)
+                m_grid.DeltaVisible = !m_grid.DeltaVisible;
+
+            if (e.Key == Key.M)
+            {
+                m_LoadNameMappings(); // always reload in case text changed
+
+                if (m_nameMappings != null)
+                {
+                    if (m_nameMappingNextIdx >= m_nameMappings.Length)
+                    {
+                        m_nameMappingNextIdx = 0;
+                        ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
+                    }
+                        
+
+                    else if (m_nameMappings.Length >= m_nameMappingNextIdx)
+                    {
+                        m_parser.SetDriverNameMappings(m_nameMappings[m_nameMappingNextIdx]);
+                        ShowInfoBox("Drivername Mapping selected: " + m_nameMappings[m_nameMappingNextIdx].LeagueName, TimeSpan.FromSeconds(2));
+                        m_nameMappingNextIdx++;
+                    }
+                    else
+                    {
+                        m_parser.SetDriverNameMappings(null);
+                    }                    
+                }
+                else
+                    m_parser.SetDriverNameMappings(null);
+
+            }
         }
 
         private void KbListener_KeyDown(object sender, KeyPressedArgs args)
@@ -356,7 +415,7 @@ namespace F1GameSessionDisplay
             sb.Append(session.TotalLaps + " Laps" + nl);
 
             // classification
-            sb.Append(nl + nl + nl + "---------------------------CLASSIFICATION----------------------" + nl);
+            sb.Append(nl + nl + nl + "--------------------------------------CLASSIFICATION----------------------------------" + nl);
             if (m_parser.Classification == null)
             {
                 sb.Append("No race result available" + nl);
@@ -385,8 +444,12 @@ namespace F1GameSessionDisplay
                 for (int i = 0; i < addspaces2; ++i)
                     sb.Append(" ");
 
-                sb.Append(" | LAPS | Track Time  | PEN | Total Time |" + nl);
-                sb.Append("----------------------------------------------------------------------" + nl);
+                sb.Append(" | LAPS | Track Time  |    Delta    | PEN | Total Time  |    Delta    |" + nl);
+                sb.Append("--------------------------------------------------------------------------------------" + nl);
+
+                double leaderTimeTrack = 0.0;
+                double leaderTimeTotal = 0.0;
+                int leaderLaps = 0;
 
                 for (int i = 0; i < m_parser.Classification.Length; ++i)
                 {
@@ -395,18 +458,53 @@ namespace F1GameSessionDisplay
                         if (result.Position != (i + 1))
                             continue;
 
+                        if (i == 0)
+                        {
+                            leaderTimeTrack = result.TotalRaceTime;
+                            leaderTimeTotal = leaderTimeTrack + result.PenaltiesTime;
+                            leaderLaps = result.NumLaps;
+                        }
+
                         sb.Append(string.Format("| {0,2} ", result.Position));
                         sb.Append(string.Format("| {0,-"  + maxDriverNameLen + "} ", result.Driver.Name)); // todo align column width!
                         sb.Append(string.Format("|  {0,2}  ", result.NumLaps));
 
-                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime));
+                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime) + " ");
+
+                        if (i == 0)
+                        {
+                            sb.Append("| ----------  ");
+                        }
+                        else
+                        {
+                            if (result.NumLaps == leaderLaps)
+                                sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime - leaderTimeTrack) + " ");
+                            else
+                                sb.Append("|    +" + (leaderLaps - result.NumLaps) + "L      ");
+                        }
+
 
                         if (result.PenaltiesTime > 0)
-                           sb.Append(" | " + string.Format("{0,2}s ", result.PenaltiesTime));
+                           sb.Append("| " + string.Format("{0,2}s ", result.PenaltiesTime));
                         else
-                           sb.Append(" |     ");
+                           sb.Append("|     ");
 
-                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime + result.PenaltiesTime) + " |" + nl);
+                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime + result.PenaltiesTime) + " ");
+
+                        if (i == 0)
+                        {
+                            sb.Append("| ----------  |");
+                        }
+                        else
+                        {
+                            if (result.NumLaps == leaderLaps)
+                                sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime + result.PenaltiesTime - leaderTimeTotal) + " |");
+                            else
+                                sb.Append("|    +" + (leaderLaps - result.NumLaps) + "L      |");
+                        }
+
+
+                        sb.Append(nl);
                     }
                 }                
             }
@@ -520,18 +618,71 @@ namespace F1GameSessionDisplay
             m_infoBox.Visibility = Visibility.Collapsed;
         }
 
+        private void m_CreateTestJsonMappingFile()
+        {
+            DriverNameMappings[] mappings = new DriverNameMappings[2];
+            mappings[0] = new DriverNameMappings();
+            mappings[1] = new DriverNameMappings();
+
+            mappings[0].LeagueName = "KRF1 - 1";
+            mappings[0].Mappings = new DriverNameMapping[2];
+            mappings[0].Mappings[0] = new DriverNameMapping();
+            mappings[0].Mappings[1] = new DriverNameMapping();
+            mappings[0].Mappings[0].Team = F1Team.RedBull;
+            mappings[0].Mappings[0].Name = "Max Damage";
+            mappings[0].Mappings[0].DriverNumber = 91;
+
+            mappings[0].Mappings[1].Team = null;
+            mappings[0].Mappings[1].Name = "tomy (Veydn)";
+            mappings[0].Mappings[1].DriverNumber = 13;
+
+            mappings[1].LeagueName = "KRF1 - 2";
+            mappings[1].Mappings = new DriverNameMapping[3];
+            mappings[1].Mappings[0] = new DriverNameMapping();
+            mappings[1].Mappings[1] = new DriverNameMapping();
+            mappings[1].Mappings[2] = new DriverNameMapping();
+            mappings[1].Mappings[0].Team = F1Team.RedBull;
+            mappings[1].Mappings[0].Name = "Max Damage";
+            mappings[1].Mappings[0].DriverNumber = 91;
+
+            mappings[1].Mappings[1].Team = null;
+            mappings[1].Mappings[1].Name = "Leopard";
+            mappings[1].Mappings[1].DriverNumber = 91;
+            mappings[1].Mappings[2].Team = null;
+            mappings[1].Mappings[2].Name = "SimonLaui";
+            mappings[1].Mappings[2].DriverNumber = 86;
+
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(mappings, Newtonsoft.Json.Formatting.Indented);
+            File.WriteAllText("json.txt", json);
+        }
+
+        private void m_LoadNameMappings()
+        {
+            try
+            {
+                var json = File.ReadAllText("namemappings.json");
+                m_nameMappings = Newtonsoft.Json.JsonConvert.DeserializeObject<DriverNameMappings[]>(json) as DriverNameMappings[];
+            }
+            catch (Exception ex)
+            {
+                ShowInfoBox("Error loading name mappings file \"namemappings.json\":\r\n" + ex.Message, TimeSpan.FromSeconds(3));
+            }
+        }
+
         private LowLevelKeyboardListener m_kbListener = new LowLevelKeyboardListener();
         private EventHandler<KeyPressedArgs> m_listenerHdl; // Needed elsewise error in KeyboardListener / some issue between GC + Native resources
-        private F12020Parser m_parser = null;
+        private F12020UdpClrMapper m_parser = null;
         private DispatcherTimer m_pollTimer = new DispatcherTimer();
         private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
         private ObservableCollection<adjsw.F12020.DriverData> m_driversList = new ObservableCollection<adjsw.F12020.DriverData>();
         private bool m_sessionFinishNotificationShown = false;
+        private int m_nameMappingNextIdx = 0;
+        private DriverNameMappings[] m_nameMappings;
 
         private static string s_splashText =
 @"
-F1-Game Session-Display for F1-2020
-Copyright 2018-2020 Andreas Jung
+F1-Game Session-Display for F1-2021
+Copyright 2018-2021 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

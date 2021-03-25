@@ -1,4 +1,4 @@
-// Copyright 2018-2020 Andreas Jung
+// Copyright 2018-2021 Andreas Jung
 // SPDX-License-Identifier: GPL-3.0-only
 
 #pragma once
@@ -371,17 +371,18 @@ namespace adjsw::F12020
       void Reset()
       {
          Name = "";
+         TelemetryName = "";
+         MappedName = "";
          m_driverNameNative[0] = 0;
          Pos = 0;
          LapNr = 1;
-         Laps = gcnew array<LapData^>(100); // 100 Laps ought to be enough for anybody        
-
+         Laps = gcnew array<LapData^>(100); // 100 Laps ought to be enough for anybody
          for (int i = 0; i < Laps->Length; ++i)
          {
             Laps[i] = gcnew LapData();
             Laps[i]->Incidents = gcnew List<SessionEvent^>();
          }
-            
+         FastestLap = gcnew LapData();           
 
          IsPlayer = false;
          Present = false;
@@ -391,7 +392,7 @@ namespace adjsw::F12020
          m_hasPitted = false;
       }
 
-      void SetName(const char(&pName)[48])
+      void SetNameFromTelemetry(const char(&pName)[48])
       {
          if (strcmp(pName, m_driverNameNative))
          {
@@ -401,11 +402,13 @@ namespace adjsw::F12020
             for (unsigned i = 0; i < sz; ++i)
                arr[i] = m_driverNameNative[i];
 
-            Name = System::Text::Encoding::UTF8->GetString(arr);
+            TelemetryName = System::Text::Encoding::UTF8->GetString(arr);
          }
-      }     
+      }
 
-      property String^ Name {String^ get() { return m_name; } void set(String^ val) { if (!String::Equals(val, m_name)) { m_name = val; NPC("Name"); } } };
+      property String^ Name {String^ get() { return m_name; } void set(String^ val) { if (!String::Equals(val, m_name)) { m_name = val; NPC("Name"); } } }; // The name for Display
+      property String^ TelemetryName {String^ get() { return m_telemetryName; } void set(String^ val) { if (!String::Equals(val, m_telemetryName)) { m_telemetryName = val; NPC("TelemetryName"); } } }; // The name from telemetry
+      property String^ MappedName {String^ get() { return m_mappedName; } void set(String^ val) { if (!String::Equals(val, m_mappedName)) { m_mappedName = val; NPC("MappedName"); } } }; // The name from translation mappings
       property bool IsPlayer {bool get() { return m_isPlayer; } void set(bool val) { if (val != m_isPlayer) { m_isPlayer = val; NPC("IsPlayer"); } } };
       property bool Present {bool get() { return m_present; } void set(bool val) { if (val != m_present) { m_present = val; NPC("Present"); } } };
       property DriverStatus Status {DriverStatus get() { return m_status; } void set(DriverStatus val) { if (val != m_status) { m_status = val; NPC("Status"); } } };
@@ -419,9 +422,11 @@ namespace adjsw::F12020
       property int Pos {int get() { return m_pos; } void set(int val) { if (val != m_pos) { m_pos = val; NPC("Pos"); } } };
       property int LapNr {int get() { return m_lapNr; } void set(int val) { if (val != m_lapNr) { m_lapNr = val; NPC("LapNr"); } } };
       property array<LapData^>^ Laps {array<LapData^>^ get() { return m_laps; } void set(array<LapData^>^ val) { m_laps = val; /*NPC("Laps");*/ }};
+      property LapData^ FastestLap {LapData^ get() { return m_fastestLap; } void set(LapData^ val) { m_fastestLap = val; NPC("FastestLap"); }};
       property int PenaltySeconds {int get() { return m_penaltySeconds; } void set(int val) { if (val != m_penaltySeconds) { m_penaltySeconds = val; NPC("PenaltySeconds"); } } };
       property float TimedeltaToPlayer {float get() { return m_timedeltaToPlayer; } void set(float val) { if (val != m_timedeltaToPlayer) { m_timedeltaToPlayer = val; NPC("TimedeltaToPlayer"); } } };
       property float LastTimedeltaToPlayer {float get() { return m_lastTimedeltaToPlayer; } void set(float val) { if (val != m_lastTimedeltaToPlayer) { m_lastTimedeltaToPlayer = val; NPC("LastTimedeltaToPlayer"); } } };
+      property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
       property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };
 
       property CarDetail^ WearDetail {CarDetail^ get() { return m_carDetail; } void set(CarDetail^ val) { m_carDetail = val; } };
@@ -437,6 +442,8 @@ namespace adjsw::F12020
       char* m_driverNameNative = nullptr;
 
       String^ m_name;
+      String^ m_telemetryName;
+      String^ m_mappedName;
       DriverStatus m_status;
       bool m_isPlayer;
       bool m_present;
@@ -452,8 +459,10 @@ namespace adjsw::F12020
       int m_penaltySeconds;      
       float m_carDamage;
       array<LapData^>^ m_laps;
+      LapData^ m_fastestLap;
       float m_timedeltaToPlayer;
       float m_lastTimedeltaToPlayer;
+      float m_timedeltaToLeader;
       CarDetail^ m_carDetail;
    };
 
@@ -470,4 +479,20 @@ namespace adjsw::F12020
       property int PenaltiesTime;   // Total penalties accumulated in seconds
       property int NumPenalties;    // Number of penalties applied to this driver
    };
+
+   public ref class DriverNameMapping
+   {
+   public:
+      property String^ Name;
+      property Nullable<F1Team> Team;
+      property int DriverNumber;
+   };
+
+   public ref class DriverNameMappings
+   {
+   public:
+      property String^ LeagueName; // the name of the mapping set
+      property array<DriverNameMapping^>^ Mappings; // each driver name mapping
+   };
+
 }
