@@ -4,8 +4,11 @@
 using adjsw.F12020;
 using DesktopWPFAppLowLevelKeyboardHook;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Security.RightsManagement;
 using System.Text;
 using System.Windows;
@@ -41,16 +44,26 @@ namespace F1GameSessionDisplay
 
             m_grid.ItemsSource = m_driversList;
 
-            m_parser = new adjsw.F12020.F12020UdpClrMapper("127.0.0.1", 20777);
+            m_parser = new adjsw.F12020.F12020UdpClrMapper();
             m_parser.InsertTestData();
+            m_udpClient = new UdpEventClient(20777);
+            m_udpClient.ReceiveEvent += OnUdpReceive;
             UpdateGrid();
             UpdateCarStatus();
             ToggleView();
 
             ShowInfoBox(s_splashText, TimeSpan.FromSeconds(7));
 
+            Closing += MainWindow_Closing;
+
             //m_CreateTestJsonMappingFile();
             //m_LoadNameMappings();
+        }
+
+        private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (m_udpClient != null)
+                m_udpClient.Dispose();
         }
 
         private void ToggleView()
@@ -70,19 +83,11 @@ namespace F1GameSessionDisplay
 
         private void PollUpdates_Tick(object sender, EventArgs e)
         {
-            if (null == m_parser)
+            byte[] newData;
+            while (m_packetQue.TryDequeue(out newData))
             {
-                if (!String.IsNullOrEmpty(ip))
-                {
-                    m_parser = new adjsw.F12020.F12020UdpClrMapper(ip, 20777);
-                }
-                else
-                    m_parser = new adjsw.F12020.F12020UdpClrMapper("127.0.0.1", 20777);
-
-                m_parser.InsertTestData();
+                m_parser.Proceed(newData);
             }
-
-            while (m_parser.Work()) { }
 
             m_grid.SessionSource = m_parser.SessionInfo;
             UpdateGrid();
@@ -124,6 +129,11 @@ namespace F1GameSessionDisplay
                     break;
             }
             m_grid.Quali = qualySession;
+        }
+
+        private void OnUdpReceive(object sender, UdpEventClientEventArgs e)
+        {
+            m_packetQue.Enqueue(e.data);
         }
 
         private void UpdateGrid()
@@ -671,6 +681,8 @@ namespace F1GameSessionDisplay
 
         private LowLevelKeyboardListener m_kbListener = new LowLevelKeyboardListener();
         private EventHandler<KeyPressedArgs> m_listenerHdl; // Needed elsewise error in KeyboardListener / some issue between GC + Native resources
+        private UdpEventClient m_udpClient = null;
+        private ConcurrentQueue<byte[]> m_packetQue = new ConcurrentQueue<byte[]>();
         private F12020UdpClrMapper m_parser = null;
         private DispatcherTimer m_pollTimer = new DispatcherTimer();
         private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
@@ -698,6 +710,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 --- For license details refer to the LICENSE.md file in the program folder ---
 ";
-
     }
 }

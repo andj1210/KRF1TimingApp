@@ -78,6 +78,7 @@
     <Compile Include="TyreView.xaml.cs">
       <DependentUpon>TyreView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UdpEventClient.cs" />
     <Page Include="CarStatusView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

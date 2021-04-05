@@ -179,7 +179,7 @@ namespace adjsw.F12020
     {
         public override object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
-            var dat = values?[2] as DriverData;
+            var dat = values?[3] as DriverData;
 
             if (null == dat)
                 return "?";
@@ -225,7 +225,8 @@ namespace adjsw.F12020
                 if (IsQualy)
                 {
                     int mins = (int)(dat.FastestLap.Lap / 60.0);
-                    return "" + mins + ":" + (Math.IEEERemainder(dat.FastestLap.Lap, 60.0)).ToString("00.000");
+                    string rval = "" + mins + ":" + (dat.FastestLap.Lap % 60.0).ToString("00.000");
+                    return rval;
                 }
                 else
                 {

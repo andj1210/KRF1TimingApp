@@ -106,6 +106,7 @@
                                     <MultiBinding Converter="{StaticResource DeltaTimeLeaderConverter}">
                                         <Binding Path="TimedeltaToLeader" />
                                         <Binding Path="Status" />
+                                        <Binding Path="FastestLap" />
                                         <Binding Path="" />
                                     </MultiBinding>
                                 </TextBlock.Text>
