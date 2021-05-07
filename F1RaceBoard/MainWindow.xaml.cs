@@ -99,7 +99,13 @@ namespace F1GameSessionDisplay
                 {
                     if (!m_sessionFinishNotificationShown)
                     {
-                        ShowInfoBox("The Race has finished.\r\n Click in the window and hit\r\n---\"s\"---\r\nto save the race report.", TimeSpan.FromSeconds(10));
+                        if (!m_autosave)
+                            ShowInfoBox("The Race has finished.\r\n Click in the window and hit\r\n---\"s\"---\r\nto save the race report.", TimeSpan.FromSeconds(10));
+                        else
+                        {
+                            SaveReport();
+                            //SaveReportJson();
+                        }
                         m_sessionFinishNotificationShown = true;
                     }
                 }
@@ -607,6 +613,51 @@ namespace F1GameSessionDisplay
             ShowInfoBox(filename + "\r\nThe race report has been saved.", TimeSpan.FromSeconds(3));
         }
 
+
+        public class JsonEntry
+        {
+            public string SessionInfo { get; set; }
+            public string Track { get; set; }
+            public int Laps { get; set; } // only for race
+
+            public DriverData[] Drivers { get; set; }
+            public string[] DriverTag { get; set; }
+        }
+
+
+        private void SaveReportJson()
+        {
+            // TODO needs a more restricted output (full internal state contains useless information).
+
+            var session = m_parser.SessionInfo;
+            var countDrivers = m_parser.CountDrivers;
+            var drivers = m_parser.Drivers;
+            var events = m_parser.EventList.Events;
+
+            JsonEntry json = new JsonEntry();
+
+
+            json.SessionInfo = session.Session.ToString("g");
+            json.Track = session.EventTrack.ToString("g");
+            json.Laps = session.TotalLaps;
+
+            DriverData[] jsonDrivers = new DriverData[countDrivers];
+            for (int i = 0; i < countDrivers; ++i)
+            {
+                jsonDrivers[i] = m_parser.Drivers[i];
+            }
+
+            json.Drivers = jsonDrivers;
+
+            string[] jsonDriversTag = new string[countDrivers];
+            json.DriverTag = jsonDriversTag;
+
+            string filename = DateTime.Now.ToString("ddMMyy_HHmmss") + "_report.json";
+
+            var jsonText = Newtonsoft.Json.JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented);
+            File.WriteAllText(filename, jsonText);
+        }
+
         private void ShowInfoBox(string text, TimeSpan autoCloseTime)
         {
             m_infoBoxTimer.Stop();
@@ -690,6 +741,7 @@ namespace F1GameSessionDisplay
         private bool m_sessionFinishNotificationShown = false;
         private int m_nameMappingNextIdx = 0;
         private DriverNameMappings[] m_nameMappings;
+        private bool m_autosave = true;
 
         private static string s_splashText =
 @"

@@ -1,3 +1,11 @@
+V0.40
+- Added function to map Player by Team and Driver Nr.
+ - For this to work the file namemappings.json needs to be placed in the program folder
+ - Mappings can be toggled by pressing "m" (Window needs focus)
+- Added function to show delta to leader
+ - Use "d" + "l" to enable/disable "Leader" and "Delta columns"
+- Display useful information during Qualifying (best Lap + delta)
+
 V0.30
 - Fixed players own penalty time not taken into account when calculating delta times
 - Added function to export race result in plain text file

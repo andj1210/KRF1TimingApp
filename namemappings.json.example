@@ -1,0 +1,67 @@
+/* 
+  Rename this file to "namemappings.json" in order to enable the mappings
+  Toggle between different mappings with "m"
+  Teams:
+  0 = Mercedes,
+  1 = Ferrari,
+  2 = RedBull,
+  3 = Williams,
+  4 = ForceIndia,
+  5 = Renault,
+  6 = TorroRosso,
+  7 = Haas,   
+  8 = McLaren,
+  9 = Sauber,
+*/
+[
+  {
+    "Mappings": [
+      {
+        "DriverNumber": 2,
+        "Team": null,
+        "Name": "John"
+      },
+      {
+        "DriverNumber": 9,
+        "Team": 7,
+        "Name": "Doe"
+      },
+      {
+        "DriverNumber": 12,
+        "Team": 7,
+        "Name": "Driver4Haas"
+      },
+      {
+        "DriverNumber": 12,
+        "Team": 2,
+        "Name": "Driver4Redbull"
+      }
+    ],
+    "LeagueName": "League A"
+  },
+  {
+    "Mappings": [
+      {
+        "DriverNumber": 9,
+        "Team": 1,
+        "Name": "Mike"
+      },
+      {
+        "DriverNumber": 9,
+        "Team": 7,
+        "Name": "Jane"
+      },
+      {
+        "DriverNumber": 12,
+        "Team": null,
+        "Name": "Torpedo"
+      },
+      {
+        "DriverNumber": 13,
+        "Team": null,
+        "Name": "Speedy"
+      }
+    ],
+    "LeagueName": "League B"
+  }
+]

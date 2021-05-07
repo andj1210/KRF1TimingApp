@@ -434,9 +434,6 @@ namespace adjsw::F12020
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
 
-      int m_lapTiresFitted{ 1 }; // for tyre age, which is not directly available in non complete telemetry.
-      int m_hasPitted{ 0 }; // for tyre age, which is not directly available in non complete telemetry.
-
    private:
       
       char* m_driverNameNative = nullptr;
@@ -464,6 +461,8 @@ namespace adjsw::F12020
       float m_lastTimedeltaToPlayer;
       float m_timedeltaToLeader;
       CarDetail^ m_carDetail;
+      int m_lapTiresFitted{ 1 }; // for tyre age, which is not directly available in non complete telemetry.
+      int m_hasPitted{ 0 }; // for tyre age, which is not directly available in non complete telemetry.
    };
 
    public ref class ClassificationData
