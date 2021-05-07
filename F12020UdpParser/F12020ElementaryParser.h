@@ -1,4 +1,4 @@
-// Copyright 2018-2020 Andreas Jung
+// Copyright 2018-2021 Andreas Jung
 // SPDX-License-Identifier: GPL-3.0-only
 
 #pragma once

@@ -168,10 +168,82 @@ namespace adjsw.F12020
         }
     }
 
-
-    public class DeltaTimeConverter : IMultiValueConverter
+    public abstract class QualifyingAwareConverter : IMultiValueConverter
     {
-        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        public bool IsQualy { get; set; }
+        public abstract object Convert(object[] values, Type targetType, object parameter, CultureInfo culture);
+        public abstract object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture);
+    }
+
+    public class DeltaTimeLeaderConverter : QualifyingAwareConverter
+    {
+        public override object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            var dat = values?[3] as DriverData;
+
+            if (null == dat)
+                return "?";
+
+            if (!dat.Present)
+                return "    DNF ";
+
+            switch (dat.Status)
+            {
+                case DriverStatus.DNF:
+                case DriverStatus.DSQ:
+                    return "    DNF ";
+
+                    /*
+                case DriverStatus.Garage:
+                    return "GARAGE";
+
+                case DriverStatus.OnTrack:
+                    // show actual delta
+                    break;
+                case DriverStatus.Pitlane:
+                    return "-PIT-";
+
+                case DriverStatus.Pitting:
+                    return "-PIT-";
+                    */
+            }
+
+            if (dat.Pos != 1)
+            {
+                if (dat.TimedeltaToLeader > 0)
+                    //return "" + dat.TimedeltaToLeader.ToString(" ###.000");
+                    return string.Format("  {0,6:##0.000}", dat.TimedeltaToLeader);
+
+
+                else
+                {
+                    return "--------";
+                }
+            }
+            else
+            {
+                if (IsQualy)
+                {
+                    int mins = (int)(dat.FastestLap.Lap / 60.0);
+                    string rval = "" + mins + ":" + (dat.FastestLap.Lap % 60.0).ToString("00.000");
+                    return rval;
+                }
+                else
+                {
+                    return "--------";
+                }
+            }
+        }
+
+        public override object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public class DeltaTimeConverter : QualifyingAwareConverter
+    {
+        public override object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             var dat = values?[2] as DriverData;
 
@@ -216,7 +288,7 @@ namespace adjsw.F12020
             }
         }
 
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        public override object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
         }

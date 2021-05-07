@@ -27,15 +27,18 @@
     <ClInclude Include="F12020ElementaryParser.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="F12020UdpClrMapper.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="F12020Parser.cpp">
+    <ClCompile Include="F12020ElementaryParser.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="F12020ElementaryParser.cpp">
+    <ClCompile Include="F12020UdpClrMapper.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
