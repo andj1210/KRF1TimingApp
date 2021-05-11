@@ -461,8 +461,8 @@ namespace adjsw::F12020
       float m_lastTimedeltaToPlayer;
       float m_timedeltaToLeader;
       CarDetail^ m_carDetail;
-      int m_lapTiresFitted{ 1 }; // for tyre age, which is not directly available in non complete telemetry.
-      int m_hasPitted{ 0 }; // for tyre age, which is not directly available in non complete telemetry.
+ public: int m_lapTiresFitted{ 1 }; private: // for tyre age, which is not directly available in non complete telemetry.
+  public:      int m_hasPitted{ 0 };  private:// for tyre age, which is not directly available in non complete telemetry.
    };
 
    public ref class ClassificationData
@@ -485,6 +485,7 @@ namespace adjsw::F12020
       property String^ Name;
       property Nullable<F1Team> Team;
       property int DriverNumber;
+      property String^ tag; // some tag which is passed to the result file for arbitrary use (i.e. Id to an external database Id for this driver) 
    };
 
    public ref class DriverNameMappings
