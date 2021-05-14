@@ -12,6 +12,7 @@ using System.Net.Sockets;
 using System.Security.RightsManagement;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -30,7 +31,7 @@ namespace F1GameSessionDisplay
         {
             InitializeComponent();
 
-            Title = "F1-Game Session-Display for F1-2020 V0.4";
+            Title = "F1-Game Session-Display for F1-2020 V0.5";
 
             m_listenerHdl += KbListener_KeyDown;
             m_kbListener.OnKeyPressed += m_listenerHdl;
@@ -56,8 +57,118 @@ namespace F1GameSessionDisplay
 
             Closing += MainWindow_Closing;
 
+            m_grid.DataGridRightClick += OnGridClick;
+
             //m_CreateTestJsonMappingFile();
             //m_LoadNameMappings();
+        }
+
+        private void OnGridClick(object sender, MouseButtonEventArgs e)
+        {
+            DriverData driver = m_grid.DriverUnderMouse as DriverData;
+            if (driver != null)
+            {
+                if (m_runtimeMapping != null)
+                    ShowContextMenuMapper(driver);
+            }
+        }
+
+        private void ShowContextMenuMapper(DriverData driver)
+        {
+            if (m_ctxMenu != null)
+            {
+                m_ctxMenu.IsOpen = false;
+            }
+            else
+            {
+                m_ctxMenu = new ContextMenu();
+            }
+
+            // clean old context menu
+            // in case we have registered event handlers we should unregister, as it leaks otherwise
+            foreach (var item in m_ctxMenu.Items)
+            {
+                MenuItem oldItem = item as MenuItem;
+                if (null != oldItem)
+                {
+                    foreach (var itemNested in oldItem.Items)
+                    {
+                        var labelOld = itemNested as Label;
+
+                        if (null != labelOld)
+                            labelOld.MouseLeftButtonDown -= OnMappingCtxMenuClick;
+                    }
+                }
+            }
+            m_ctxMenu.Items.Clear();
+
+            // (re)create context menu items
+            string header = driver.Name + " | " + driver.DriverNr + " | " + driver.Team.ToString("g");
+            var label = new Label();
+            label.Content = header;
+            m_ctxMenu.Items.Add( header);
+            m_ctxMenu.Items.Add(new Separator());
+
+            foreach (var mappinglist in m_nameMappings)
+            {
+                MenuItem newItem = new MenuItem();
+                newItem.Header = mappinglist.LeagueName;
+                foreach (var mapping in mappinglist.Mappings)
+                {
+                    Label nested = new Label();
+                    nested.Content = mapping;
+                    nested.MouseLeftButtonDown += OnMappingCtxMenuClick;
+                    newItem.Items.Add(nested);
+                }
+
+                m_ctxMenu.Items.Add(newItem);
+            }
+            m_ctxMenu.IsOpen = true;
+            m_ctxMenuReferencedDriver = driver;
+        }
+
+        private void OnMappingCtxMenuClick(object sender, RoutedEventArgs e)
+        {
+            var itemLb = sender as Label;
+            if (itemLb != null)
+            {
+                var originalMapping = itemLb.Content as DriverNameMapping;
+                //var originalMapping = item.Items.CurrentItem as DriverNameMapping;
+
+                if (originalMapping != null)
+                {
+                    DriverNameMapping mappingToDriver = ReflectionCloner.DeepCopy<DriverNameMapping>(originalMapping);
+                    mappingToDriver.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
+                    mappingToDriver.Team = m_ctxMenuReferencedDriver.Team;
+
+
+                    bool exchangedMapping = false;
+                    for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
+                    {
+                        var mapping = m_runtimeMapping.Mappings[i];
+                        if (
+                            (mapping.DriverNumber == mappingToDriver.DriverNumber) &&
+                            (mapping.Team == mappingToDriver.Team)
+                            )
+                        {
+                            m_runtimeMapping.Mappings[i] = mappingToDriver;
+                            exchangedMapping = true;
+                        }
+                    }
+
+                    if (!exchangedMapping)
+                    {
+                        DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
+
+                        Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
+                        newMappingsArray[newMappingsArray.Length - 1] = mappingToDriver;
+                        m_runtimeMapping.Mappings = newMappingsArray;
+                    }
+
+                    m_parser.SetDriverNameMappings(null);
+                    m_parser.SetDriverNameMappings(m_runtimeMapping);
+                }
+            }
         }
 
         private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -365,24 +476,25 @@ namespace F1GameSessionDisplay
                     if (m_nameMappingNextIdx >= m_nameMappings.Length)
                     {
                         m_nameMappingNextIdx = 0;
+                        m_runtimeMapping = null;
                         ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
-                    }
-                        
+                    }                        
 
                     else if (m_nameMappings.Length >= m_nameMappingNextIdx)
                     {
-                        m_parser.SetDriverNameMappings(m_nameMappings[m_nameMappingNextIdx]);
-                        ShowInfoBox("Drivername Mapping selected: " + m_nameMappings[m_nameMappingNextIdx].LeagueName, TimeSpan.FromSeconds(2));
+                        m_runtimeMapping = ReflectionCloner.DeepCopy<DriverNameMappings>(m_nameMappings[m_nameMappingNextIdx]);
+                        ShowInfoBox("Drivername Mapping selected: " + m_runtimeMapping.LeagueName, TimeSpan.FromSeconds(2));
                         m_nameMappingNextIdx++;
                     }
                     else
                     {
-                        m_parser.SetDriverNameMappings(null);
+                        m_runtimeMapping = null;
                     }                    
                 }
                 else
-                    m_parser.SetDriverNameMappings(null);
+                    m_runtimeMapping = null;
 
+                m_parser.SetDriverNameMappings(m_runtimeMapping);
             }
         }
 
@@ -741,7 +853,10 @@ namespace F1GameSessionDisplay
         private bool m_sessionFinishNotificationShown = false;
         private int m_nameMappingNextIdx = 0;
         private DriverNameMappings[] m_nameMappings;
+        private DriverNameMappings m_runtimeMapping = null; // A volatile mapping which is altered during runtime by user intervention
         private bool m_autosave = true;
+        private ContextMenu m_ctxMenu = null;
+        private DriverData m_ctxMenuReferencedDriver = null;
 
         private static string s_splashText =
 @"

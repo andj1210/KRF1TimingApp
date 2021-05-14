@@ -1,3 +1,7 @@
+V0.50
+- Fixed Drivername mapping may not fetch the correct name at the beginning of a session
+- If a Drivername mapping is active, single drivers can be remapped by right click and selected from any mapping entry
+
 V0.40
 - Added function to map Player by Team and Driver Nr.
  - For this to work the file namemappings.json needs to be placed in the program folder

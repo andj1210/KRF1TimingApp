@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using System;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace F1GameSessionDisplay
 {
@@ -15,7 +18,7 @@ namespace F1GameSessionDisplay
         public PersonalLeaderboard()
         {
             InitializeComponent();
-            
+
             var cols = m_grid.Columns;
             foreach (var col in cols)
             {
@@ -82,7 +85,7 @@ namespace F1GameSessionDisplay
         public bool Quali
         {
             get { return m_isQuali; }
-            set 
+            set
             {
                 if (m_isQuali != value)
                 {
@@ -90,14 +93,56 @@ namespace F1GameSessionDisplay
 
                     var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12020.DeltaTimeLeaderConverter;
                     converter.IsQualy = m_isQuali;
-                }            
+                }
             }
         }
 
 
+        public object DriverUnderMouse
+        {
+            get 
+            {
+                HitTestResult hitTestResult =
+                VisualTreeHelper.HitTest(m_grid, Mouse.GetPosition(m_grid));
+                DataGridRow dataGridRow = hitTestResult.VisualHit.GetParentOfType<DataGridRow>();
+                int index = -1;
+                
+                if (dataGridRow != null)
+                    index = dataGridRow.GetIndex();
+
+                if ((index >= 0) && (index < m_grid.Items.Count))
+                {
+                    return m_grid.Items[index];
+                }
+                return null;
+            }
+        }
+
+
+        public event System.Windows.Input.MouseButtonEventHandler DataGridRightClick
+        {
+            add { m_grid.MouseRightButtonDown += value; }
+            remove { m_grid.MouseRightButtonDown -= value; }
+        }
+
         private DataGridColumn m_playerDeltaColumn;
         private DataGridColumn m_leaderDeltaColumn;
         private bool m_isQuali = false;
+    }
+
+    static class Extension
+    {
+        // https://stackoverflow.com/questions/25502150/wpf-datagrid-get-row-number-which-mouse-cursor-is-on
+        public static T GetParentOfType<T>(this DependencyObject element) where T : DependencyObject
+        {
+            Type type = typeof(T);
+            if (element == null) return null;
+            DependencyObject parent = VisualTreeHelper.GetParent(element);
+            if (parent == null && ((FrameworkElement)element).Parent is DependencyObject) parent = ((FrameworkElement)element).Parent;
+            if (parent == null) return null;
+            else if (parent.GetType() == type || parent.GetType().IsSubclassOf(type)) return parent as T;
+            return GetParentOfType<T>(parent);
+        }
 
     }
 }

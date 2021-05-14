@@ -413,6 +413,7 @@ namespace adjsw::F12020
       property bool Present {bool get() { return m_present; } void set(bool val) { if (val != m_present) { m_present = val; NPC("Present"); } } };
       property DriverStatus Status {DriverStatus get() { return m_status; } void set(DriverStatus val) { if (val != m_status) { m_status = val; NPC("Status"); } } };
       property F1Team Team {F1Team get() { return m_team; } void set(F1Team val) { if (val != m_team) { m_team = val; NPC("Team"); } } };
+      property int DriverNr {int get() { return m_driverNr; } void set(int val) { if (val != m_driverNr) { m_driverNr = val; NPC("DriverNr"); } } };
       property F1Tyre Tyre {F1Tyre get() { return m_tyre; } void set(F1Tyre val) { if (val != m_tyre) { m_tyre = val; NPC("Tyre"); } } };
       property F1VisualTyre VisualTyre {F1VisualTyre get() { return m_visualTyre; } void set(F1VisualTyre val) { if (val != m_visualTyre) { m_visualTyre = val; NPC("VisualTyre"); } } };
       property List<F1VisualTyre>^ VisualTyres {List<F1VisualTyre>^ get() { return m_visualTyres; } void set(List<F1VisualTyre>^ val) { m_visualTyres = val; NPC("VisualTyres"); } };
@@ -431,6 +432,11 @@ namespace adjsw::F12020
 
       property CarDetail^ WearDetail {CarDetail^ get() { return m_carDetail; } void set(CarDetail^ val) { m_carDetail = val; } };
 
+      // temporary state only for the UDP mapper
+      // It is used to compute the age of tires by some pitlane heuristics. (tyre age should directly be present in telemetry, but actually is dummy value when using reduced telemetry.)
+      property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} };
+      property int LapTiresFittedLatch {int get() { return m_lapTiresFitted; } void set(int val) { m_lapTiresFitted = val; } };
+
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
 
@@ -445,6 +451,7 @@ namespace adjsw::F12020
       bool m_isPlayer;
       bool m_present;
       F1Team m_team;
+      int m_driverNr{ 0 };
       F1Tyre m_tyre;
       F1VisualTyre m_visualTyre;
       List<F1VisualTyre>^ m_visualTyres;
@@ -461,8 +468,8 @@ namespace adjsw::F12020
       float m_lastTimedeltaToPlayer;
       float m_timedeltaToLeader;
       CarDetail^ m_carDetail;
- public: int m_lapTiresFitted{ 1 }; private: // for tyre age, which is not directly available in non complete telemetry.
-  public:      int m_hasPitted{ 0 };  private:// for tyre age, which is not directly available in non complete telemetry.
+      int m_lapTiresFitted{ 1 }; // for tyre age, which is not directly available in non complete telemetry.
+      int m_hasPitted{ 0 };      // for tyre age, which is not directly available in non complete telemetry.
    };
 
    public ref class ClassificationData
@@ -485,7 +492,12 @@ namespace adjsw::F12020
       property String^ Name;
       property Nullable<F1Team> Team;
       property int DriverNumber;
-      property String^ tag; // some tag which is passed to the result file for arbitrary use (i.e. Id to an external database Id for this driver) 
+      property String^ tag; // some tag which is passed to the result file for arbitrary use (i.e. Id to an external database Id for this driver)
+
+      String^ ToString() override
+      {
+         return "" + Name + " (" + (Team.HasValue ? Team.Value.ToString("g") + " | " : "") + DriverNumber + ")";
+      }
    };
 
    public ref class DriverNameMappings

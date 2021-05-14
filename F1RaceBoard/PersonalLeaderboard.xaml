@@ -37,7 +37,7 @@
                 </MultiBinding>
             </TextBlock.Text>
         </TextBlock>
-        <DataGrid RowHeight="35" x:Name="m_grid" RowBackground="#FF555555" AlternatingRowBackground="#FF404040" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="28" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="35" BorderThickness="0">
+        <DataGrid RowHeight="35" x:Name="m_grid" RowBackground="#FF555555" AlternatingRowBackground="#FF404040" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="28" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="35" BorderThickness="0" CanUserSortColumns="False">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="POS" Width="60">
                     <DataGridTemplateColumn.CellTemplate>

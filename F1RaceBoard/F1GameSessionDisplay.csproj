@@ -75,6 +75,7 @@
     <Compile Include="PersonalLeaderboard.xaml.cs">
       <DependentUpon>PersonalLeaderboard.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ReflectionClone.cs" />
     <Compile Include="TyreView.xaml.cs">
       <DependentUpon>TyreView.xaml</DependentUpon>
     </Compile>
