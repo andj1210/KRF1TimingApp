@@ -296,10 +296,10 @@ namespace adjsw::F12022
    public ref class LapData
    {
    public:
-      property float Sector1;
-      property float Sector2;
-      property float Lap;
-      property float LapsAccumulated;
+      property double Sector1;
+      property double Sector2;
+      property double Lap;
+      property double LapsAccumulated;
       property List<SessionEvent^>^ Incidents;
    };
 
@@ -483,7 +483,7 @@ namespace adjsw::F12022
       property int NumLaps;         // Number of laps completed
       property int GridPosition;    // Grid position of the car
       property int Points;          // Number of points scored
-      property float BestLapTime;   // Best lap time of the session in seconds
+      property double BestLapTime;   // Best lap time of the session in seconds
       property double TotalRaceTime;// Total race time in seconds without penalties
       property int PenaltiesTime;   // Total penalties accumulated in seconds
       property int NumPenalties;    // Number of penalties applied to this driver

@@ -20,4 +20,7 @@ struct F12020ElementaryParser
    PacketCarTelemetryData telemetry{};
    PacketCarStatusData status{};
    PacketFinalClassificationData classification{};
+   PacketLobbyInfoData lobby{};
+   PacketCarDamageData cardamage{};
+   PacketSessionHistoryData histoy{};
 };

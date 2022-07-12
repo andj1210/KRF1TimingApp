@@ -14,7 +14,7 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
 
    PacketHeader hdr;
    memcpy(&hdr, pData, sizeof(PacketHeader));
-   if ((hdr.m_packetFormat != 2020) || (hdr.m_packetVersion != 1))
+   if ((hdr.m_packetFormat != 2022) || (hdr.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
       return len;
 
    switch (hdr.m_packetId)
@@ -40,13 +40,9 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
       // Clear old Data when a new event starts
       if (!strncmp((const char*)event.m_eventStringCode, "SSTA", 4))
       {
-         motion = PacketMotionData{};
-         session = PacketSessionData{};
-         lap = PacketLapData{};
-         participants = PacketParticipantsData{};
-         setups = PacketCarSetupData{};
-         telemetry = PacketCarTelemetryData{};
-         status = PacketCarStatusData{};
+         auto eventCpy = this->event;
+         *this = F12020ElementaryParser();
+         this->event = eventCpy;
       }
 
       return sizeof(event);
@@ -75,6 +71,21 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
    case 8:
       memcpy(&classification, pData, sizeof(classification));
       return sizeof(classification);
+      break;
+
+   case 9:
+      memcpy(&lobby, pData, sizeof(lobby));
+      return sizeof(lobby);
+      break;
+
+   case 10:
+      memcpy(&cardamage, pData, sizeof(cardamage));
+      return sizeof(cardamage);
+      break;
+
+   case 11:
+      memcpy(&histoy, pData, sizeof(histoy));
+      return sizeof(histoy);
       break;
    }
    return len;
