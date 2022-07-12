@@ -215,7 +215,7 @@ namespace F1GameSessionDisplay
                         else
                         {
                             SaveReport();
-                            //SaveReportJson();
+                            SaveReportJson();
                         }
                         m_sessionFinishNotificationShown = true;
                     }
@@ -459,7 +459,11 @@ namespace F1GameSessionDisplay
             }
 
             if (e.Key == Key.S)
+            {
                 SaveReport();
+                SaveReportJson();
+            }
+                
 
             if (e.Key == Key.L)
                 m_grid.LeaderVisible = !m_grid.LeaderVisible;
@@ -720,7 +724,7 @@ namespace F1GameSessionDisplay
             }
             sb.Append(sep + nl);
 
-            string filename = DateTime.Now.ToString("ddMMyy_HHmmss") + "_report.txt";
+            string filename = DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + "_report.txt";
             File.WriteAllText(filename, sb.ToString());
             ShowInfoBox(filename + "\r\nThe race report has been saved.", TimeSpan.FromSeconds(3));
         }
@@ -739,33 +743,47 @@ namespace F1GameSessionDisplay
 
         private void SaveReportJson()
         {
-            // TODO needs a more restricted output (full internal state contains useless information).
+            if (m_parser.Classification == null)
+                return;
 
-            var session = m_parser.SessionInfo;
-            var countDrivers = m_parser.CountDrivers;
-            var drivers = m_parser.Drivers;
-            var events = m_parser.EventList.Events;
+            var json = new ResultExport();
+            json.Events = m_parser.EventList;
+            json.EventTrack = m_parser.SessionInfo.EventTrack;
+            json.TotalLaps = m_parser.SessionInfo.TotalLaps;
+            json.Session = m_parser.SessionInfo.Session;
 
-            JsonEntry json = new JsonEntry();
+            // merge drivers into the reduced export model
+            json.Drivers = new DriverDataResult[m_parser.Classification.Length];
 
-
-            json.SessionInfo = session.Session.ToString("g");
-            json.Track = session.EventTrack.ToString("g");
-            json.Laps = session.TotalLaps;
-
-            DriverData[] jsonDrivers = new DriverData[countDrivers];
-            for (int i = 0; i < countDrivers; ++i)
+            for (int i = 0; i < m_parser.Classification.Length; ++i)
             {
-                jsonDrivers[i] = m_parser.Drivers[i];
+                json.Drivers[i] = new DriverDataResult();
+                DriverDataResult driverResult = json.Drivers[i];
+                ClassificationData classification = m_parser.Classification[i];
+                DriverData driverSession = m_parser.Classification[i].Driver;
+
+                driverResult.DriverTag = driverSession.DriverTag;
+                driverResult.DriverNr = driverSession.DriverNr;
+                driverResult.Team = driverSession.Team;
+                driverResult.Name = driverSession.Name;
+                driverResult.PitPenalties = driverSession.PitPenalties;
+                driverResult.VisualTyres = driverSession.VisualTyres;
+
+                driverResult.Pos = classification.Position;
+                driverResult.PenaltySeconds = classification.PenaltiesTime;
+                driverResult.RaceTimeOnTrack = (int)(classification.TotalRaceTime * 1000 + 0.5);
+
+                driverResult.Laps = new LapData[classification.NumLaps];
+                for (int j = 0; j < driverResult.Laps.Length; ++j)
+                {
+                    driverResult.Laps[j] = driverSession.Laps[j];
+                }
+
+                driverResult.BugtimeRacedirector = 0;
+                driverResult.PenaltySecondsRacedirector = 0;
             }
 
-            json.Drivers = jsonDrivers;
-
-            string[] jsonDriversTag = new string[countDrivers];
-            json.DriverTag = jsonDriversTag;
-
-            string filename = DateTime.Now.ToString("ddMMyy_HHmmss") + "_report.json";
-
+            string filename = DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + "_report.json";
             var jsonText = Newtonsoft.Json.JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented);
             File.WriteAllText(filename, jsonText);
         }
@@ -860,7 +878,7 @@ namespace F1GameSessionDisplay
 
         private static string s_splashText =
 @"
-F1-Game Session-Display for F1-2021
+F1-Game Session-Display for F1-2020
 Copyright 2018-2021 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify

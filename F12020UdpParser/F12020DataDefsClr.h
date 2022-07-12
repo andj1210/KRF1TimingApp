@@ -373,6 +373,7 @@ namespace adjsw::F12020
          Name = "";
          TelemetryName = "";
          MappedName = "";
+         DriverTag = "";
          m_driverNameNative[0] = 0;
          Pos = 0;
          LapNr = 1;
@@ -429,6 +430,8 @@ namespace adjsw::F12020
       property float LastTimedeltaToPlayer {float get() { return m_lastTimedeltaToPlayer; } void set(float val) { if (val != m_lastTimedeltaToPlayer) { m_lastTimedeltaToPlayer = val; NPC("LastTimedeltaToPlayer"); } } };
       property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
       property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };
+
+      property String^ DriverTag; // from name mappings -> only to forward to racereport
 
       property CarDetail^ WearDetail {CarDetail^ get() { return m_carDetail; } void set(CarDetail^ val) { m_carDetail = val; } };
 
@@ -505,6 +508,88 @@ namespace adjsw::F12020
    public:
       property String^ LeagueName; // the name of the mapping set
       property array<DriverNameMapping^>^ Mappings; // each driver name mapping
+   };
+
+
+   // reduced data model for result export
+   public ref class DriverDataResult : public System::ComponentModel::INotifyPropertyChanged
+   {
+   public:
+      DriverDataResult()
+      {}
+
+      property String^ Name {String^ get() { return m_name; } void set(String^ val) { if (!String::Equals(val, m_name)) { m_name = val; NPC("Name"); } } }; // The name for Display      
+      property String^ DriverTag {String^ get() { return m_tag; } void set(String^ val) { if (!String::Equals(val, m_tag)) { m_tag = val; NPC("DriverTag"); } } }; // arbitrary tag passed from name mapping to results for external use
+      property DriverStatus Status {DriverStatus get() { return m_status; } void set(DriverStatus val) { if (val != m_status) { m_status = val; NPC("Status"); } } };
+      property F1Team Team {F1Team get() { return m_team; } void set(F1Team val) { if (val != m_team) { m_team = val; NPC("Team"); } } };
+      property int DriverNr {int get() { return m_driverNr; } void set(int val) { if (val != m_driverNr) { m_driverNr = val; NPC("DriverNr"); } } };      
+
+      // --------- result
+
+      property int Pos {int get() { return m_pos; } void set(int val) { if (val != m_pos) { m_pos = val; NPC("Pos"); } } };
+      property int RaceTimeOnTrack;   // Total race time in milliseconds without penalties      
+      property int PenaltySeconds {int get() { return m_penaltySeconds; } void set(int val) { if (val != m_penaltySeconds) { m_penaltySeconds = val; NPC("PenaltySeconds"); } } };
+
+      property int TotalRaceTime {int get() { return RaceTimeOnTrack + m_penaltySeconds * 1000; }}
+      
+      // for post-processing: Additional Penalty addition or subtraction from human race director
+      property int PenaltySecondsRacedirector {int get() { return m_penaltySecondsRacedirector; } void set(int val) {
+         if (val != m_penaltySecondsRacedirector) {
+            m_penaltySecondsRacedirector = val; NPC("PenaltySecondsRacedirector"); NPC("RaceTimeOnTrackFinal"); NPC("TotalRaceTimeFinal");
+         }
+      } }
+      
+      // for post-processing: When in game result do not match with the actual result, this time can be used to correct the order of cars
+      // in ms, since sub seconds adjustments might be neccessary
+      property int BugtimeRacedirector {int get() { return m_bugtimeRacedirector; } void set(int val) {
+         if (val != m_bugtimeRacedirector) {
+            m_bugtimeRacedirector = val; NPC("BugtimeRacedirector"); NPC("RaceTimeOnTrackFinal"); NPC("TotalRaceTimeFinal");
+         }
+      }}
+
+      property int RaceTimeOnTrackFinal {int get() {return RaceTimeOnTrack + BugtimeRacedirector;}}
+      property int TotalRaceTimeFinal {int get() { return RaceTimeOnTrackFinal + (PenaltySeconds + PenaltySecondsRacedirector) * 1000 ; }}
+
+
+      property int GridPosition;    // Grid position of the car
+
+      // --------- tire strategy
+      property List<F1VisualTyre>^ VisualTyres {List<F1VisualTyre>^ get() { return m_visualTyres; } void set(List<F1VisualTyre>^ val) { m_visualTyres = val; NPC("VisualTyres"); } };
+      
+      // --------- penalties ( DT & Stop+Go) during the race
+      property List<SessionEvent^>^ PitPenalties {List<SessionEvent^>^ get() { return m_otherPenalties; } void set(List<SessionEvent^>^ val) { m_otherPenalties = val; NPC("PitPenalties"); } };
+      
+      // --------- Laptimes during the race
+      property array<LapData^>^ Laps {array<LapData^>^ get() { return m_laps; } void set(array<LapData^>^ val) { m_laps = val; NPC("Laps"); }};
+
+      virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
+
+   private:
+      void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
+
+      String^ m_name;
+      String^ m_tag;
+      DriverStatus m_status;
+      F1Team m_team;
+      int m_driverNr{ 0 };
+      List<F1VisualTyre>^ m_visualTyres;
+      List<SessionEvent^>^ m_otherPenalties; // all penalties except time penalties, which can´t be served in the pits
+      int m_pos;
+      int m_lapNr;
+      int m_penaltySeconds;
+      int m_penaltySecondsRacedirector;
+      int m_bugtimeRacedirector;
+      array<LapData^>^ m_laps;
+   };
+
+   public ref class ResultExport
+   {
+   public:
+      property Track EventTrack;
+      property SessionType Session;
+      property SessionEventList^ Events;
+      property int TotalLaps; // for race only
+      property array<DriverDataResult^>^ Drivers;
    };
 
 }
