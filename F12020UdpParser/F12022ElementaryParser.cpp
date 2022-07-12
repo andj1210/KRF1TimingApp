@@ -169,5 +169,23 @@ const char* IdToTrackName(unsigned i)
 
    case 24:
       return "SuzukaShort";
+
+   case 25:
+      return "Hanoi";
+
+   case 26:
+      return "Zandboort";
+
+   case 27:
+      return "Imola";
+
+   case 28:
+      return "Portimao";
+
+   case 29:
+      return "Jeddah";
+
+   case 30:
+      return "Miami";
    }
 }

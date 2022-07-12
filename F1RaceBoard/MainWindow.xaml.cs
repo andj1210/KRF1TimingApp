@@ -31,7 +31,7 @@ namespace F1GameSessionDisplay
         {
             InitializeComponent();
 
-            Title = "F1-Game Session-Display for F1-2020 V0.5";
+            Title = "F1-Game Session-Display for F1-2022 V0.6";
 
             m_listenerHdl += KbListener_KeyDown;
             m_kbListener.OnKeyPressed += m_listenerHdl;
@@ -656,9 +656,9 @@ namespace F1GameSessionDisplay
                 for (int j = 0; j < driver.LapNr - 1; ++j)
                 {
                     var lap = driver.Laps[j];
-                    float sector3 = lap.Lap - (lap.Sector1 + lap.Sector2);
+                    double sector3 = lap.Lap - (lap.Sector1 + lap.Sector2);
                     int minutes = (int)lap.Lap / 60;
-                    float seconds = lap.Lap % 60.0f;
+                    double seconds = lap.Lap % 60.0f;
                     int secondsInt = (int)seconds;
                     int milliesInt = (int)((seconds - secondsInt) * 1000);
 
@@ -878,8 +878,8 @@ namespace F1GameSessionDisplay
 
         private static string s_splashText =
 @"
-F1-Game Session-Display for F1-2020
-Copyright 2018-2021 Andreas Jung
+F1-Game Session-Display for F1-2022
+Copyright 2018-2022 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
