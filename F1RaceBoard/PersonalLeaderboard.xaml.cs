@@ -91,7 +91,7 @@ namespace F1GameSessionDisplay
                 {
                     m_isQuali = value;
 
-                    var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12020.DeltaTimeLeaderConverter;
+                    var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12022.DeltaTimeLeaderConverter;
                     converter.IsQualy = m_isQuali;
                 }
             }

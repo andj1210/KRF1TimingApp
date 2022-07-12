@@ -1,7 +1,7 @@
 ﻿// Copyright 2018-2020 Andreas Jung
 // SPDX-License-Identifier: GPL-3.0-only
 
-using adjsw.F12020;
+using adjsw.F12022;
 using DesktopWPFAppLowLevelKeyboardHook;
 using System;
 using System.Collections.Concurrent;
@@ -45,7 +45,7 @@ namespace F1GameSessionDisplay
 
             m_grid.ItemsSource = m_driversList;
 
-            m_parser = new adjsw.F12020.F12020UdpClrMapper();
+            m_parser = new adjsw.F12022.F12020UdpClrMapper();
             m_parser.InsertTestData();
             m_udpClient = new UdpEventClient(20777);
             m_udpClient.ReceiveEvent += OnUdpReceive;
@@ -867,7 +867,7 @@ namespace F1GameSessionDisplay
         private F12020UdpClrMapper m_parser = null;
         private DispatcherTimer m_pollTimer = new DispatcherTimer();
         private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
-        private ObservableCollection<adjsw.F12020.DriverData> m_driversList = new ObservableCollection<adjsw.F12020.DriverData>();
+        private ObservableCollection<adjsw.F12022.DriverData> m_driversList = new ObservableCollection<adjsw.F12022.DriverData>();
         private bool m_sessionFinishNotificationShown = false;
         private int m_nameMappingNextIdx = 0;
         private DriverNameMappings[] m_nameMappings;
