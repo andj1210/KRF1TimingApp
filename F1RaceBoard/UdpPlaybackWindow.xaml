@@ -1,0 +1,29 @@
+﻿<Window x:Class="F1GameSessionDisplay.UdpPlaybackWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:F1GameSessionDisplay"
+        mc:Ignorable="d"
+        Title="Udp Playback" Height="300" Width="600">
+    <StackPanel>
+        <TextBlock FontSize="24" FontWeight="Bold" >Playback Control</TextBlock>
+
+        <TextBlock FontSize="16">{FileName}</TextBlock>
+        <ProgressBar x:Name="m_pbar" Height="40" Margin="20"></ProgressBar>
+        <WrapPanel Margin="10" HorizontalAlignment="Center">
+            <Button Margin="5" Click="Button_Speedm_Click">Speed -</Button>
+            <ToggleButton  Height ="30" Width="40"  Margin="5" IsChecked="{Binding Play}" >Play</ToggleButton>
+            <Button Margin="5">Single Frame</Button>
+            <Button Margin="5" Click="Button_Speedp_Click">Speed +</Button>
+        </WrapPanel>
+        <WrapPanel HorizontalAlignment="Center">
+            <Label>Frame:</Label>
+            <TextBlock Width="200" FontSize="20" Name="m_tbFrame"></TextBlock>
+        </WrapPanel>
+        <WrapPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Label>Time:</Label>
+            <Label Width="200" FontSize="20" Name="m_lblTime">test</Label>
+        </WrapPanel>
+    </StackPanel>
+</Window>
