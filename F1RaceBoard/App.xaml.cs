@@ -10,11 +10,14 @@ namespace F1SessionDisplay
     /// </summary>
     public partial class App : Application
     {
+        public static string PlaybackFile { get; set; }
+
+
         protected override void OnStartup(System.Windows.StartupEventArgs e)
         {
             if (e.Args.Length > 0)
             {
-                // todo add command line argument handling, when necessary 
+               PlaybackFile = e.Args[0];
             }
         }
     }

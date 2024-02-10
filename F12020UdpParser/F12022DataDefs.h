@@ -570,4 +570,22 @@ struct PacketSessionHistoryData
 
 static_assert(sizeof(PacketSessionHistoryData) == 1155);
 
+enum class PacketType : uint8_t
+{
+   PacketMotionData = 0,
+   PacketSessionData,
+   PacketLapData,
+   PacketEventData,
+   PacketParticipantsData,
+   PacketCarSetupData,
+   PacketCarTelemetryData,
+   PacketCarStatusData,
+   PacketFinalClassificationData,
+   PacketLobbyInfoData,
+   PacketCarDamageData,
+   PacketSessionHistoryData,
+
+   UnknownOrIllformed
+};
+
 #pragma pack(pop)

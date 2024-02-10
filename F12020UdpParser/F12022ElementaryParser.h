@@ -9,7 +9,7 @@
 
 struct F12020ElementaryParser
 {
-   unsigned ProceedPacket(const uint8_t* pData, unsigned len);
+   unsigned ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType = nullptr);
 
    PacketMotionData motion{};
    PacketSessionData session{};
@@ -23,4 +23,21 @@ struct F12020ElementaryParser
    PacketLobbyInfoData lobby{};
    PacketCarDamageData cardamage{};
    PacketSessionHistoryData histoy{};
+
+   template<typename PKT_TYPE>
+   static bool CopyBytesToStruct(const uint8_t* pData, unsigned& len, PKT_TYPE* pPkt);
 };
+
+
+template<typename PKT_TYPE>
+bool F12020ElementaryParser::CopyBytesToStruct(const uint8_t* pData, unsigned& len, PKT_TYPE* pPkt)
+{
+   if (sizeof(PKT_TYPE) <= len)
+   {
+      memcpy(pPkt, pData, sizeof(PKT_TYPE));
+      len = sizeof(PKT_TYPE);
+      return true;
+   }
+
+   return false;
+}

@@ -104,7 +104,13 @@ namespace adjsw::F12022
       TexasShort,
       SuzukaShort,
       Hanoi,
-      Zandvoort
+      Zandvoort,
+      Imola,
+      Portimao,
+      Jeddah,
+      Miami,
+
+      numEntries
    };
 
    public enum class SessionType

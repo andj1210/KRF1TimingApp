@@ -6,13 +6,16 @@
 #include <fstream>
 #include <type_traits>
 
-
-unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned len)
+unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
 {
    if (len < sizeof(PacketHeader))
       return len;
 
    PacketHeader hdr;
+   PacketType type = PacketType::UnknownOrIllformed;
+   if (pType)
+      *pType = type;
+
    memcpy(&hdr, pData, sizeof(PacketHeader));
    if ((hdr.m_packetFormat != 2022) || (hdr.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
       return len;
@@ -20,74 +23,124 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
    switch (hdr.m_packetId)
    {
    case 0:
-      memcpy(&motion, pData, sizeof(motion));
-      return sizeof(motion);
+      if (CopyBytesToStruct(pData, len, &motion))
+      {
+         type = PacketType::PacketMotionData;
+      }
+      else
+         return len;
       break;
 
    case 1:
-      memcpy(&session, pData, sizeof(session));
-      return sizeof(session);
+      if (CopyBytesToStruct(pData, len, &session))
+      {
+         type = PacketType::PacketSessionData;
+      }
+      else
+         return len;
       break;
 
    case 2:
-      memcpy(&lap, pData, sizeof(lap));
-      return sizeof(lap);
+      if (CopyBytesToStruct(pData, len, &lap))
+      {
+         type = PacketType::PacketLapData;
+      }
+      else
+         return len;
       break;
 
    case 3:
-      memcpy(&event, pData, sizeof(event));
-
-      // Clear old Data when a new event starts
-      if (!strncmp((const char*)event.m_eventStringCode, "SSTA", 4))
+      if (CopyBytesToStruct(pData, len, &event))
       {
-         auto eventCpy = this->event;
-         *this = F12020ElementaryParser();
-         this->event = eventCpy;
+         // Clear old Data when a new event starts
+         if (!strncmp((const char*)event.m_eventStringCode, "SSTA", 4))
+         {
+            auto eventCpy = this->event;
+            *this = F12020ElementaryParser();
+            this->event = eventCpy;
+         }
+         type = PacketType::PacketEventData;
       }
-
-      return sizeof(event);
+      else
+         return len;
       break;
 
    case 4:
-      memcpy(&participants, pData, sizeof(participants));
-      return sizeof(participants);
+      if (CopyBytesToStruct(pData, len, &participants))
+      {
+         type = PacketType::PacketParticipantsData;
+      }
+      else
+         return len;
       break;
 
    case 5:
-      memcpy(&setups, pData, sizeof(setups));
-      return sizeof(setups);
+      if (CopyBytesToStruct(pData, len, &setups))
+      {
+         type = PacketType::PacketCarSetupData;
+      }
+      else
+         return len;
       break;
 
    case 6:
-      memcpy(&telemetry, pData, sizeof(telemetry));
-      return sizeof(telemetry);
+      if (CopyBytesToStruct(pData, len, &telemetry))
+      {
+         type = PacketType::PacketCarTelemetryData;
+      }
+      else
+         return len;
       break;
 
    case 7:
-      memcpy(&status, pData, sizeof(status));
-      return sizeof(status);
+      if (CopyBytesToStruct(pData, len, &status))
+      {
+         type = PacketType::PacketCarStatusData;
+      }
+      else
+         return len;
       break;
 
    case 8:
-      memcpy(&classification, pData, sizeof(classification));
-      return sizeof(classification);
+      if (CopyBytesToStruct(pData, len, &classification))
+      {
+         type = PacketType::PacketFinalClassificationData;
+      }
+      else
+         return len;
       break;
 
    case 9:
-      memcpy(&lobby, pData, sizeof(lobby));
-      return sizeof(lobby);
+      if (CopyBytesToStruct(pData, len, &lobby))
+      {
+         type = PacketType::PacketLobbyInfoData;
+      }
+      else
+         return len;
       break;
 
    case 10:
-      memcpy(&cardamage, pData, sizeof(cardamage));
-      return sizeof(cardamage);
+      if (CopyBytesToStruct(pData, len, &cardamage))
+      {
+         type = PacketType::PacketCarDamageData;
+      }
+      else
+         return len;
       break;
 
    case 11:
-      memcpy(&histoy, pData, sizeof(histoy));
-      return sizeof(histoy);
+      if (CopyBytesToStruct(pData, len, &histoy))
+      {
+         type = PacketType::PacketSessionHistoryData;
+      }
+      else
+         return len;
       break;
    }
+
+   if (pType)
+      *pType = type;
+
    return len;
 }
 

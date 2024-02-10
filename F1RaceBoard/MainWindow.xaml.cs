@@ -3,6 +3,7 @@
 
 using adjsw.F12022;
 using DesktopWPFAppLowLevelKeyboardHook;
+using F1SessionDisplay;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
@@ -45,14 +46,13 @@ namespace F1GameSessionDisplay
 
          m_grid.ItemsSource = m_driversList;
 
-         m_parser = new adjsw.F12022.F12020UdpClrMapper();
+         m_parser = new adjsw.F12022.F12022UdpClrMapper();
          m_parser.InsertTestData();
 
-         if (true)
+         if (!String.IsNullOrEmpty(App.PlaybackFile))
          {
             UdpPlaybackWindow wnd = new UdpPlaybackWindow(
-               @"f1_2023_q", 
-               //@"f1_2023_r",
+               App.PlaybackFile,
                this);
             m_playbackWindow = wnd;
             wnd.Show();
@@ -886,7 +886,7 @@ namespace F1GameSessionDisplay
       private UdpEventClient m_udpClient = null;
       private UdpPlaybackWindow m_playbackWindow = null;
       private ConcurrentQueue<byte[]> m_packetQue = new ConcurrentQueue<byte[]>();
-      private F12020UdpClrMapper m_parser = null;
+      private F12022UdpClrMapper m_parser = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer();
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
       private ObservableCollection<adjsw.F12022.DriverData> m_driversList = new ObservableCollection<adjsw.F12022.DriverData>();

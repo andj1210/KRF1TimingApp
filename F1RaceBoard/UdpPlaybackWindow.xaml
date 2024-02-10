@@ -13,8 +13,8 @@
         <ProgressBar x:Name="m_pbar" Height="40" Margin="20"></ProgressBar>
         <WrapPanel Margin="10" HorizontalAlignment="Center">
             <Button Margin="5" Click="Button_Speedm_Click">Speed -</Button>
-            <ToggleButton  Height ="30" Width="40"  Margin="5" IsChecked="{Binding Play}" >Play</ToggleButton>
-            <Button Margin="5">Single Frame</Button>
+            <ToggleButton Name="m_btnPlay" Height ="30" Width="65"  Margin="5" IsChecked="{Binding Play}">Play (1x)</ToggleButton>
+            <!--Button Margin="5">Single Frame</Button-->
             <Button Margin="5" Click="Button_Speedp_Click">Speed +</Button>
         </WrapPanel>
         <WrapPanel HorizontalAlignment="Center">

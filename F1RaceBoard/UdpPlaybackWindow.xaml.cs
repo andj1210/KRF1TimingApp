@@ -99,11 +99,15 @@ namespace F1GameSessionDisplay
       {
          if (m_speed >= 2)
             m_speed /= 2;
+
+         m_btnPlay.Content = "Play (" + m_speed + "x)";
       }
       private void Button_Speedp_Click(object sender, RoutedEventArgs e)
       {
          if (m_speed < 100)
             m_speed *= 2;
+
+         m_btnPlay.Content = "Play (" + m_speed + "x)";
       }
 
       private void NPC([CallerMemberName] string propertyName = "")
