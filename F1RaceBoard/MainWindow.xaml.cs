@@ -32,7 +32,7 @@ namespace F1GameSessionDisplay
       {
          InitializeComponent();
 
-         Title = "F1-Game Session-Display for F1-22 V0.6";
+         Title = "F1-Game Session-Display for F1-22 V0.61";
 
          m_listenerHdl += KbListener_KeyDown;
          m_kbListener.OnKeyPressed += m_listenerHdl;
