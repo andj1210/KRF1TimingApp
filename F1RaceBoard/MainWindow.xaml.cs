@@ -39,7 +39,7 @@ namespace F1GameSessionDisplay
          m_kbListener.HookKeyboard();
 
          m_pollTimer.Tick += PollUpdates_Tick;
-         m_pollTimer.Interval = TimeSpan.FromMilliseconds(100);
+         m_pollTimer.Interval = TimeSpan.FromMilliseconds(50);
          m_pollTimer.IsEnabled = true;
 
          m_infoBoxTimer.Tick += m_InfoBoxTimer_Tick;
@@ -74,7 +74,8 @@ namespace F1GameSessionDisplay
          m_grid.DataGridRightClick += OnGridClick;
 
          //m_CreateTestJsonMappingFile();
-         //m_LoadNameMappings();
+         m_LoadNameMappings(false);
+         m_runtimeMapping = ReflectionCloner.DeepCopy(m_nameMappings[0]);
       }
 
       public ConcurrentQueue<byte[]> PacketQue
@@ -87,8 +88,7 @@ namespace F1GameSessionDisplay
          DriverData driver = m_grid.DriverUnderMouse as DriverData;
          if (driver != null)
          {
-            if (m_runtimeMapping != null)
-               ShowContextMenuMapper(driver);
+            ShowContextMenuMapper(driver);
          }
       }
 
@@ -156,7 +156,7 @@ namespace F1GameSessionDisplay
 
             if (originalMapping != null)
             {
-               DriverNameMapping mappingToDriver = ReflectionCloner.DeepCopy<DriverNameMapping>(originalMapping);
+               DriverNameMapping mappingToDriver = ReflectionCloner.DeepCopy(originalMapping);
                mappingToDriver.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
                mappingToDriver.Team = m_ctxMenuReferencedDriver.Team;
 
@@ -200,12 +200,20 @@ namespace F1GameSessionDisplay
 
       private void ToggleView()
       {
-         if (m_grid.Visibility == Visibility.Visible)
+         // toggle sequence:
+         // 1. leaderboard only -> 2. both -> 3. catstatus only -> 1. ...
+
+         if ((m_grid.Visibility == Visibility.Visible) && (m_carStatus.Visibility == Visibility.Visible))
          {
             m_grid.Visibility = Visibility.Collapsed;
             m_carStatus.Visibility = Visibility.Visible;
          }
 
+         else if (m_grid.Visibility == Visibility.Visible)
+         {
+            m_carStatus.Visibility = Visibility.Visible;
+            m_grid.Visibility = Visibility.Visible;            
+         }
          else
          {
             m_grid.Visibility = Visibility.Visible;
@@ -267,6 +275,17 @@ namespace F1GameSessionDisplay
                break;
          }
          m_grid.Quali = qualySession;
+
+         if (m_parser.Udp1Action)
+         {
+            m_parser.Udp1Action = false;
+
+            if (m_udpClient != null)
+            {
+               // accept button input only in live mode...
+               ToggleView();
+            }
+         }
       }
 
       private void OnUdpReceive(object sender, UdpEventClientEventArgs e)
@@ -494,7 +513,7 @@ namespace F1GameSessionDisplay
 
          if (e.Key == Key.M)
          {
-            m_LoadNameMappings(); // always reload in case text changed
+            m_LoadNameMappings(true); // always reload in case text changed
 
             if (m_nameMappings != null)
             {
@@ -677,14 +696,13 @@ namespace F1GameSessionDisplay
             for (int j = 0; j < driver.LapNr - 1; ++j)
             {
                var lap = driver.Laps[j];
-               double sector3 = lap.Lap - (lap.Sector1 + lap.Sector2);
                int minutes = (int)lap.Lap / 60;
-               double seconds = lap.Lap % 60.0f;
+               double seconds = lap.Lap % 60.0;
                int secondsInt = (int)seconds;
                int milliesInt = (int)((seconds - secondsInt) * 1000);
 
                sb.Append(string.Format("| {0,2} | {1,7:0.000} | {2,7:0.000} | {3,7:0.000} | {4}:{5:00}.{6:000} |",
-                   j + 1, lap.Sector1, lap.Sector2, sector3, minutes, secondsInt, milliesInt));
+                   j + 1, lap.Sector1, lap.Sector2, lap.Sector3, minutes, secondsInt, milliesInt));
 
                foreach (var ev in driver.Laps[j].Incidents)
                {
@@ -861,14 +879,14 @@ namespace F1GameSessionDisplay
          mappings[1].Mappings[1].Name = "Leopard";
          mappings[1].Mappings[1].DriverNumber = 91;
          mappings[1].Mappings[2].Team = null;
-         mappings[1].Mappings[2].Name = "SimonLaui";
+         mappings[1].Mappings[2].Name = "SimonWilliams";
          mappings[1].Mappings[2].DriverNumber = 86;
 
          var json = Newtonsoft.Json.JsonConvert.SerializeObject(mappings, Newtonsoft.Json.Formatting.Indented);
          File.WriteAllText("json.txt", json);
       }
 
-      private void m_LoadNameMappings()
+      private void m_LoadNameMappings(bool showErrorOnFail)
       {
          try
          {
@@ -877,7 +895,17 @@ namespace F1GameSessionDisplay
          }
          catch (Exception ex)
          {
-            ShowInfoBox("Error loading name mappings file \"namemappings.json\":\r\n" + ex.Message, TimeSpan.FromSeconds(3));
+            if (showErrorOnFail)
+               ShowInfoBox("Error loading name mappings file \"namemappings.json\":\r\n" + ex.Message, TimeSpan.FromSeconds(3));
+            else 
+            {
+               DriverNameMappings dummy = new DriverNameMappings();
+               dummy.LeagueName = "none";
+               dummy.Mappings = new DriverNameMapping[0];
+
+               m_nameMappings = new DriverNameMappings[1];
+               m_nameMappings[0] = dummy;
+            }
          }
       }
 
@@ -901,7 +929,7 @@ namespace F1GameSessionDisplay
       private static string s_splashText =
 @"
 F1-Game Session-Display for F1-2022
-Copyright 2018-2022 Andreas Jung
+Copyright 2018-2024 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

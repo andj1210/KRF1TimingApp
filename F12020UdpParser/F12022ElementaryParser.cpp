@@ -20,6 +20,9 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
    if ((hdr.m_packetFormat != 2022) || (hdr.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
       return len;
 
+   sessionUID = hdr.m_sessionUID;
+   sessionTime = hdr.m_sessionTime;
+
    switch (hdr.m_packetId)
    {
    case 0:

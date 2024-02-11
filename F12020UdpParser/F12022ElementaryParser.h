@@ -11,6 +11,8 @@ struct F12020ElementaryParser
 {
    unsigned ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType = nullptr);
 
+   uint64_t sessionUID{ 0 };
+   float sessionTime{0};
    PacketMotionData motion{};
    PacketSessionData session{};
    PacketLapData lap{};

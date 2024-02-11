@@ -95,6 +95,11 @@ namespace F1GameSessionDisplay
             m_lblTime.Content = "" + minutes + ":" + seconds + "." + tenth;
       }
 
+      private void Button_Reset_Click(object sender, RoutedEventArgs e)
+      {
+         m_idx = 0;
+         m_ts = 0;
+      }
       private void Button_Speedm_Click(object sender, RoutedEventArgs e)
       {
          if (m_speed >= 2)

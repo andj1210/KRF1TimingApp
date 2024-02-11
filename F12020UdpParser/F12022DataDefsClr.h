@@ -15,7 +15,7 @@ namespace adjsw::F12022
    Ferrari,
    RedBull,
    Williams,
-   ForceIndia,
+   AstonMartin,
    Renault,
    TorroRosso,
    Haas,   
@@ -238,7 +238,7 @@ namespace adjsw::F12022
    public ref class SessionEvent
    {
    public:
-      property DateTime TimeCode;
+      property double TimeCode; // in seconds since session start
       property EventType Type;
       property int CarIndex;
 
@@ -304,6 +304,7 @@ namespace adjsw::F12022
    public:
       property double Sector1;
       property double Sector2;
+      property double Sector3 {double get() { return (Lap != 0.0) ? Lap - (Sector1 + Sector2) : 0.0; } };
       property double Lap;
       property double LapsAccumulated;
       property List<SessionEvent^>^ Incidents;
@@ -444,7 +445,6 @@ namespace adjsw::F12022
       // temporary state only for the UDP mapper
       // It is used to compute the age of tires by some pitlane heuristics. (tyre age should directly be present in telemetry, but actually is dummy value when using reduced telemetry.)
       property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} };
-      property int LapTiresFittedLatch {int get() { return m_lapTiresFitted; } void set(int val) { m_lapTiresFitted = val; } };
 
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;

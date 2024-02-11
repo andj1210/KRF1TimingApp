@@ -16,6 +16,7 @@
         <local:TyreColorConverter x:Key="TyreColorConverter"/>
         <local:DeltaTimeConverter x:Key="DeltaTimeConverter"/>
         <local:DeltaTimeLeaderConverter x:Key="DeltaTimeLeaderConverter"/>
+        <local:FastestLapConverter x:Key="FastestLapConverter"/>
         <local:PenaltyConverter x:Key="PenaltyConverter"/>
         <local:PitPenaltyConverter x:Key="PitPenaltyConverter"/>
         <local:TyreAgeConverter x:Key="TyreAgeConverter"/>
@@ -37,7 +38,13 @@
                 </MultiBinding>
             </TextBlock.Text>
         </TextBlock>
-        <DataGrid RowHeight="35" x:Name="m_grid" RowBackground="#FF555555" AlternatingRowBackground="#FF404040" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="28" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="35" BorderThickness="0" CanUserSortColumns="False">
+        <DataGrid RowHeight="35" x:Name="m_grid" IsReadOnly="True"  RowBackground="#FF383838" AlternatingRowBackground="#FF1F1E1E" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="28" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="35" BorderThickness="0">
+            <DataGrid.Resources>
+                <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
+                    <Setter Property="Background" Value="Gray" />
+                    <Setter Property="Foreground" Value="AntiqueWhite" />
+                </Style>
+            </DataGrid.Resources>
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="POS" Width="60">
                     <DataGridTemplateColumn.CellTemplate>
@@ -59,7 +66,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Foreground="White"></DataGridTextColumn>
+                <DataGridTextColumn FontFamily="Times New Roman" FontSize="26" Header="Name" Binding="{Binding Name}" Foreground="White"></DataGridTextColumn>
                 <DataGridTemplateColumn Header="Delta">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -106,6 +113,48 @@
                                     <MultiBinding Converter="{StaticResource DeltaTimeLeaderConverter}">
                                         <Binding Path="TimedeltaToLeader" />
                                         <Binding Path="Status" />
+                                        <Binding Path="FastestLap" />
+                                        <Binding Path="" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="S1" Width="120" Visibility="Collapsed">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Foreground="White">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource FastestLapConverter}" ConverterParameter="1">
+                                        <Binding Path="FastestLap" />
+                                        <Binding Path="" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="S2" Width="120" Visibility="Collapsed">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Foreground="White">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource FastestLapConverter}" ConverterParameter="2">
+                                        <Binding Path="FastestLap" />
+                                        <Binding Path="" />
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="S3" Width="120" Visibility="Collapsed">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Foreground="White">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource FastestLapConverter}" ConverterParameter="3">
                                         <Binding Path="FastestLap" />
                                         <Binding Path="" />
                                     </MultiBinding>

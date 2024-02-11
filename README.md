@@ -1,22 +1,23 @@
 # F1-Game Session-Display
 
-This repository contains a software to display the leaderboard and car status for the F1-2020 game on a second monitor by utilizing the game Telemetry output.
+This repository contains a software to display the leaderboard and car status for the F1-2022 game on a second monitor by utilizing the game Telemetry output.
 
-Initially I made this software for F1-2018 for my own use and now ported it to the F1-2020 game and post it here since I hope it is useful for other players.
+Initially I made this software for F1-2018 for my own use and now ported it to the F1-2020 then F1-2022 game and post it here since I hope it is useful for other players.
+Newer Game Versions can be used, when the ingame UPD Telemetry setting is set to "2022". 
 As well I´m hoping to find some help with the visualization, WPF/xaml or graphics contributions very welcome.
 
 ### Installation
 The binaries are provided in form of one DLL and one executable. They can be extracted to any directory.
 On a Windows 10 machine usually just the executable must be started and everything should be working.
-In case the program does not start, please install the Visual Studio C++ Redistributable (vx_redist.x86.exe) for Visual Studio 2015/2017/2019:
-- [vx_redist.x86.exe](https://aka.ms/vs/16/release/vc_redist.x86.exe)
+In case the program does not start, please install the Visual Studio C++ Redistributable (vc_redist.x86.exe) for Visual Studio 2022:
+- [vc_redist.x86.exe](https://aka.ms/vs/17/release/vc_redist.x86.exe)
 
-Furthermore in the game the telemetry output must be enabled in mode "2020" to UDP port 20777.
+Furthermore in the game the telemetry output must be enabled in mode "2022" to UDP port 20777.
 
 ### Functions
-The program does currently only contain two different views.
+The program does currently only contain two different views and a combination of both.
 
-- The personal leader board
+- The leader board
 - The car status view
 
 
@@ -24,16 +25,22 @@ After the program has been started, the view can be changed with the space bar.
 Space bar is also captured when the window is not active.
 
 Keymapping:
-- F11 - toggle fullscreen
-- s - save a race report as text file
-- space - Toggle view (Car status / Leaderboard), also captured when the window is not active (i.e. you are in game)
+- F11           - toggle fullscreen
+- s             - save a race report as text file
+- d             - enable disable the other cars relative delta to the player (factoring in all penalties)
+- l             - enable disable the delta to leader for all cars including player
+- m             - toggle between namemappings from file "namemappings.json" placed into the program directory
+- space         - Toggle view (Leaderboard -> Combined -> Car status), also captured when the window is not active (i.e. you are in game)
+- UDP1 button   - same as above, assign UDP1 ingame to your controller/wheel button
+- right mouse   - select driver name
 
 **The window is updated automatically as soon as telemetry data from the game is received**
 
-#### The personal leader board
-The personal leader board displays the race leader board from perspective of the active player, meaning the deltas are relative to the player.
+#### The leader board
+The leader board displays the race leader board from perspective of the active player, meaning the deltas are relative to the player.
 
-Currently the leaderboard is very useful for the race while practice and qualifying sessions use the same layout which is not ideal.
+The leaderboard is useful for the race and practice/qualifying.
+When a practive / qualifying session is detected, the view is focused arround the fastest lap of each car.
 
 On top of the screen the event information is displayed:
 - Track
@@ -71,7 +78,7 @@ Additional "DNF" and "DSQ" are added to the column if a car retired / disqualifi
 Display the tyre and engine temperatures. Furthermore displays the tyre wear and wing damage. Behind the Rear wing the personal penalty time is shown.
 
 ### Limitations
-- Human driver names are not available in the telemetry, therefore teamname + car number is shown as name.
+- Human driver names are mostly not available in the telemetry (per default), therefore teamname + car number is shown as name if the actual player name is not available. Also a custom mapping file has can be used.
 - The information during practice or qualifying is not particular useful, yet.
 - When the start of the session is not captured, the raceboard will show incorrect data (i.e. number of drivers, deltas, etc.)
 - The lap infos in racereport may contain rounding errors, so that sector 1-3 not always sum exactly the lap time
@@ -79,4 +86,4 @@ Display the tyre and engine temperatures. Furthermore displays the tyre wear and
 - The data is focused on the driver participating in the race, no particular support for spectator mode
 
 ### Compilation
-The .sln file should compile out of the box with Visual Studio 2019.
+The .sln file should compile out of the box with Visual Studio 2022.

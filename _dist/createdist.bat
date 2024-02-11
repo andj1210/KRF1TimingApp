@@ -25,8 +25,9 @@ mkdir %tempfolder%
 mkdir %tempfolder%\f1gamesessiondisplay
 
 copy ..\_build\bin\F1GameSessionDisplay.exe %tempfolder%\f1gamesessiondisplay\F1GameSessionDisplay.exe
-copy ..\_build\bin\F12020UdpParser.dll %tempfolder%\f1gamesessiondisplay\F12020UdpParser.dll
+copy ..\_build\bin\F12022UdpParser.dll %tempfolder%\f1gamesessiondisplay\F12022UdpParser.dll
 copy ..\_build\bin\Newtonsoft.Json.dll %tempfolder%\f1gamesessiondisplay\Newtonsoft.Json.dll
+copy ..\_build\bin\Razorvine.Pickle.dll %tempfolder%\f1gamesessiondisplay\Razorvine.Pickle.dll
 copy ..\changelog.txt %tempfolder%\f1gamesessiondisplay\.
 copy ..\LICENSE.md %tempfolder%\f1gamesessiondisplay\.
 copy ..\LICENSE.*.* %tempfolder%\f1gamesessiondisplay\.
