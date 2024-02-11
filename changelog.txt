@@ -1,3 +1,8 @@
+V0.60
+- Update to 2022 telemetry version
+- UI appearance
+- update toolset (VC++ 2022 / .net 4.7.2)
+
 V0.50
 - Fixed Drivername mapping may not fetch the correct name at the beginning of a session
 - If a Drivername mapping is active, single drivers can be remapped by right click and selected from any mapping entry

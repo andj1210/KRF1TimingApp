@@ -3,18 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:adjsw.F12020"
+        xmlns:local="clr-namespace:adjsw.F12022"
         xmlns:localui="clr-namespace:F1GameSessionDisplay"
         mc:Ignorable="d"
-        Background="#FF555555"
+        Background="#FF383838"
         Title="t.b.d. src" Height="450" Width="800" KeyDown="OnKeyDown" x:Name="wnd" x:FieldModifier="public">
     <Window.Resources>
     </Window.Resources>
     <Grid Height="Auto">
-        <Border x:Name="m_infoBox" HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" BorderBrush="Black" BorderThickness="3" Panel.ZIndex="1" MouseDown="m_infoBox_MouseDown">
+        <Border Grid.Column="1" Grid.ColumnSpan="2" x:Name="m_infoBox" HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" BorderBrush="Black" BorderThickness="3" Panel.ZIndex="1" MouseDown="m_infoBox_MouseDown">
             <TextBlock Margin="5" x:Name="m_infoTxt"  Foreground="Black" FontSize="16" FontWeight="Bold">LICENSE</TextBlock>
         </Border>
-        <local:CarStatusView HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="m_carStatus" Width="364"></local:CarStatusView>
-        <localui:PersonalLeaderboard x:Name="m_grid" Visibility="Collapsed"></localui:PersonalLeaderboard>
+        <DockPanel x:Name="m_dockPanel" HorizontalAlignment="Center">
+            <local:CarStatusView DockPanel.Dock="Right" Margin="20" Grid.Column="1" x:Name="m_carStatus" HorizontalAlignment="Center" VerticalAlignment="Center"  Width="450"></local:CarStatusView>
+            <localui:PersonalLeaderboard DockPanel.Dock="Left" Grid.Column="0" x:Name="m_grid" Visibility="Collapsed"></localui:PersonalLeaderboard>            
+        </DockPanel>
     </Grid>
 </Window>

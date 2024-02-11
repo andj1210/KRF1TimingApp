@@ -7,7 +7,7 @@ using namespace System::Collections::Generic;
 #include <string.h>
 #include <list>
 
-namespace adjsw::F12020
+namespace adjsw::F12022
 {
    public enum class F1Team : int
    {
@@ -15,7 +15,7 @@ namespace adjsw::F12020
    Ferrari,
    RedBull,
    Williams,
-   ForceIndia,
+   AstonMartin,
    Renault,
    TorroRosso,
    Haas,   
@@ -104,7 +104,13 @@ namespace adjsw::F12020
       TexasShort,
       SuzukaShort,
       Hanoi,
-      Zandvoort
+      Zandvoort,
+      Imola,
+      Portimao,
+      Jeddah,
+      Miami,
+
+      numEntries
    };
 
    public enum class SessionType
@@ -232,7 +238,7 @@ namespace adjsw::F12020
    public ref class SessionEvent
    {
    public:
-      property DateTime TimeCode;
+      property double TimeCode; // in seconds since session start
       property EventType Type;
       property int CarIndex;
 
@@ -296,10 +302,11 @@ namespace adjsw::F12020
    public ref class LapData
    {
    public:
-      property float Sector1;
-      property float Sector2;
-      property float Lap;
-      property float LapsAccumulated;
+      property double Sector1;
+      property double Sector2;
+      property double Sector3 {double get() { return (Lap != 0.0) ? Lap - (Sector1 + Sector2) : 0.0; } };
+      property double Lap;
+      property double LapsAccumulated;
       property List<SessionEvent^>^ Incidents;
    };
 
@@ -438,7 +445,6 @@ namespace adjsw::F12020
       // temporary state only for the UDP mapper
       // It is used to compute the age of tires by some pitlane heuristics. (tyre age should directly be present in telemetry, but actually is dummy value when using reduced telemetry.)
       property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} };
-      property int LapTiresFittedLatch {int get() { return m_lapTiresFitted; } void set(int val) { m_lapTiresFitted = val; } };
 
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
@@ -483,7 +489,7 @@ namespace adjsw::F12020
       property int NumLaps;         // Number of laps completed
       property int GridPosition;    // Grid position of the car
       property int Points;          // Number of points scored
-      property float BestLapTime;   // Best lap time of the session in seconds
+      property double BestLapTime;   // Best lap time of the session in seconds
       property double TotalRaceTime;// Total race time in seconds without penalties
       property int PenaltiesTime;   // Total penalties accumulated in seconds
       property int NumPenalties;    // Number of penalties applied to this driver
