@@ -211,8 +211,7 @@ namespace adjsw.F12022
          if (dat.Pos != 1)
          {
             if (dat.TimedeltaToLeader > 0)
-               //return "" + dat.TimedeltaToLeader.ToString(" ###.000");
-               return string.Format("  {0,6:##0.000}", dat.TimedeltaToLeader);
+               return string.Format("  {0,6:##0.000}", (dat.TimedeltaToLeader + 0.0005));
 
 
             else
@@ -224,9 +223,7 @@ namespace adjsw.F12022
          {
             if (IsQualy)
             {
-               int mins = (int)(dat.FastestLap.Lap / 60.0);
-               string rval = "" + mins + ":" + (dat.FastestLap.Lap % 60.0).ToString("00.000");
-               return rval;
+               return dat.FastestLap.To_M_SS_MMMM(dat.FastestLap.Lap);
             }
             else
             {
@@ -251,31 +248,26 @@ namespace adjsw.F12022
             return "";
 
          string sector = parameter as string;
-         double value = 0.0;
+         UInt32 value = 0;
          switch (sector)
          {
             case "1":
-               value = dat.FastestLap.Sector1;
+               value = dat.FastestLap.Sector1Ms;
                break;
 
             case "2":
-               value = dat.FastestLap.Sector2;
+               value = dat.FastestLap.Sector2Ms;
                break;
 
             case "3":
-               value = dat.FastestLap.Sector3;
+               value = dat.FastestLap.Sector3Ms;
                break;
 
             default:
                return "";
          }
 
-         string valStr = "" +  (int)value + ".";
-         value -= (int)value;
-         value *= 1000;
-         int msInt = (int)value;
-         valStr += msInt.ToString("D3");
-         return valStr;
+         return dat.FastestLap.To_SS_MMMM(value);
       }
 
       public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

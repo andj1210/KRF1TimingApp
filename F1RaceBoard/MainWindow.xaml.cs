@@ -32,7 +32,7 @@ namespace F1GameSessionDisplay
       {
          InitializeComponent();
 
-         Title = "F1-Game Session-Display for F1-22 V0.61";
+         Title = "F1-Game Session-Display for F1-22 V0.62";
 
          m_listenerHdl += KbListener_KeyDown;
          m_kbListener.OnKeyPressed += m_listenerHdl;
@@ -696,13 +696,14 @@ namespace F1GameSessionDisplay
             for (int j = 0; j < driver.LapNr - 1; ++j)
             {
                var lap = driver.Laps[j];
-               int minutes = (int)lap.Lap / 60;
-               double seconds = lap.Lap % 60.0;
-               int secondsInt = (int)seconds;
-               int milliesInt = (int)((seconds - secondsInt) * 1000);
 
-               sb.Append(string.Format("| {0,2} | {1,7:0.000} | {2,7:0.000} | {3,7:0.000} | {4}:{5:00}.{6:000} |",
-                   j + 1, lap.Sector1, lap.Sector2, lap.Sector3, minutes, secondsInt, milliesInt));
+               sb.Append(
+                  string.Format("| {0,2} | {1,7} | {2,7} | {3,7} | {4} |",
+                   j + 1, 
+                   lap.To_SS_MMMM(lap.Sector1Ms), 
+                   lap.To_SS_MMMM(lap.Sector2Ms), 
+                   lap.To_SS_MMMM(lap.Sector3Ms), 
+                   lap.To_M_SS_MMMM(lap.LapMs)));
 
                foreach (var ev in driver.Laps[j].Incidents)
                {

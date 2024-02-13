@@ -302,12 +302,52 @@ namespace adjsw::F12022
    public ref class LapData
    {
    public:
+      property System::UInt32 Sector1Ms {System::UInt32 get() { return m_DoubleSecToIntMsec(Sector1); } }
+      property System::UInt32 Sector2Ms {System::UInt32 get() { return m_DoubleSecToIntMsec(Sector2); } }
+      property System::UInt32 Sector3Ms {System::UInt32 get() { return m_DoubleSecToIntMsec(Sector3); } }
+      property System::UInt32 LapMs {System::UInt32 get() { return m_DoubleSecToIntMsec(Lap); } }
+
       property double Sector1;
       property double Sector2;
       property double Sector3 {double get() { return (Lap != 0.0) ? Lap - (Sector1 + Sector2) : 0.0; } };
+
       property double Lap;
       property double LapsAccumulated;
       property List<SessionEvent^>^ Incidents;
+
+      String^ To_M_SS_MMMM(UInt32 totalMilliSeconds)
+      {
+         UInt32 mins = totalMilliSeconds / 60000;
+         UInt32 seconds = (totalMilliSeconds % 60000) / 1000;
+         UInt32 milliSeconds = totalMilliSeconds % 1000;
+
+         return "" + mins + ":" + seconds.ToString("D2") + "." + milliSeconds.ToString("D3");
+      }
+
+      String^ To_M_SS_MMMM(double totalSeconds)
+      {
+         return To_M_SS_MMMM(m_DoubleSecToIntMsec(totalSeconds));
+      }
+
+      String^ To_SS_MMMM(UInt32 totalMilliSeconds)
+      {
+         UInt32 seconds = totalMilliSeconds / 1000;
+         UInt32 milliSeconds = totalMilliSeconds % 1000;            
+
+         if (seconds < 10)
+            return "" + seconds.ToString("D2") + "." + milliSeconds.ToString("D3");
+         else
+            return "" + seconds + "." + milliSeconds.ToString("D3");
+      }
+
+      String^ To_SS_MMMM(double totalSeconds)
+      {
+         return To_SS_MMMM(m_DoubleSecToIntMsec(totalSeconds));
+      }
+
+   private:
+      // get double seconds to int milliseconds with correct rounding
+      System::UInt32 m_DoubleSecToIntMsec(double d) { d *= 1000.0; d += 0.5; return (System::UInt32)d; }
    };
 
    public ref class CarDetail
