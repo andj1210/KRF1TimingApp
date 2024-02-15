@@ -7,7 +7,7 @@
 #include <fstream>
 #include "F12022DataDefs.h"
 
-struct F12020ElementaryParser
+struct F1_23_PacketExtractor
 {
    unsigned ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType = nullptr);
 
@@ -25,6 +25,9 @@ struct F12020ElementaryParser
    PacketLobbyInfoData lobby{};
    PacketCarDamageData cardamage{};
    PacketSessionHistoryData histoy{};
+   PacketTyreSetsData tyreSets{};
+   PacketMotionExData motionEx{};
+
 
    template<typename PKT_TYPE>
    static bool CopyBytesToStruct(const uint8_t* pData, unsigned& len, PKT_TYPE* pPkt);
@@ -32,7 +35,7 @@ struct F12020ElementaryParser
 
 
 template<typename PKT_TYPE>
-bool F12020ElementaryParser::CopyBytesToStruct(const uint8_t* pData, unsigned& len, PKT_TYPE* pPkt)
+bool F1_23_PacketExtractor::CopyBytesToStruct(const uint8_t* pData, unsigned& len, PKT_TYPE* pPkt)
 {
    if (sizeof(PKT_TYPE) <= len)
    {

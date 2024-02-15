@@ -6,7 +6,7 @@
 #include <fstream>
 #include <type_traits>
 
-unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
+unsigned F1_23_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
 {
    if (len < sizeof(PacketHeader))
       return len;
@@ -17,7 +17,7 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
       *pType = type;
 
    memcpy(&hdr, pData, sizeof(PacketHeader));
-   if ((hdr.m_packetFormat != 2022) || (hdr.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
+   if ((hdr.m_packetFormat != 2023) || (hdr.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
       return len;
 
    sessionUID = hdr.m_sessionUID;
@@ -59,7 +59,7 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
          if (!strncmp((const char*)event.m_eventStringCode, "SSTA", 4))
          {
             auto eventCpy = this->event;
-            *this = F12020ElementaryParser();
+            *this = F1_23_PacketExtractor();
             this->event = eventCpy;
          }
          type = PacketType::PacketEventData;
@@ -139,6 +139,24 @@ unsigned F12020ElementaryParser::ProceedPacket(const uint8_t* pData, unsigned le
       else
          return len;
       break;
+
+    case 12:
+         if (CopyBytesToStruct(pData, len, &tyreSets))
+         {
+            type = PacketType::PacketTyreSetsData;
+         }
+         else
+            return len;
+         break;
+
+    case 13:
+       if (CopyBytesToStruct(pData, len, &motionEx))
+       {
+          type = PacketType::PacketMotionExData;
+       }
+       else
+          return len;
+       break;
    }
 
    if (pType)
