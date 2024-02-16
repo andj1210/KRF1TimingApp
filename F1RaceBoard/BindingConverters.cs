@@ -511,15 +511,49 @@ namespace adjsw.F12022
    {
       public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
       {
-         var dat = values?[1] as DriverData;
+         var dat = values?[2] as DriverData;
 
          if (null == dat)
             return new TyreView(TyreView.OtherTyre);
 
          WrapPanel wp = new WrapPanel();
-         foreach (F1VisualTyre tyre in dat.VisualTyres)
+         if (dat.VisualTyres.Count >= 1)
          {
-            switch (tyre)
+            foreach (F1VisualTyre tyre in dat.VisualTyres)
+            {
+               switch (tyre)
+               {
+                  case F1VisualTyre.Soft:
+                     wp.Children.Add(new TyreView(TyreView.SoftTyre));
+                     break;
+
+                  case F1VisualTyre.Medium:
+                     wp.Children.Add(new TyreView(TyreView.MediumTyre));
+                     break;
+
+                  case F1VisualTyre.Hard:
+                     wp.Children.Add(new TyreView(TyreView.HardTyre));
+                     break;
+
+                  case F1VisualTyre.Intermediate:
+                     wp.Children.Add(new TyreView(TyreView.InterTyre));
+                     break;
+
+                  case F1VisualTyre.Wet:
+                     wp.Children.Add(new TyreView(TyreView.WetTyre));
+                     break;
+
+                  case F1VisualTyre.Unknown:
+                  default:
+                     wp.Children.Add(new TyreView(TyreView.OtherTyre));
+                     break;
+               }
+            }
+         }
+         else 
+         {
+            // tyre list not avaible now, so just display the visual tyre
+            switch (dat.VisualTyre)
             {
                case F1VisualTyre.Soft:
                   wp.Children.Add(new TyreView(TyreView.SoftTyre));
@@ -539,6 +573,11 @@ namespace adjsw.F12022
 
                case F1VisualTyre.Wet:
                   wp.Children.Add(new TyreView(TyreView.WetTyre));
+                  break;
+
+               case F1VisualTyre.Unknown:
+               default:
+                  wp.Children.Add(new TyreView(TyreView.OtherTyre));
                   break;
             }
          }

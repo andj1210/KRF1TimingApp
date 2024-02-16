@@ -11,19 +11,31 @@ unsigned F1_23_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len
    if (len < sizeof(PacketHeader))
       return len;
 
-   PacketHeader hdr;
    PacketType type = PacketType::UnknownOrIllformed;
    if (pType)
       *pType = type;
 
-   memcpy(&hdr, pData, sizeof(PacketHeader));
-   if ((hdr.m_packetFormat != 2023) || (hdr.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
+   memcpy(&lastHeader, pData, sizeof(PacketHeader));
+   if ((lastHeader.m_packetFormat != 2023) || (lastHeader.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
       return len;
 
-   sessionUID = hdr.m_sessionUID;
-   sessionTime = hdr.m_sessionTime;
+   if (sessionUID != lastHeader.m_sessionUID)
+   {
+      if (lastHeader.m_sessionUID != 0)
+      {
+         auto hdr = lastHeader;
+         *this = F1_23_PacketExtractor();
+         lastHeader = hdr;
+      }
+   }
 
-   switch (hdr.m_packetId)
+   if (lastHeader.m_sessionUID)
+   {
+      sessionUID = lastHeader.m_sessionUID;
+      sessionTime = lastHeader.m_sessionTime;
+   }
+
+   switch (lastHeader.m_packetId)
    {
    case 0:
       if (CopyBytesToStruct(pData, len, &motion))
@@ -61,6 +73,7 @@ unsigned F1_23_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len
             auto eventCpy = this->event;
             *this = F1_23_PacketExtractor();
             this->event = eventCpy;
+            this->lastHeader = event.m_header;
          }
          type = PacketType::PacketEventData;
       }
@@ -132,7 +145,7 @@ unsigned F1_23_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len
       break;
 
    case 11:
-      if (CopyBytesToStruct(pData, len, &histoy))
+      if (CopyBytesToStruct(pData, len, &history))
       {
          type = PacketType::PacketSessionHistoryData;
       }

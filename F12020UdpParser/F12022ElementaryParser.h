@@ -13,6 +13,7 @@ struct F1_23_PacketExtractor
 
    uint64_t sessionUID{ 0 };
    float sessionTime{0};
+   PacketHeader lastHeader{};
    PacketMotionData motion{};
    PacketSessionData session{};
    PacketLapData lap{};
@@ -24,7 +25,7 @@ struct F1_23_PacketExtractor
    PacketFinalClassificationData classification{};
    PacketLobbyInfoData lobby{};
    PacketCarDamageData cardamage{};
-   PacketSessionHistoryData histoy{};
+   PacketSessionHistoryData history{};
    PacketTyreSetsData tyreSets{};
    PacketMotionExData motionEx{};
 

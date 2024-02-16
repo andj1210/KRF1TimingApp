@@ -46,7 +46,7 @@ namespace F1GameSessionDisplay
             WetTyre.ellipse_tyremark.Stroke = Brushes.Blue;
 
             OtherTyre = new TyreView();
-            OtherTyre.txt_blk_name.Text = "C"; // for "classic"
+            OtherTyre.txt_blk_name.Text = "?"; // "classic" or unknown
             OtherTyre.txt_blk_name.Foreground = Brushes.Silver;
             OtherTyre.ellipse_tyremark.Stroke = Brushes.Silver;
         }

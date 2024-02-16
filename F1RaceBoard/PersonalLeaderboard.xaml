@@ -170,6 +170,7 @@
                                 <UserControl.Content>
                                     <MultiBinding Converter="{StaticResource TyreConverter}">
                                         <Binding Path="VisualTyres" />
+                                        <Binding Path="VisualTyre" />
                                         <Binding Path="" />
                                     </MultiBinding>
                                 </UserControl.Content>

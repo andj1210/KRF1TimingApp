@@ -72,7 +72,9 @@ namespace adjsw::F12022
 
       Soft = 16,
       Medium = 17,
-      Hard = 18
+      Hard = 18,
+
+      Unknown = 254
    };
 
    public enum class Track
