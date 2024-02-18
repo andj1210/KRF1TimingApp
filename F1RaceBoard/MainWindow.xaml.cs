@@ -32,11 +32,7 @@ namespace F1GameSessionDisplay
       {
          InitializeComponent();
 
-         Title = "F1-Game Session-Display for F1-22 V0.62";
-
-         m_listenerHdl += KbListener_KeyDown;
-         m_kbListener.OnKeyPressed += m_listenerHdl;
-         m_kbListener.HookKeyboard();
+         Title = "F1-Game Session-Display for F1-23 V0.7.x";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(50);
@@ -511,6 +507,9 @@ namespace F1GameSessionDisplay
          if (e.Key == Key.D)
             m_grid.DeltaVisible = !m_grid.DeltaVisible;
 
+         if (e.Key == Key.Space)
+            ToggleView();
+
          if (e.Key == Key.M)
          {
             m_LoadNameMappings(true); // always reload in case text changed
@@ -540,12 +539,6 @@ namespace F1GameSessionDisplay
 
             m_parser.SetDriverNameMappings(m_runtimeMapping);
          }
-      }
-
-      private void KbListener_KeyDown(object sender, KeyPressedArgs args)
-      {
-         if (args.KeyPressed == Key.Space)
-            ToggleView();
       }
 
       private string To_H_MM_SS_mmm_String(double inputSeconds)
@@ -910,8 +903,6 @@ namespace F1GameSessionDisplay
          }
       }
 
-      private LowLevelKeyboardListener m_kbListener = new LowLevelKeyboardListener();
-      private EventHandler<KeyPressedArgs> m_listenerHdl; // Needed elsewise error in KeyboardListener / some issue between GC + Native resources
       private UdpEventClient m_udpClient = null;
       private UdpPlaybackWindow m_playbackWindow = null;
       private ConcurrentQueue<byte[]> m_packetQue = new ConcurrentQueue<byte[]>();

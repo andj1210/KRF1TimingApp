@@ -3,7 +3,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
     <StartWorkingDirectory>F:\swe\github\f1gamesessiondisplay\_build\bin\</StartWorkingDirectory>
-    <StartArguments>f1_23_latejoinspec</StartArguments>
+    <StartArguments>f1_23_qshort</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
     <PublishUrlHistory>publish\</PublishUrlHistory>

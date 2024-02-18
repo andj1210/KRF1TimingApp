@@ -27,10 +27,11 @@ Space bar is also captured when the window is not active.
 Keymapping:
 - F11           - toggle fullscreen
 - s             - save a race report as text file
-- d             - enable disable the other cars relative delta to the player (factoring in all penalties)
+- d             - enable disable the delta of other cars relative delta to the player (factoring in all penalties)
 - l             - enable disable the delta to leader for all cars including player
+- i             - enable / disable interval (the time diff to the car ahead)
 - m             - toggle between namemappings from file "namemappings.json" placed into the program directory
-- space         - Toggle view (Leaderboard -> Combined -> Car status), also captured when the window is not active (i.e. you are in game)
+- space         - Toggle view (Leaderboard -> Combined -> Car status)
 - UDP1 button   - same as above, assign UDP1 ingame to your controller/wheel button
 - right mouse   - select driver name
 
