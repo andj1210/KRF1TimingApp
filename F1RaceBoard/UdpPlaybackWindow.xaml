@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:F1GameSessionDisplay"
         mc:Ignorable="d"
-        Title="Udp Playback" Height="300" Width="600">
+        Topmost="True"
+        Title="Udp Playback" 
+        Height="300" Width="600">
     <StackPanel>
         <TextBlock FontSize="24" FontWeight="Bold" >Playback Control</TextBlock>
 

@@ -49,7 +49,7 @@ namespace F1GameSessionDisplay
 
          var pbd = new UdpPlaybackData(filename);
          m_data = pbd.GetPackets();
-         m_timer = new DispatcherTimer();
+         m_timer = new DispatcherTimer(DispatcherPriority.Send);
          m_timer.Interval = TimeSpan.FromMilliseconds(50);
          m_timer.Tick += M_timer_Tick; ;
          m_timer.Start();

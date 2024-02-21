@@ -3,13 +3,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:adjsw.F12022"             
+             xmlns:local="clr-namespace:adjsw.F12022"
+             xmlns:app="clr-namespace:F1GameSessionDisplay"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <local:PositionConverter x:Key="PositionConverter"/>
         <local:RaceEventTextConverter x:Key="RaceEventTextConverter"/>
         <local:PositionColorConverter x:Key="PositionColorConverter"/>
+        <local:StatusConverter x:Key="StatusConverter"/>
         <local:DeltaTimeColorConverter x:Key="DeltaTimeColorConverter"/>
         <local:DeltaTimeBgColorConverter x:Key="DeltaTimeBgColorConverter"/>
         <local:TyreConverter x:Key="TyreConverter"/>
@@ -25,7 +27,7 @@
     <StackPanel Background="Transparent">
         <StackPanel.Resources>
         </StackPanel.Resources>
-        <TextBlock FontSize="32" FontWeight="Bold" FontFamily="Courier New" Foreground="White" HorizontalAlignment="Center">Personal Raceboard</TextBlock>
+        <TextBlock FontSize="32" FontWeight="Bold" FontFamily="Courier New" Foreground="White" HorizontalAlignment="Center">Leaderboard</TextBlock>
         <TextBlock x:Name="m_textpanel" FontSize="32" FontWeight="Bold" FontFamily="Courier New" Foreground="White" HorizontalAlignment="Center">
             <TextBlock.Text>
                 <MultiBinding Converter="{StaticResource RaceEventTextConverter}">
@@ -67,44 +69,6 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn FontFamily="Times New Roman" FontSize="26" Header="Name" Binding="{Binding Name}" Foreground="White"></DataGridTextColumn>
-                <DataGridTemplateColumn Header="Delta">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <WrapPanel>
-                                <Ellipse Width="15" Height="15">
-                                    <Ellipse.Fill>
-                                        <MultiBinding Converter="{StaticResource LastTimeDeltaBgColorConverter}">
-                                            <Binding Path="TimedeltaToPlayer" />
-                                            <Binding Path="" />
-                                        </MultiBinding>
-                                    </Ellipse.Fill>
-                                </Ellipse>
-                                <TextBlock>
-                                    <TextBlock.Text>
-                                        <MultiBinding Converter="{StaticResource DeltaTimeConverter}">
-                                            <Binding Path="TimedeltaToPlayer" />
-                                            <Binding Path="Status" />
-                                            <Binding Path="" />
-                                            <Binding Path="FastestLap" />
-                                        </MultiBinding>
-                                    </TextBlock.Text>
-                                    <TextBlock.Foreground>
-                                        <MultiBinding Converter="{StaticResource DeltaTimeColorConverter}">
-                                            <Binding Path="TimedeltaToPlayer" />
-                                            <Binding Path="" />
-                                        </MultiBinding>
-                                    </TextBlock.Foreground>
-                                    <TextBlock.Background>
-                                        <MultiBinding Converter="{StaticResource DeltaTimeBgColorConverter}">
-                                            <Binding Path="TimedeltaToPlayer" />
-                                            <Binding Path="" />
-                                        </MultiBinding>
-                                    </TextBlock.Background>
-                                </TextBlock>
-                            </WrapPanel>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
                 <DataGridTemplateColumn Header="Leader" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
@@ -160,6 +124,60 @@
                                     </MultiBinding>
                                 </TextBlock.Text>
                             </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Status" MinWidth="100">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <app:StatusView>
+                                <app:StatusView.StatusInfo>
+                                    <MultiBinding Converter="{StaticResource StatusConverter}">
+                                        <Binding Path="TimedeltaToPlayer" />
+                                        <Binding Path="CurrentLap" />
+                                        <Binding Path="Status" />
+                                        <Binding Path=""/>
+                                    </MultiBinding>
+                                </app:StatusView.StatusInfo>
+                            </app:StatusView>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Delta">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <WrapPanel>
+                                <Ellipse Width="15" Height="15">
+                                    <Ellipse.Fill>
+                                        <MultiBinding Converter="{StaticResource LastTimeDeltaBgColorConverter}">
+                                            <Binding Path="TimedeltaToPlayer" />
+                                            <Binding Path="" />
+                                        </MultiBinding>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                                <TextBlock>
+                                    <TextBlock.Text>
+                                        <MultiBinding Converter="{StaticResource DeltaTimeConverter}">
+                                            <Binding Path="TimedeltaToPlayer" />
+                                            <Binding Path="Status" />
+                                            <Binding Path="" />
+                                            <Binding Path="FastestLap" />
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                    <TextBlock.Foreground>
+                                        <MultiBinding Converter="{StaticResource DeltaTimeColorConverter}">
+                                            <Binding Path="TimedeltaToPlayer" />
+                                            <Binding Path="" />
+                                        </MultiBinding>
+                                    </TextBlock.Foreground>
+                                    <TextBlock.Background>
+                                        <MultiBinding Converter="{StaticResource DeltaTimeBgColorConverter}">
+                                            <Binding Path="TimedeltaToPlayer" />
+                                            <Binding Path="" />
+                                        </MultiBinding>
+                                    </TextBlock.Background>
+                                </TextBlock>
+                            </WrapPanel>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

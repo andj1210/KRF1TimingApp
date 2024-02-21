@@ -7,13 +7,16 @@ using F1SessionDisplay;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.RightsManagement;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
@@ -42,8 +45,8 @@ namespace F1GameSessionDisplay
 
          m_grid.ItemsSource = m_driversList;
 
-         m_parser = new adjsw.F12022.F12022UdpClrMapper();
-         m_parser.InsertTestData();
+         m_mapper = new adjsw.F12022.F12022UdpClrMapper();
+         m_mapper.InsertTestData();
 
          if (!String.IsNullOrEmpty(App.PlaybackFile))
          {
@@ -71,7 +74,12 @@ namespace F1GameSessionDisplay
 
          //m_CreateTestJsonMappingFile();
          m_LoadNameMappings(false);
-         m_runtimeMapping = ReflectionCloner.DeepCopy(m_nameMappings[0]);
+         DriverNameMappings dummy = new DriverNameMappings();
+         dummy.LeagueName = "none";
+         dummy.Mappings = new DriverNameMapping[0];
+         m_emptyMapping = dummy;
+         m_nameMappingNextIdx = 0;
+         m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping);
       }
 
       public ConcurrentQueue<byte[]> PacketQue
@@ -180,8 +188,8 @@ namespace F1GameSessionDisplay
                   m_runtimeMapping.Mappings = newMappingsArray;
                }
 
-               m_parser.SetDriverNameMappings(null);
-               m_parser.SetDriverNameMappings(m_runtimeMapping);
+               m_mapper.SetDriverNameMappings(null);
+               m_mapper.SetDriverNameMappings(m_runtimeMapping);
             }
          }
       }
@@ -222,18 +230,18 @@ namespace F1GameSessionDisplay
          byte[] newData;
          while (m_packetQue.TryDequeue(out newData))
          {
-            m_parser.Proceed(newData);
+            m_mapper.Proceed(newData);
          }
 
-         m_grid.SessionSource = m_parser.SessionInfo;
+         m_grid.SessionSource = m_mapper.SessionInfo;
          UpdateGrid();
          UpdateCarStatus();
 
-         if (m_parser.SessionInfo.Session == SessionType.Race)
+         if (m_mapper.SessionInfo.Session == SessionType.Race)
          {
-            if (m_parser.Classification != null)
+            if (m_mapper.Classification != null)
             {
-               if (!m_sessionFinishNotificationShown)
+               if (!m_sessionClassificationHandled)
                {
                   if (!m_autosave)
                      ShowInfoBox("The Race has finished.\r\n Click in the window and hit\r\n---\"s\"---\r\nto save the race report.", TimeSpan.FromSeconds(10));
@@ -242,17 +250,17 @@ namespace F1GameSessionDisplay
                      SaveReport();
                      SaveReportJson();
                   }
-                  m_sessionFinishNotificationShown = true;
+                  m_sessionClassificationHandled = true;
                }
             }
             else
             {
-               m_sessionFinishNotificationShown = false;
+               m_sessionClassificationHandled = false;
             }
          }
 
          bool qualySession = false;
-         switch (m_parser.SessionInfo.Session)
+         switch (m_mapper.SessionInfo.Session)
          {
             case SessionType.P1:
             case SessionType.P2:
@@ -272,9 +280,9 @@ namespace F1GameSessionDisplay
          }
          m_grid.Quali = qualySession;
 
-         if (m_parser.Udp1Action)
+         if (m_mapper.Udp1Action)
          {
-            m_parser.Udp1Action = false;
+            m_mapper.Udp1Action = false;
 
             if (m_udpClient != null)
             {
@@ -291,23 +299,47 @@ namespace F1GameSessionDisplay
 
       private void UpdateGrid()
       {
-         if (m_driversList.Count != m_parser.CountDrivers)
+         if (m_driversList.Count != m_mapper.CountDrivers)
          {
             m_driversList.Clear();
-            foreach (var driver in m_parser.Drivers)
+            foreach (var driver in m_mapper.Drivers)
             {
                if (driver.Present)
                {
                   m_driversList.Add(driver);
                }
             }
+
             m_grid.ItemsSource = null;
             m_grid.ItemsSource = m_driversList;
+
+//             var dataGrid = m_grid.TheDataGrid;
+//             var firstCol = dataGrid.Columns[0];
+//             firstCol.SortDirection = ListSortDirection.Ascending;
+//             dataGrid.Items.IsLiveSorting = true;
+//             dataGrid.Items.SortDescriptions.Add(new SortDescription("Pos", ListSortDirection.Ascending));
+            
+
+//             var sort = new System.ComponentModel.SortDescription();
+//             sort.PropertyName = "Pos";
+//             sort.Direction = System.ComponentModel.ListSortDirection.Ascending;
+// 
+//             m_driverListViewSource.SortDescriptions.Add(new System.ComponentModel.SortDescription("Pos", System.ComponentModel.ListSortDirection.Ascending));
+//             m_driverListViewSource.Filter += M_driverListViewSource_Filter;
+//             m_driverListViewSource.IsLiveSortingRequested = true;
+//             m_driverListViewSource.IsLiveFilteringRequested = true;
+//             m_driverListViewSource.Source = m_mapper.Drivers;
+// 
+//             var binding = new Binding();
+//             binding.Source = m_driverListViewSource;
+//             binding.Mode = BindingMode.OneWay;
+//             m_grid.ItemsSource = null;
+//             m_grid.TheDataGrid.SetBinding(DataGrid.ItemsSourceProperty, binding);
          }
 
-         foreach (var driver in m_parser.Drivers)
+         foreach (var driver in m_mapper.Drivers)
          {
-            if ((driver.Pos) > 0 && (driver.Pos <= 20))
+            if ((driver.Pos > 0) && (driver.Pos <= 22))
             {
                if ((driver.Pos - 1) < m_driversList.Count)
                   m_driversList[driver.Pos - 1] = driver;
@@ -315,9 +347,18 @@ namespace F1GameSessionDisplay
          }
       }
 
+      private void M_driverListViewSource_Filter(object sender, FilterEventArgs e)
+      {
+         DriverData d = e.Item as DriverData;
+         if (d == null)
+            e.Accepted = false;
+         else
+            e.Accepted = d.Present;
+      }
+
       private void UpdateCarStatus()
       {
-         foreach (var driver in m_parser.Drivers)
+         foreach (var driver in m_mapper.Drivers)
          {
             if (driver.IsPlayer)
             {
@@ -519,7 +560,7 @@ namespace F1GameSessionDisplay
                if (m_nameMappingNextIdx >= m_nameMappings.Length)
                {
                   m_nameMappingNextIdx = 0;
-                  m_runtimeMapping = null;
+                  m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping); ;
                   ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
                }
 
@@ -537,7 +578,7 @@ namespace F1GameSessionDisplay
             else
                m_runtimeMapping = null;
 
-            m_parser.SetDriverNameMappings(m_runtimeMapping);
+            m_mapper.SetDriverNameMappings(m_runtimeMapping);
          }
       }
 
@@ -562,10 +603,10 @@ namespace F1GameSessionDisplay
       {
          StringBuilder sb = new StringBuilder();
          var sep = "--------------------------------------------------------------";
-         var session = m_parser.SessionInfo;
-         var countDrivers = m_parser.CountDrivers;
-         var drivers = m_parser.Drivers;
-         var events = m_parser.EventList.Events;
+         var session = m_mapper.SessionInfo;
+         var countDrivers = m_mapper.CountDrivers;
+         var drivers = m_mapper.Drivers;
+         var events = m_mapper.EventList.Events;
          string nl = "\r\n";
 
          if (events.Count == 0)
@@ -581,7 +622,7 @@ namespace F1GameSessionDisplay
 
          // classification
          sb.Append(nl + nl + nl + "--------------------------------------CLASSIFICATION----------------------------------" + nl);
-         if (m_parser.Classification == null)
+         if (m_mapper.Classification == null)
          {
             sb.Append("No race result available" + nl);
          }
@@ -589,7 +630,7 @@ namespace F1GameSessionDisplay
          {
             int maxDriverNameLen = 4; // "Name"
             ClassificationData winner = null;
-            foreach (var result in m_parser.Classification)
+            foreach (var result in m_mapper.Classification)
             {
                if (result.Driver.Name.Length > maxDriverNameLen)
                   maxDriverNameLen = result.Driver.Name.Length;
@@ -616,9 +657,9 @@ namespace F1GameSessionDisplay
             double leaderTimeTotal = 0.0;
             int leaderLaps = 0;
 
-            for (int i = 0; i < m_parser.Classification.Length; ++i)
+            for (int i = 0; i < m_mapper.Classification.Length; ++i)
             {
-               foreach (var result in m_parser.Classification)
+               foreach (var result in m_mapper.Classification)
                {
                   if (result.Position != (i + 1))
                      continue;
@@ -776,24 +817,24 @@ namespace F1GameSessionDisplay
 
       private void SaveReportJson()
       {
-         if (m_parser.Classification == null)
+         if (m_mapper.Classification == null)
             return;
 
          var json = new ResultExport();
-         json.Events = m_parser.EventList;
-         json.EventTrack = m_parser.SessionInfo.EventTrack;
-         json.TotalLaps = m_parser.SessionInfo.TotalLaps;
-         json.Session = m_parser.SessionInfo.Session;
+         json.Events = m_mapper.EventList;
+         json.EventTrack = m_mapper.SessionInfo.EventTrack;
+         json.TotalLaps = m_mapper.SessionInfo.TotalLaps;
+         json.Session = m_mapper.SessionInfo.Session;
 
          // merge drivers into the reduced export model
-         json.Drivers = new DriverDataResult[m_parser.Classification.Length];
+         json.Drivers = new DriverDataResult[m_mapper.Classification.Length];
 
-         for (int i = 0; i < m_parser.Classification.Length; ++i)
+         for (int i = 0; i < m_mapper.Classification.Length; ++i)
          {
             json.Drivers[i] = new DriverDataResult();
             DriverDataResult driverResult = json.Drivers[i];
-            ClassificationData classification = m_parser.Classification[i];
-            DriverData driverSession = m_parser.Classification[i].Driver;
+            ClassificationData classification = m_mapper.Classification[i];
+            DriverData driverSession = m_mapper.Classification[i].Driver;
 
             driverResult.DriverTag = driverSession.DriverTag;
             driverResult.DriverNr = driverSession.DriverNr;
@@ -906,12 +947,14 @@ namespace F1GameSessionDisplay
       private UdpEventClient m_udpClient = null;
       private UdpPlaybackWindow m_playbackWindow = null;
       private ConcurrentQueue<byte[]> m_packetQue = new ConcurrentQueue<byte[]>();
-      private F12022UdpClrMapper m_parser = null;
+      private F12022UdpClrMapper m_mapper = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer();
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
       private ObservableCollection<adjsw.F12022.DriverData> m_driversList = new ObservableCollection<adjsw.F12022.DriverData>();
-      private bool m_sessionFinishNotificationShown = false;
+      private CollectionViewSource m_driverListViewSource = new CollectionViewSource();
+      private bool m_sessionClassificationHandled = false;
       private int m_nameMappingNextIdx = 0;
+      private DriverNameMappings m_emptyMapping;
       private DriverNameMappings[] m_nameMappings;
       private DriverNameMappings m_runtimeMapping = null; // A volatile mapping which is altered during runtime by user intervention
       private bool m_autosave = true;

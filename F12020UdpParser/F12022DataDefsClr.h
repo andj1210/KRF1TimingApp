@@ -135,9 +135,12 @@ namespace adjsw::F12022
    public enum class DriverStatus
    {
       Garage,
+      OutLap,
       OnTrack,
+      Inlap,
       Pitlane,
       Pitting,
+      Retired,
       DNF,
       DSQ
    };
@@ -317,6 +320,18 @@ namespace adjsw::F12022
       property double LapsAccumulated;
       property List<SessionEvent^>^ Incidents;
 
+      property bool Invalid;
+
+      void CopyFrom(LapData^ lap)
+      {
+         Sector1 = lap->Sector1;
+         Sector2 = lap->Sector2;
+         Lap = lap->Lap;
+         LapsAccumulated = lap->LapsAccumulated;
+         Invalid = lap->Invalid;
+         Incidents = lap->Incidents;
+      }
+
       String^ To_M_SS_MMMM(UInt32 totalMilliSeconds)
       {
          UInt32 mins = totalMilliSeconds / 60000;
@@ -426,20 +441,24 @@ namespace adjsw::F12022
          m_driverNameNative[0] = 0;
          Pos = 0;
          LapNr = 1;
+         Status = DriverStatus::Garage;
          Laps = gcnew array<LapData^>(100); // 100 Laps ought to be enough for anybody
          for (int i = 0; i < Laps->Length; ++i)
          {
             Laps[i] = gcnew LapData();
             Laps[i]->Incidents = gcnew List<SessionEvent^>();
          }
-         FastestLap = gcnew LapData();           
-
+         FastestLap = gcnew LapData();      
+         CurrentLap = gcnew LapData();         
          IsPlayer = false;
          Present = false;
          VisualTyres = gcnew List<F1VisualTyre>();
          PitPenalties = gcnew List<SessionEvent^>();
          m_lapTiresFitted = 1;
          m_hasPitted = false;
+
+         TimedeltaToLeader = 0;
+         TimedeltaToPlayer = 0;
       }
 
       void SetNameFromTelemetry(const char(&pName)[48])
@@ -474,11 +493,13 @@ namespace adjsw::F12022
       property int LapNr {int get() { return m_lapNr; } void set(int val) { if (val != m_lapNr) { m_lapNr = val; NPC("LapNr"); } } };
       property array<LapData^>^ Laps {array<LapData^>^ get() { return m_laps; } void set(array<LapData^>^ val) { m_laps = val; /*NPC("Laps");*/ }};
       property LapData^ FastestLap {LapData^ get() { return m_fastestLap; } void set(LapData^ val) { m_fastestLap = val; NPC("FastestLap"); }};
+      property LapData^ CurrentLap {LapData^ get() { return m_currentLap; } void set(LapData^ val) { m_currentLap = val; NPC("CurrentLap"); }};
       property int PenaltySeconds {int get() { return m_penaltySeconds; } void set(int val) { if (val != m_penaltySeconds) { m_penaltySeconds = val; NPC("PenaltySeconds"); } } };
       property float TimedeltaToPlayer {float get() { return m_timedeltaToPlayer; } void set(float val) { if (val != m_timedeltaToPlayer) { m_timedeltaToPlayer = val; NPC("TimedeltaToPlayer"); } } };
       property float LastTimedeltaToPlayer {float get() { return m_lastTimedeltaToPlayer; } void set(float val) { if (val != m_lastTimedeltaToPlayer) { m_lastTimedeltaToPlayer = val; NPC("LastTimedeltaToPlayer"); } } };
       property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
       property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };
+      property float LocationOnTrack;
 
       property String^ DriverTag; // from name mappings -> only to forward to racereport
 
@@ -515,6 +536,7 @@ namespace adjsw::F12022
       float m_carDamage;
       array<LapData^>^ m_laps;
       LapData^ m_fastestLap;
+      LapData^ m_currentLap;
       float m_timedeltaToPlayer;
       float m_lastTimedeltaToPlayer;
       float m_timedeltaToLeader;

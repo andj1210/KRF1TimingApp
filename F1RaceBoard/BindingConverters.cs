@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Navigation;
 
 namespace adjsw.F12022
 {
@@ -190,8 +191,9 @@ namespace adjsw.F12022
          switch (dat.Status)
          {
             case DriverStatus.DNF:
-            case DriverStatus.DSQ:
                return "    DNF ";
+            case DriverStatus.DSQ:
+               return "    DSQ ";
 
                /*
            case DriverStatus.Garage:
@@ -211,8 +213,14 @@ namespace adjsw.F12022
          if (dat.Pos != 1)
          {
             if (dat.TimedeltaToLeader > 0)
-               return string.Format("  {0,6:##0.000}", (dat.TimedeltaToLeader + 0.0005));
+               return string.Format(" {0,7:##0.000}", (dat.TimedeltaToLeader + 0.0005));
 
+            else if (dat.TimedeltaToLeader < 0)
+            {
+               int lapped = (int)(dat.TimedeltaToLeader - 0.5);
+               lapped *= -1;
+               return "     +" + lapped + "L";
+            }
 
             else
             {
@@ -274,6 +282,178 @@ namespace adjsw.F12022
       {
          throw new NotImplementedException();
       }
+   }
+
+   public class StatusConverter : QualifyingAwareConverter
+   {
+      public override object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+      {
+         StatusView.Setter setter = new StatusView.Setter();
+
+         var dat = values?[3] as DriverData;
+         if (null == dat)
+            setter.SpecialText = "|?";
+
+         driver = dat;
+         this.setter = setter;
+
+         if (dat.IsPlayer && !IsQualy)
+            setter.SpecialText = "| --- ";
+
+         if (!dat.Present)
+            setter.SpecialText = "| DNF ";
+
+         switch (dat.Status)
+         {
+            case DriverStatus.DNF:
+            case DriverStatus.DSQ:
+               setter.SpecialText = "  DNF ";
+               break;
+            case DriverStatus.Garage:
+               setter.SpecialText = "GARAGE";
+               break;
+
+            case DriverStatus.OnTrack:
+               // show actual delta
+               break;
+            case DriverStatus.Pitlane:
+               setter.SpecialText = " -PIT-";
+               break;
+
+            case DriverStatus.Pitting:
+               setter.SpecialText = " -PIT-";
+               break;
+            case DriverStatus.OutLap:
+               setter.SpecialText = "OUTLAP";
+               break;
+
+            case DriverStatus.Inlap:
+               setter.SpecialText = "INLAP";
+               break;
+
+            case DriverStatus.Retired:
+               setter.SpecialText = "RETIRED";
+               break;
+         }
+
+         if (!string.IsNullOrEmpty(setter.SpecialText))
+            return setter;
+
+
+         if (IsQualy)
+         {
+            return ConvertQualy(values, targetType, parameter, culture);
+         }
+         else
+         {
+            return ConvertRace(values, targetType, parameter, culture);
+         }
+      }
+
+      public override object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+      {
+         throw new NotImplementedException();
+      }
+
+      public object ConvertQualy(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+      {
+         setter.Quali = true;
+         if (driver.FastestLap.Lap < 1.0)
+         {
+            if (driver.CurrentLap.Sector1 != 0)
+               setter.S1 = StatusView.SetterSectorType.Green;
+            else
+               setter.S1 = StatusView.SetterSectorType.None;
+
+            if (driver.CurrentLap.Sector2 != 0)
+               setter.S2 = StatusView.SetterSectorType.Green;
+            else
+               setter.S2 = StatusView.SetterSectorType.None;
+
+
+            if (driver.CurrentLap.Sector3 != 0)
+               setter.S3 = StatusView.SetterSectorType.Green;
+            else
+               setter.S3 = StatusView.SetterSectorType.None;
+
+            if (driver.CurrentLap.Invalid)
+            {
+               setter.S1 = StatusView.SetterSectorType.Red;
+               setter.S2 = StatusView.SetterSectorType.Red;
+               setter.S2 = StatusView.SetterSectorType.Red;
+            }
+
+            setter.Delta = 0;            
+         }
+
+         else
+         {
+            if (driver.CurrentLap.Sector1 != 0)
+               setter.S1 = driver.CurrentLap.Sector1 < driver.FastestLap.Sector1 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+            else
+               setter.S1 = StatusView.SetterSectorType.None;
+
+            if (driver.CurrentLap.Sector2 != 0)
+               setter.S2 = driver.CurrentLap.Sector2 < driver.FastestLap.Sector2 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+            else
+               setter.S2 = StatusView.SetterSectorType.None;
+
+
+            if (driver.CurrentLap.Sector3 != 0)
+               setter.S3 = driver.CurrentLap.Sector3 < driver.FastestLap.Sector3 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+            else
+               setter.S3 = StatusView.SetterSectorType.None;
+
+            if (driver.CurrentLap.Invalid)
+            {
+               setter.S1 = StatusView.SetterSectorType.Red;
+               setter.S2 = StatusView.SetterSectorType.Red;
+               setter.S2 = StatusView.SetterSectorType.Red;
+            }
+            else
+            {
+               
+               if (driver.CurrentLap.Sector1Ms == 0)
+               {
+                  setter.Delta = 0;
+               }
+               else
+               {
+                  Int32 delta = (int)driver.CurrentLap.Sector1Ms - (int) driver.FastestLap.Sector1Ms;
+
+
+                  if (driver.CurrentLap.Sector2Ms > 0)
+                  {
+                     delta += (int)driver.CurrentLap.Sector2Ms - (int)driver.FastestLap.Sector2Ms;
+                  }
+
+                  if (driver.CurrentLap.Sector3Ms > 0)
+                  {
+                     delta += (int)driver.CurrentLap.Sector3Ms - (int)driver.FastestLap.Sector3Ms;
+                  }
+                  setter.Delta = delta;
+               }
+            }
+         }
+         return setter;
+      }
+
+
+      public object ConvertRace(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+      {
+         setter.Quali = false;
+         if (driver.IsPlayer)
+         {
+            setter.Player = true;
+            return setter;
+         }
+
+         setter.Delta = (System.Int32) driver.TimedeltaToPlayer * 1000;
+         return setter;
+      }
+
+      private DriverData driver;
+      private StatusView.Setter setter;
    }
 
    public class DeltaTimeConverter : QualifyingAwareConverter

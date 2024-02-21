@@ -61,6 +61,11 @@ namespace F1GameSessionDisplay
          set { m_grid.ItemsSource = value; }
       }
 
+      public DataGrid TheDataGrid
+      {
+         get { return m_grid; }
+      }
+
       public object SessionSource
       {
          get { return m_textpanel.DataContext; }
@@ -107,7 +112,11 @@ namespace F1GameSessionDisplay
             {
                m_isQuali = value;
 
-               var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12022.DeltaTimeLeaderConverter;
+               var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12022.QualifyingAwareConverter;
+               converter.IsQualy = m_isQuali;
+               converter = this.Resources["DeltaTimeConverter"] as adjsw.F12022.QualifyingAwareConverter;
+               converter.IsQualy = m_isQuali;
+               converter = this.Resources["StatusConverter"] as adjsw.F12022.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
 
                if (m_isQuali)
