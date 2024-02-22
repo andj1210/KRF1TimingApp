@@ -159,16 +159,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="F12022DataDefs.h" />
-    <ClInclude Include="F12022DataDefsClr.h" />
-    <ClInclude Include="F12022ElementaryParser.h" />
-    <ClInclude Include="F12022UdpClrMapper.h" />
+    <ClInclude Include="F1DataDefs.h" />
+    <ClInclude Include="F1DataDefsClr.h" />
+    <ClInclude Include="F1PacketExtractor.h" />
+    <ClInclude Include="F1UdpClrMapper.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="F12022ElementaryParser.cpp" />
-    <ClCompile Include="F12022UdpClrMapper.cpp" />
+    <ClCompile Include="F1PacketExtractor.cpp" />
+    <ClCompile Include="F1UdpClrMapper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />

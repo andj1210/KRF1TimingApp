@@ -18,16 +18,16 @@
     <ClInclude Include="targetver.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="F12022DataDefs.h">
+    <ClInclude Include="F1DataDefs.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="F12022DataDefsClr.h">
+    <ClInclude Include="F1DataDefsClr.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="F12022ElementaryParser.h">
+    <ClInclude Include="F1PacketExtractor.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
-    <ClInclude Include="F12022UdpClrMapper.h">
+    <ClInclude Include="F1UdpClrMapper.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,10 +35,10 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="F12022ElementaryParser.cpp">
+    <ClCompile Include="F1PacketExtractor.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
-    <ClCompile Include="F12022UdpClrMapper.cpp">
+    <ClCompile Include="F1UdpClrMapper.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>
