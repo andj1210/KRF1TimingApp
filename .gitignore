@@ -8,3 +8,7 @@
 /_dist/*.zip
 /*.zip
 /packages
+/F1Udp/Debug
+/F1Udp/Release
+/KRF1Timing/bin
+/KRF1Timing/obj
