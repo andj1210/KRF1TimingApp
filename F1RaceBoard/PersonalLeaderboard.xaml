@@ -68,7 +68,8 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn FontFamily="Times New Roman" FontSize="26" Header="Name" Binding="{Binding Name}" Foreground="White"></DataGridTextColumn>
+                <DataGridTextColumn FontFamily="Times New Roman" FontSize="26" Header="Name" Binding="{Binding Name}" Foreground="White">                    
+                </DataGridTextColumn>
                 <DataGridTemplateColumn Header="Leader" Width="150">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>

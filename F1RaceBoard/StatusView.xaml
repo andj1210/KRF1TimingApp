@@ -5,8 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:F1GameSessionDisplay"
              mc:Ignorable="d" 
-             d:DesignHeight="30" d:DesignWidth="150">
-    <Grid MinHeight="35" MinWidth="50">
+             d:DesignHeight="30" d:DesignWidth="180">
+    <Grid MinHeight="35" Width="195">
         <WrapPanel>
             <Rectangle Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS1" Fill="LightGreen">
             </Rectangle>

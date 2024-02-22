@@ -292,47 +292,54 @@ namespace adjsw.F12022
 
          var dat = values?[3] as DriverData;
          if (null == dat)
+         {
             setter.SpecialText = "|?";
+            return setter;
+         }
+            
 
          driver = dat;
+         setter.DriverId = driver.Id;
          this.setter = setter;
 
          if (dat.IsPlayer && !IsQualy)
-            setter.SpecialText = "| --- ";
+            setter.SpecialText = 
+               "| --- ";
 
          if (!dat.Present)
-            setter.SpecialText = "| DNF ";
+            setter.SpecialText = 
+               " ***DNF***";
 
          switch (dat.Status)
          {
             case DriverStatus.DNF:
             case DriverStatus.DSQ:
-               setter.SpecialText = "  DNF ";
+               setter.SpecialText = " ***DNF***";
                break;
             case DriverStatus.Garage:
-               setter.SpecialText = "GARAGE";
+               setter.SpecialText = "  GARAGE";
                break;
 
             case DriverStatus.OnTrack:
                // show actual delta
                break;
             case DriverStatus.Pitlane:
-               setter.SpecialText = " -PIT-";
+               setter.SpecialText = "  -PIT-";
                break;
 
             case DriverStatus.Pitting:
-               setter.SpecialText = " -PIT-";
+               setter.SpecialText = "  -PIT-";
                break;
             case DriverStatus.OutLap:
-               setter.SpecialText = "OUTLAP";
+               setter.SpecialText = "  OUTLAP";
                break;
 
             case DriverStatus.Inlap:
-               setter.SpecialText = "INLAP";
+               setter.SpecialText = "  INLAP";
                break;
 
             case DriverStatus.Retired:
-               setter.SpecialText = "RETIRED";
+               setter.SpecialText = " RETIRED";
                break;
          }
 

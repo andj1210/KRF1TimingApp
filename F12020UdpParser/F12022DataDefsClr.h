@@ -459,6 +459,7 @@ namespace adjsw::F12022
 
          TimedeltaToLeader = 0;
          TimedeltaToPlayer = 0;
+         Id = 0;
       }
 
       void SetNameFromTelemetry(const char(&pName)[48])
@@ -475,6 +476,7 @@ namespace adjsw::F12022
          }
       }
 
+      property int Id;
       property String^ Name {String^ get() { return m_name; } void set(String^ val) { if (!String::Equals(val, m_name)) { m_name = val; NPC("Name"); } } }; // The name for Display
       property String^ TelemetryName {String^ get() { return m_telemetryName; } void set(String^ val) { if (!String::Equals(val, m_telemetryName)) { m_telemetryName = val; NPC("TelemetryName"); } } }; // The name from telemetry
       property String^ MappedName {String^ get() { return m_mappedName; } void set(String^ val) { if (!String::Equals(val, m_mappedName)) { m_mappedName = val; NPC("MappedName"); } } }; // The name from translation mappings
