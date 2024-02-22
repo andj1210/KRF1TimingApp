@@ -24,8 +24,8 @@ if exist %tempfolder%/ rm %tempfolder% -R
 mkdir %tempfolder%
 mkdir %tempfolder%\f1gamesessiondisplay
 
-copy ..\_build\bin\F1GameSessionDisplay.exe %tempfolder%\f1gamesessiondisplay\F1GameSessionDisplay.exe
-copy ..\_build\bin\F12022UdpParser.dll %tempfolder%\f1gamesessiondisplay\F12022UdpParser.dll
+copy ..\_build\bin\F1GameSessionDisplay.exe %tempfolder%\f1gamesessiondisplay\Krf1Timing.exe
+copy ..\_build\bin\F12022UdpParser.dll %tempfolder%\f1gamesessiondisplay\adjsw.F1Udp.23.dll
 copy ..\_build\bin\Newtonsoft.Json.dll %tempfolder%\f1gamesessiondisplay\Newtonsoft.Json.dll
 copy ..\_build\bin\Razorvine.Pickle.dll %tempfolder%\f1gamesessiondisplay\Razorvine.Pickle.dll
 copy ..\changelog.txt %tempfolder%\f1gamesessiondisplay\.

@@ -4,7 +4,7 @@
 using System;
 using System.Reflection;
 
-namespace F1GameSessionDisplay
+namespace adjsw.F12023
 {
     // a simple utility to make a deep copy of an managed object
     public class ReflectionCloner

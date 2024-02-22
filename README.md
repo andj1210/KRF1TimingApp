@@ -1,10 +1,6 @@
-# F1-Game Session-Display
+# KRF1 Timing App
 
-This repository contains a software to display the leaderboard and car status for the F1-2022 game on a second monitor by utilizing the game Telemetry output.
-
-Initially I made this software for F1-2018 for my own use and now ported it to the F1-2020 then F1-2022 game and post it here since I hope it is useful for other players.
-Newer Game Versions can be used, when the ingame UPD Telemetry setting is set to "2022". 
-As well I´m hoping to find some help with the visualization, WPF/xaml or graphics contributions very welcome.
+This repository contains a software to display the leaderboard and car status for the F1-23 game on a second monitor by utilizing the game Telemetry output.
 
 ### Installation
 The binaries are provided in form of one DLL and one executable. They can be extracted to any directory.
@@ -12,17 +8,16 @@ On a Windows 10 machine usually just the executable must be started and everythi
 In case the program does not start, please install the Visual Studio C++ Redistributable (vc_redist.x86.exe) for Visual Studio 2022:
 - [vc_redist.x86.exe](https://aka.ms/vs/17/release/vc_redist.x86.exe)
 
-Furthermore in the game the telemetry output must be enabled in mode "2022" to UDP port 20777.
+Furthermore in the game the telemetry output must be enabled in mode "2023" to UDP port 20777.
 
 ### Functions
-The program does currently only contain two different views and a combination of both.
+The program contains two different views and a combination of both.
 
 - The leader board
 - The car status view
 
 
-After the program has been started, the view can be changed with the space bar.
-Space bar is also captured when the window is not active.
+After the program has been started, the view can be changed with the space bar or by ingame UDP1 button (needs to be mapped for the input device).
 
 Keymapping:
 - F11           - toggle fullscreen
@@ -41,17 +36,22 @@ Keymapping:
 The leader board displays the race leader board from perspective of the active player, meaning the deltas are relative to the player.
 
 The leaderboard is useful for the race and practice/qualifying.
-When a practive / qualifying session is detected, the view is focused arround the fastest lap of each car.
+When a practice / qualifying session is detected, the view is focused arround the fastest lap of each car.
 
 On top of the screen the event information is displayed:
 - Track
 - Session (qualifying, race...)
 - Remaining time or laps
+Below the leaderboard is displayed.
 
-Below the personal leaderboard is displayed.
-Each line represents one car, and the order is according to the position on tack (race) or best laptime (Q+P).  For each car the following columns are displayed:
+Each line represents one car, and the order is according to the position on tack (race) or best laptime (Q+P).  
+
+For each car the following columns are displayed:
 - POS
-The position of the car. The Number is colored after the team color if F1-2020 regular cars are used.
+  - The position of the car. The Number is colored after the team color if F1 regular cars are used.
+- Leader
+  - The time or number of laps the car is behind the current leader. For Q/P sessions it is focussed arround the fastest lap. For Q/P also the sector times of the fastest lap for each car is shown as columns S1, S2, S3. 
+- Status 
 - Delta
 The Circle is colored red, gray, or green.
  Red: The last sector of the opponent was 0.050 seconds or more faster than the player.

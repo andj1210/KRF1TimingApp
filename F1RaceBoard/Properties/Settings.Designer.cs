@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace F1GameSessionDisplay.Properties {
+namespace adjsw.F12023.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

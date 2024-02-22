@@ -2,27 +2,20 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 using adjsw.F12022;
-using DesktopWPFAppLowLevelKeyboardHook;
-using F1SessionDisplay;
+using adjsw.F12023;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Security.RightsManagement;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
 using System.Windows.Threading;
 
-namespace F1GameSessionDisplay
+namespace adjsw.F12023
 {
    /// <summary>
    /// Interaktionslogik für MainWindow.xaml
@@ -35,7 +28,7 @@ namespace F1GameSessionDisplay
       {
          InitializeComponent();
 
-         Title = "F1-Game Session-Display for F1-23 V0.7.x";
+         Title = "KRF1 Timing App for F1-23 V0.7.x";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(50);
@@ -45,7 +38,7 @@ namespace F1GameSessionDisplay
 
          m_grid.ItemsSource = m_driversList;
 
-         m_mapper = new adjsw.F12022.F12022UdpClrMapper();
+         m_mapper = new adjsw.F12023.F12022UdpClrMapper();
          m_mapper.InsertTestData();
 
          if (!String.IsNullOrEmpty(App.PlaybackFile))
@@ -66,7 +59,7 @@ namespace F1GameSessionDisplay
          UpdateCarStatus();
          ToggleView();
 
-         ShowInfoBox(s_splashText, TimeSpan.FromSeconds(7));
+         ShowInfoBox(s_splashText, TimeSpan.FromSeconds(10));
 
          Closing += MainWindow_Closing;
 
@@ -880,45 +873,8 @@ namespace F1GameSessionDisplay
       private void m_InfoBoxTimer_Tick(object sender, EventArgs e)
       {
          m_infoBoxTimer.Stop();
+         m_imgInfo.Visibility = Visibility.Collapsed;
          m_infoBox.Visibility = Visibility.Collapsed;
-      }
-
-      private void m_CreateTestJsonMappingFile()
-      {
-         DriverNameMappings[] mappings = new DriverNameMappings[2];
-         mappings[0] = new DriverNameMappings();
-         mappings[1] = new DriverNameMappings();
-
-         mappings[0].LeagueName = "KRF1 - 1";
-         mappings[0].Mappings = new DriverNameMapping[2];
-         mappings[0].Mappings[0] = new DriverNameMapping();
-         mappings[0].Mappings[1] = new DriverNameMapping();
-         mappings[0].Mappings[0].Team = F1Team.RedBull;
-         mappings[0].Mappings[0].Name = "Max Damage";
-         mappings[0].Mappings[0].DriverNumber = 91;
-
-         mappings[0].Mappings[1].Team = null;
-         mappings[0].Mappings[1].Name = "tomy (Veydn)";
-         mappings[0].Mappings[1].DriverNumber = 13;
-
-         mappings[1].LeagueName = "KRF1 - 2";
-         mappings[1].Mappings = new DriverNameMapping[3];
-         mappings[1].Mappings[0] = new DriverNameMapping();
-         mappings[1].Mappings[1] = new DriverNameMapping();
-         mappings[1].Mappings[2] = new DriverNameMapping();
-         mappings[1].Mappings[0].Team = F1Team.RedBull;
-         mappings[1].Mappings[0].Name = "Max Damage";
-         mappings[1].Mappings[0].DriverNumber = 91;
-
-         mappings[1].Mappings[1].Team = null;
-         mappings[1].Mappings[1].Name = "Leopard";
-         mappings[1].Mappings[1].DriverNumber = 91;
-         mappings[1].Mappings[2].Team = null;
-         mappings[1].Mappings[2].Name = "SimonWilliams";
-         mappings[1].Mappings[2].DriverNumber = 86;
-
-         var json = Newtonsoft.Json.JsonConvert.SerializeObject(mappings, Newtonsoft.Json.Formatting.Indented);
-         File.WriteAllText("json.txt", json);
       }
 
       private void m_LoadNameMappings(bool showErrorOnFail)
@@ -950,7 +906,7 @@ namespace F1GameSessionDisplay
       private F12022UdpClrMapper m_mapper = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer();
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
-      private ObservableCollection<adjsw.F12022.DriverData> m_driversList = new ObservableCollection<adjsw.F12022.DriverData>();
+      private ObservableCollection<adjsw.F12023.DriverData> m_driversList = new ObservableCollection<adjsw.F12023.DriverData>();
       private CollectionViewSource m_driverListViewSource = new CollectionViewSource();
       private bool m_sessionClassificationHandled = false;
       private int m_nameMappingNextIdx = 0;
@@ -963,7 +919,7 @@ namespace F1GameSessionDisplay
 
       private static string s_splashText =
 @"
-F1-Game Session-Display for F1-2022
+KRF1 Timing App for F1-23
 Copyright 2018-2024 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify

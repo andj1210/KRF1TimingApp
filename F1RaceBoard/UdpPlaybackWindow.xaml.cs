@@ -16,7 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace F1GameSessionDisplay
+namespace adjsw.F12023
 {
    /// <summary>
    /// Interaktionslogik für UdpPlaybackWindow.xaml

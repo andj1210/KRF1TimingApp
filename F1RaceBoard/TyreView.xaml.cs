@@ -4,7 +4,7 @@
 using System.Windows.Controls;
 using System.Windows.Media;
 
-namespace F1GameSessionDisplay
+namespace adjsw.F12023
 {
     /// <summary>
     /// Interaktionslogik für TyreView.xaml

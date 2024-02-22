@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace F1GameSessionDisplay
+namespace adjsw.F12023
 {
    /// <summary>
    /// Personal Leaderboard displays the leaderboard with the focus on the player, which means

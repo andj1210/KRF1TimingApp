@@ -1,7 +1,7 @@
 ﻿// Copyright 2018-2020 Andreas Jung
 // SPDX-License-Identifier: GPL-3.0-only
 
-using F1GameSessionDisplay;
+using adjsw.F12023;
 using System;
 using System.Globalization;
 using System.Windows.Controls;

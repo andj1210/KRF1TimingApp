@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30104.148
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34302.85
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "F1GameSessionDisplay", "F1RaceBoard\F1GameSessionDisplay.csproj", "{12169BD2-CF99-462B-BA86-FA567B628771}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KRF1Timing", "F1RaceBoard\KRF1Timing.csproj", "{12169BD2-CF99-462B-BA86-FA567B628771}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "F12020UdpParser", "F12020UdpParser\F12020UdpParser.vcxproj", "{D0196828-84B6-4467-AA72-AA368B9DF85D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "F1Udp", "F12020UdpParser\F12020UdpParser.vcxproj", "{D0196828-84B6-4467-AA72-AA368B9DF85D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

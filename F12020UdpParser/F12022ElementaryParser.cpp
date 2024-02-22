@@ -6,7 +6,7 @@
 #include <fstream>
 #include <type_traits>
 
-unsigned F1_23_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
+unsigned F12023_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
 {
    if (len < sizeof(PacketHeader))
       return len;
@@ -24,7 +24,7 @@ unsigned F1_23_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len
       if (lastHeader.m_sessionUID != 0)
       {
          auto hdr = lastHeader;
-         *this = F1_23_PacketExtractor();
+         *this = F12023_PacketExtractor();
          lastHeader = hdr;
       }
    }
@@ -71,7 +71,7 @@ unsigned F1_23_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len
          if (!strncmp((const char*)event.m_eventStringCode, "SSTA", 4))
          {
             auto eventCpy = this->event;
-            *this = F1_23_PacketExtractor();
+            *this = F12023_PacketExtractor();
             this->event = eventCpy;
             this->lastHeader = event.m_header;
          }

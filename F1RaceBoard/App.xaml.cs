@@ -3,7 +3,7 @@
 
 using System.Windows;
 
-namespace F1SessionDisplay
+namespace adjsw.F12023
 {
     /// <summary>
     /// Interaktionslogik für "App.xaml"
