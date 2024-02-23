@@ -150,7 +150,14 @@ namespace adjsw.F12023
       {
          if (m_setter.DriverId < s_freezeState.Length)
          {
-            return s_freezeState[m_setter.DriverId].View != null;
+            bool isFrozen = s_freezeState[m_setter.DriverId].View != null;
+
+            if (isFrozen)
+            {
+               s_freezeState[m_setter.DriverId].View = this;
+            }
+
+            return isFrozen;
          }
          return false;
       }

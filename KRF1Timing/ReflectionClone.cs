@@ -58,6 +58,5 @@ namespace adjsw.F12023
             else
                 throw new ArgumentException("Unknown type");
         }
-
     }
 }

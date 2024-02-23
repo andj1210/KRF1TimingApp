@@ -38,7 +38,7 @@ namespace adjsw.F12023
 
          m_grid.ItemsSource = m_driversList;
 
-         m_mapper = new adjsw.F12023.F12022UdpClrMapper();
+         m_mapper = new adjsw.F12023.F1UdpClrMapper();
          m_mapper.InsertTestData();
 
          if (!String.IsNullOrEmpty(App.PlaybackFile))
@@ -220,11 +220,16 @@ namespace adjsw.F12023
 
       private void PollUpdates_Tick(object sender, EventArgs e)
       {
+         bool updated = false;
          byte[] newData;
          while (m_packetQue.TryDequeue(out newData))
          {
             m_mapper.Proceed(newData);
+            updated = true;
          }
+
+         if (!updated)
+            return;
 
          m_grid.SessionSource = m_mapper.SessionInfo;
          UpdateGrid();
@@ -903,7 +908,7 @@ namespace adjsw.F12023
       private UdpEventClient m_udpClient = null;
       private UdpPlaybackWindow m_playbackWindow = null;
       private ConcurrentQueue<byte[]> m_packetQue = new ConcurrentQueue<byte[]>();
-      private F12022UdpClrMapper m_mapper = null;
+      private F1UdpClrMapper m_mapper = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer();
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
       private ObservableCollection<adjsw.F12023.DriverData> m_driversList = new ObservableCollection<adjsw.F12023.DriverData>();

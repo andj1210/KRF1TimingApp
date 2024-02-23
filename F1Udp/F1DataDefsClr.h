@@ -449,7 +449,7 @@ namespace adjsw::F12023
             Laps[i]->Incidents = gcnew List<SessionEvent^>();
          }
          FastestLap = gcnew LapData();      
-         CurrentLap = gcnew LapData();         
+         CurrentLap = Laps[0];
          IsPlayer = false;
          Present = false;
          VisualTyres = gcnew List<F1VisualTyre>();
@@ -510,6 +510,11 @@ namespace adjsw::F12023
       // temporary state only for the UDP mapper
       // It is used to compute the age of tires by some pitlane heuristics. (tyre age should directly be present in telemetry, but actually is dummy value when using reduced telemetry.)
       property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} };
+     
+      // temporary state only for the UDP mapper
+      // for some reason, during qualifying after first hotlap has finished, the game telemtry tells us the next lap is still lap 1
+      // therefore we need to latch the lap 1 state so, we can tell wether hotlap 1 is finished or not 
+      property bool FirstLapStartedLatch;
 
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;

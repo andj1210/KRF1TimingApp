@@ -296,7 +296,6 @@ namespace adjsw.F12022
             setter.SpecialText = "|?";
             return setter;
          }
-            
 
          driver = dat;
          setter.DriverId = driver.Id;
@@ -331,11 +330,13 @@ namespace adjsw.F12022
                setter.SpecialText = "  -PIT-";
                break;
             case DriverStatus.OutLap:
-               setter.SpecialText = "  OUTLAP";
+               if (IsQualy)
+                  setter.SpecialText = "  OUTLAP";
                break;
 
             case DriverStatus.Inlap:
-               setter.SpecialText = "  INLAP";
+               if (IsQualy)
+                  setter.SpecialText = "  INLAP";
                break;
 
             case DriverStatus.Retired:
@@ -345,7 +346,6 @@ namespace adjsw.F12022
 
          if (!string.IsNullOrEmpty(setter.SpecialText))
             return setter;
-
 
          if (IsQualy)
          {
@@ -454,7 +454,6 @@ namespace adjsw.F12022
             setter.Player = true;
             return setter;
          }
-
          setter.Delta = (System.Int32) driver.TimedeltaToPlayer * 1000;
          return setter;
       }
