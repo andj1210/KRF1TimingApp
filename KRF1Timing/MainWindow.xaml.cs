@@ -28,7 +28,7 @@ namespace adjsw.F12023
       {
          InitializeComponent();
 
-         Title = "KRF1 Timing App for F1-23 V0.7.x";
+         Title = "KRF1 Timing App for F1-23 V0.7.0";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(50);
@@ -106,6 +106,18 @@ namespace adjsw.F12023
          // in case we have registered event handlers we should unregister, as it leaks otherwise
          foreach (var item in m_ctxMenu.Items)
          {
+            var oldWrap = item as WrapPanel;
+            if (oldWrap != null)
+            {
+               foreach (var innerChild in oldWrap.Children)
+               {
+                  var btn = innerChild as Button;
+                  if (btn != null)
+                     btn.Click -= Button_ChangeName_Click;
+               }
+            }
+
+
             MenuItem oldItem = item as MenuItem;
             if (null != oldItem)
             {
@@ -122,12 +134,23 @@ namespace adjsw.F12023
 
          // (re)create context menu items
          string header = driver.Name + " | " + driver.DriverNr + " | " + driver.Team.ToString("g");
-         var edit = new TextBox;
+
+         var edit = new TextBox();
+         edit.Text = header;
+         var button = new Button();
+         button.Content = "ok";
+         var wrap = new WrapPanel();
+
+         wrap.Children.Add(edit);
+         wrap.Children.Add(button);
+         button.Click += Button_ChangeName_Click;
 
          var label = new Label();
          label.Content = header;
          m_ctxMenu.Items.Add(header);
          m_ctxMenu.Items.Add(new Separator());
+         m_ctxMenu.Items.Add(wrap);
+
          foreach (var mappinglist in m_nameMappings)
          {
             MenuItem newItem = new MenuItem();
@@ -144,6 +167,61 @@ namespace adjsw.F12023
          }
          m_ctxMenu.IsOpen = true;
          m_ctxMenuReferencedDriver = driver;
+      }
+
+      private void Button_ChangeName_Click(object sender, RoutedEventArgs e)
+      {
+         string newName = "";
+         foreach (var child in m_ctxMenu.Items)
+         {
+            var wrap = child as WrapPanel;
+            if (wrap != null)
+            {
+               foreach (var innerChild in wrap.Children)
+               {
+                  var tb = innerChild as TextBox;
+                  if (tb != null)
+                     newName = tb.Text;
+               }
+            }
+         }
+
+         if (string.IsNullOrEmpty(newName))
+         {
+            m_ctxMenu.IsOpen = false;
+            return;
+         }
+
+         // find existing mapping and overwrite:
+         bool exchangedMapping = false;
+         for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
+         {
+            var mapping = m_runtimeMapping.Mappings[i];
+            if (
+                (mapping.DriverNumber == m_ctxMenuReferencedDriver.DriverNr) &&
+                (mapping.Team == m_ctxMenuReferencedDriver.Team)
+                )
+            {
+               m_runtimeMapping.Mappings[i].Name = newName;
+               exchangedMapping = true;
+            }
+         }
+
+         if (!exchangedMapping)
+         {
+            DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
+            Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
+            var addMapping = new DriverNameMapping();
+            addMapping.Name = newName;
+            addMapping.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
+            addMapping.Team = m_ctxMenuReferencedDriver.Team;
+            newMappingsArray[newMappingsArray.Length - 1] = addMapping;
+            m_runtimeMapping.Mappings = newMappingsArray;
+         }
+
+         m_mapper.SetDriverNameMappings(null);
+         m_mapper.SetDriverNameMappings(m_runtimeMapping);
+         m_ctxMenu.IsOpen = false;
       }
 
       private void OnMappingCtxMenuClick(object sender, RoutedEventArgs e)
@@ -707,23 +785,29 @@ namespace adjsw.F12023
             sb.Append("|LAP | SECTOR1 | SECTOR2 | SECTOR3 | Lap Time | Penalties|" + nl);
             sb.Append(sep + nl);
 
-            for (int j = 0; j < driver.LapNr - 1; ++j)
+            for (int j = 0; j < driver.LapNr; ++j)
             {
-               var lap = driver.Laps[j];
-
-               sb.Append(
-                  string.Format("| {0,2} | {1,7} | {2,7} | {3,7} | {4} |",
-                   j + 1, 
-                   lap.To_SS_MMMM(lap.Sector1Ms), 
-                   lap.To_SS_MMMM(lap.Sector2Ms), 
-                   lap.To_SS_MMMM(lap.Sector3Ms), 
-                   lap.To_M_SS_MMMM(lap.LapMs)));
-
-               foreach (var ev in driver.Laps[j].Incidents)
+               if (j < driver.Laps.Length)
                {
-                  sb.Append(ev.PenaltyType.ToString("g") + ",");
+                  var lap = driver.Laps[j];
+                  if (j == driver.LapNr)
+                     if (lap.Lap == 0)
+                        continue;
+
+                  sb.Append(
+                     string.Format("| {0,2} | {1,7} | {2,7} | {3,7} | {4} |",
+                      j + 1, 
+                      lap.To_SS_MMMM(lap.Sector1Ms), 
+                      lap.To_SS_MMMM(lap.Sector2Ms), 
+                      lap.To_SS_MMMM(lap.Sector3Ms), 
+                      lap.To_M_SS_MMMM(lap.LapMs)));
+
+                  foreach (var ev in driver.Laps[j].Incidents)
+                  {
+                     sb.Append(ev.PenaltyType.ToString("g") + ",");
+                  }
+                  sb.Append(nl);
                }
-               sb.Append(nl);
             }
 
             sb.Append(sep + nl + nl + nl);
