@@ -230,9 +230,19 @@ namespace adjsw.F12023
             m_rectS2.Visibility = Visibility.Collapsed;
             m_rectS3.Visibility = Visibility.Collapsed;
 
-            m_text.Content = setter.SpecialText;
-            m_text.Foreground = Brushes.Red;
-            m_text.Background = Brushes.Transparent;
+            if (setter.Player)
+            {
+               m_text.Content = setter.SpecialText;
+               m_text.Foreground = Brushes.White;
+               m_text.Background = Brushes.HotPink;
+            }
+            else
+            {
+               m_text.Content = setter.SpecialText;
+               m_text.Foreground = Brushes.Red;
+               m_text.Background = Brushes.Transparent;
+            }
+
             return;
          }
 
@@ -307,14 +317,50 @@ namespace adjsw.F12023
          }
          else
          {
-            m_text.Background = Brushes.Transparent;
             // RACE
-            if (setter.Player)
-            {
+            m_text.Background = Brushes.Transparent;
                m_rectS1.Visibility = Visibility.Collapsed;
                m_rectS2.Visibility = Visibility.Collapsed;
                m_rectS3.Visibility = Visibility.Collapsed;
 
+            bool pos = setter.Delta >= 0;
+            int deltaMs = setter.Delta;
+
+            if (!pos)
+            {
+               deltaMs *= -1;
+            }
+
+            int seconds = deltaMs / 1000;
+            int tenth = deltaMs % 1000;
+            tenth += 50;
+            tenth /= 100;
+            if (tenth == 10)
+            {
+               seconds++;
+               tenth = 0;
+            }
+
+            if (seconds > 99)
+            {
+               seconds = 99;
+               tenth = 9;
+            }
+
+            m_text.Content = (pos ? "+" : "-") + seconds.ToString("D2") + "." + tenth.ToString("D1");
+
+            if (pos)
+            {
+               m_text.Foreground = Brushes.Red;
+            }
+
+            else
+            {
+               m_text.Foreground = Brushes.Green;
+            }
+
+            if (setter.Player)
+            {
                m_text.Content = "----------";
                m_text.Foreground = Brushes.White;
                m_text.Background = Brushes.Violet;

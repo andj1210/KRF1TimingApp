@@ -225,6 +225,7 @@ namespace adjsw::F12023
       SafetyCarExceedingAllowedPace,
       VirtualSafetyCarExceedingAllowedPace,
       FormationLapBelowAllowedSpeed,
+      FormationLapParking,
       RetiredMechanicalFailure,
       RetiredTerminallyDamaged,
       SafetyCarFallingTooFarBack,
@@ -233,10 +234,12 @@ namespace adjsw::F12023
       UnservedDriveThroughPenalty,
       EngineComponentChange,
       GearboxChange,
+      ParcFermeChange,
       LeagueGridPenalty,
       RetryPenalty,
       IllegalTimeGain,
-      MandatoryPitstop
+      MandatoryPitstop,
+      AttributeAssigned // (???)
    };
 
 

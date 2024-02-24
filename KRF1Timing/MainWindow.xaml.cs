@@ -73,6 +73,8 @@ namespace adjsw.F12023
          m_emptyMapping = dummy;
          m_nameMappingNextIdx = 0;
          m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping);
+
+         m_grid.DeltaVisible = false;
       }
 
       public ConcurrentQueue<byte[]> PacketQue
@@ -120,11 +122,12 @@ namespace adjsw.F12023
 
          // (re)create context menu items
          string header = driver.Name + " | " + driver.DriverNr + " | " + driver.Team.ToString("g");
+         var edit = new TextBox;
+
          var label = new Label();
          label.Content = header;
          m_ctxMenu.Items.Add(header);
          m_ctxMenu.Items.Add(new Separator());
-
          foreach (var mappinglist in m_nameMappings)
          {
             MenuItem newItem = new MenuItem();
@@ -228,8 +231,8 @@ namespace adjsw.F12023
             updated = true;
          }
 
-//          if (!updated)
-//             return;
+         if (!updated)
+            return;
 
          m_grid.SessionSource = m_mapper.SessionInfo;
          UpdateGrid();
@@ -308,28 +311,10 @@ namespace adjsw.F12023
             m_grid.ItemsSource = null;
             m_grid.ItemsSource = m_driversList;
 
-//             var dataGrid = m_grid.TheDataGrid;
-//             var firstCol = dataGrid.Columns[0];
-//             firstCol.SortDirection = ListSortDirection.Ascending;
-//             dataGrid.Items.IsLiveSorting = true;
-//             dataGrid.Items.SortDescriptions.Add(new SortDescription("Pos", ListSortDirection.Ascending));
-            
-
-//             var sort = new System.ComponentModel.SortDescription();
-//             sort.PropertyName = "Pos";
-//             sort.Direction = System.ComponentModel.ListSortDirection.Ascending;
-// 
-//             m_driverListViewSource.SortDescriptions.Add(new System.ComponentModel.SortDescription("Pos", System.ComponentModel.ListSortDirection.Ascending));
-//             m_driverListViewSource.Filter += M_driverListViewSource_Filter;
-//             m_driverListViewSource.IsLiveSortingRequested = true;
-//             m_driverListViewSource.IsLiveFilteringRequested = true;
-//             m_driverListViewSource.Source = m_mapper.Drivers;
-// 
-//             var binding = new Binding();
-//             binding.Source = m_driverListViewSource;
-//             binding.Mode = BindingMode.OneWay;
-//             m_grid.ItemsSource = null;
-//             m_grid.TheDataGrid.SetBinding(DataGrid.ItemsSourceProperty, binding);
+            if (m_grid.TheDataGrid.SelectedItem != null)
+            {
+               m_grid.TheDataGrid.SelectedItem = null; // avoid bluemarking from user for a selected row which cannot get removed afterwards
+            }
          }
 
          foreach (var driver in m_mapper.Drivers)
@@ -540,8 +525,8 @@ namespace adjsw.F12023
          if (e.Key == Key.L)
             m_grid.LeaderVisible = !m_grid.LeaderVisible;
 
-         if (e.Key == Key.D)
-            m_grid.DeltaVisible = !m_grid.DeltaVisible;
+//          if (e.Key == Key.D)
+//             m_grid.DeltaVisible = !m_grid.DeltaVisible;
 
          if (e.Key == Key.Space)
             ToggleView();
@@ -681,7 +666,7 @@ namespace adjsw.F12023
                      if (result.NumLaps == leaderLaps)
                         sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime - leaderTimeTrack) + " ");
                      else
-                        sb.Append("|    +" + (leaderLaps - result.NumLaps) + "L      ");
+                        sb.Append("|   +" + (leaderLaps - result.NumLaps).ToString("D2") + "L      ");
                   }
 
 
@@ -701,7 +686,7 @@ namespace adjsw.F12023
                      if (result.NumLaps == leaderLaps)
                         sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime + result.PenaltiesTime - leaderTimeTotal) + " |");
                      else
-                        sb.Append("|    +" + (leaderLaps - result.NumLaps) + "L      |");
+                        sb.Append("|   +" + (leaderLaps - result.NumLaps).ToString("D2") + "L      |");
                   }
 
 

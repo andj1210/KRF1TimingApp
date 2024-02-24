@@ -6,15 +6,19 @@
              xmlns:local="clr-namespace:adjsw.F12023"
              mc:Ignorable="d" 
              d:DesignHeight="30" d:DesignWidth="180">
-    <Grid MinHeight="35" Width="195">
-        <WrapPanel>
-            <Rectangle Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS1" Fill="LightGreen">
-            </Rectangle>
-            <Rectangle Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS2" Fill="#FFE232EC">
-            </Rectangle>
-            <Rectangle Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS3" Fill="Yellow">
-            </Rectangle>
-            <Label Name="m_text" Foreground="Green">-0.231</Label>
-        </WrapPanel>
+    <Grid MinHeight="35">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+            <ColumnDefinition Width="Auto"></ColumnDefinition>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <Rectangle Grid.Column="0" Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS1" Fill="LightGreen">
+        </Rectangle>
+        <Rectangle Grid.Column="1" Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS2" Fill="#FFE232EC">
+        </Rectangle>
+        <Rectangle Grid.Column="2" Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS3" Fill="Yellow">
+        </Rectangle>
+        <Label Grid.Column="3" Name="m_text" Foreground="Green" HorizontalAlignment="Center" HorizontalContentAlignment="Center" >...</Label>
     </Grid>
 </UserControl>

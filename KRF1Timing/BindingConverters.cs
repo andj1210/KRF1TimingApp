@@ -219,7 +219,11 @@ namespace adjsw.F12022
             {
                int lapped = (int)(dat.TimedeltaToLeader - 0.5);
                lapped *= -1;
-               return "     +" + lapped + "L";
+               if (lapped > 9)
+                  return "    +" + lapped + "L";
+               else
+                  return "     +" + lapped + "L";
+
             }
 
             else
@@ -299,48 +303,49 @@ namespace adjsw.F12022
 
          driver = dat;
          setter.DriverId = driver.Id;
+         setter.Player = dat.IsPlayer;
          this.setter = setter;
 
          if (dat.IsPlayer && !IsQualy)
             setter.SpecialText = 
-               "| --- ";
+               "-----";
 
          if (!dat.Present)
             setter.SpecialText = 
-               " ***DNF***";
+               "*DNF*";
 
          switch (dat.Status)
          {
             case DriverStatus.DNF:
             case DriverStatus.DSQ:
-               setter.SpecialText = " ***DNF***";
+               setter.SpecialText = "*DNF*";
                break;
             case DriverStatus.Garage:
-               setter.SpecialText = "  GARAGE";
+               setter.SpecialText = "GARAGE";
                break;
 
             case DriverStatus.OnTrack:
                // show actual delta
                break;
             case DriverStatus.Pitlane:
-               setter.SpecialText = "  -PIT-";
+               setter.SpecialText = "-PIT-";
                break;
 
             case DriverStatus.Pitting:
-               setter.SpecialText = "  -PIT-";
+               setter.SpecialText = "-PIT-";
                break;
             case DriverStatus.OutLap:
                if (IsQualy)
-                  setter.SpecialText = "  OUTLAP";
+                  setter.SpecialText = "OUTLAP";
                break;
 
             case DriverStatus.Inlap:
                if (IsQualy)
-                  setter.SpecialText = "  INLAP";
+                  setter.SpecialText = "INLAP";
                break;
 
             case DriverStatus.Retired:
-               setter.SpecialText = " RETIRED";
+               setter.SpecialText = "RETIRED";
                break;
          }
 
@@ -464,12 +469,7 @@ namespace adjsw.F12022
       public object ConvertRace(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
       {
          setter.Quali = false;
-         if (driver.IsPlayer)
-         {
-            setter.Player = true;
-            return setter;
-         }
-         setter.Delta = (System.Int32) driver.TimedeltaToPlayer * 1000;
+         setter.Delta = (System.Int32) (driver.TimedeltaToPlayer * 1000);
          return setter;
       }
 

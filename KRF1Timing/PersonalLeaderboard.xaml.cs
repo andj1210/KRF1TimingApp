@@ -27,6 +27,11 @@ namespace adjsw.F12023
                m_playerDeltaColumn = col;
             }
 
+            if (col.Header.ToString() == "Status")
+            {
+               m_statusColumn = col;
+            }
+
             if (col.Header.ToString() == "Leader")
             {
                m_leaderDeltaColumn = col;
@@ -53,6 +58,10 @@ namespace adjsw.F12023
 
          LeaderVisible = true;
          DeltaVisible = true;
+
+         // trigger correct cell size
+         Quali = true;
+         Quali = false; 
       }
 
       public System.Collections.IEnumerable ItemsSource
@@ -124,12 +133,14 @@ namespace adjsw.F12023
                   m_fastestLapS1Column.Visibility = System.Windows.Visibility.Visible;
                   m_fastestLapS2Column.Visibility = System.Windows.Visibility.Visible;
                   m_fastestLapS3Column.Visibility = System.Windows.Visibility.Visible;
+                  m_statusColumn.Width = 195;
                }
                else
                {
                   m_fastestLapS1Column.Visibility = System.Windows.Visibility.Collapsed;
                   m_fastestLapS2Column.Visibility = System.Windows.Visibility.Collapsed;
                   m_fastestLapS3Column.Visibility = System.Windows.Visibility.Collapsed;
+                  m_statusColumn.Width = 130;
                }
 
             }
@@ -165,6 +176,7 @@ namespace adjsw.F12023
 
       private DataGridColumn m_playerDeltaColumn;
       private DataGridColumn m_leaderDeltaColumn;
+      private DataGridColumn m_statusColumn;
       private DataGridColumn m_fastestLapS1Column;
       private DataGridColumn m_fastestLapS2Column;
       private DataGridColumn m_fastestLapS3Column;
