@@ -228,8 +228,8 @@ namespace adjsw.F12023
             updated = true;
          }
 
-         if (!updated)
-            return;
+//          if (!updated)
+//             return;
 
          m_grid.SessionSource = m_mapper.SessionInfo;
          UpdateGrid();
@@ -300,12 +300,9 @@ namespace adjsw.F12023
          if (m_driversList.Count != m_mapper.CountDrivers)
          {
             m_driversList.Clear();
-            foreach (var driver in m_mapper.Drivers)
+            for (int i = 0; i < m_mapper.CountDrivers; i++)
             {
-               if (driver.Present)
-               {
-                  m_driversList.Add(driver);
-               }
+               m_driversList.Add(m_mapper.Drivers[i]);
             }
 
             m_grid.ItemsSource = null;

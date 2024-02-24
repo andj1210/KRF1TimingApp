@@ -460,6 +460,7 @@ namespace adjsw::F12023
          TimedeltaToLeader = 0;
          TimedeltaToPlayer = 0;
          Id = 0;
+         AllowLapHistoryQuali = true;
       }
 
       void SetNameFromTelemetry(const char(&pName)[48])
@@ -500,7 +501,10 @@ namespace adjsw::F12023
       property float TimedeltaToPlayer {float get() { return m_timedeltaToPlayer; } void set(float val) { if (val != m_timedeltaToPlayer) { m_timedeltaToPlayer = val; NPC("TimedeltaToPlayer"); } } };
       property float LastTimedeltaToPlayer {float get() { return m_lastTimedeltaToPlayer; } void set(float val) { if (val != m_lastTimedeltaToPlayer) { m_lastTimedeltaToPlayer = val; NPC("LastTimedeltaToPlayer"); } } };
       property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
-      property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };
+      property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };      
+
+      // quali
+      property bool AllowLapHistoryQuali;
       property float LocationOnTrack;
 
       property String^ DriverTag; // from name mappings -> only to forward to racereport
@@ -509,12 +513,7 @@ namespace adjsw::F12023
 
       // temporary state only for the UDP mapper
       // It is used to compute the age of tires by some pitlane heuristics. (tyre age should directly be present in telemetry, but actually is dummy value when using reduced telemetry.)
-      property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} };
-     
-      // temporary state only for the UDP mapper
-      // for some reason, during qualifying after first hotlap has finished, the game telemtry tells us the next lap is still lap 1
-      // therefore we need to latch the lap 1 state so, we can tell wether hotlap 1 is finished or not 
-      property bool FirstLapStartedLatch;
+      property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} };     
 
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;

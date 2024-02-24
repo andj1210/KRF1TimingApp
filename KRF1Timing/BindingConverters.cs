@@ -385,9 +385,7 @@ namespace adjsw.F12022
 
             if (driver.CurrentLap.Invalid)
             {
-               setter.S1 = StatusView.SetterSectorType.Red;
-               setter.S2 = StatusView.SetterSectorType.Red;
-               setter.S2 = StatusView.SetterSectorType.Red;
+               setter.LapInvalid = true;
             }
 
             setter.Delta = 0;            
@@ -396,50 +394,67 @@ namespace adjsw.F12022
          else
          {
             if (driver.CurrentLap.Sector1 != 0)
+            {
                setter.S1 = driver.CurrentLap.Sector1 < driver.FastestLap.Sector1 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+
+               if (((int)driver.CurrentLap.Sector1Ms - driver.FastestLap.Sector1Ms) > 1250)
+               {
+                  setter.S1 = StatusView.SetterSectorType.Red;
+               }
+            }               
             else
                setter.S1 = StatusView.SetterSectorType.None;
 
             if (driver.CurrentLap.Sector2 != 0)
+            {
                setter.S2 = driver.CurrentLap.Sector2 < driver.FastestLap.Sector2 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+
+               if (((int)driver.CurrentLap.Sector2Ms - driver.FastestLap.Sector2Ms) > 1250)
+               {
+                  setter.S2 = StatusView.SetterSectorType.Red;
+               }
+            }
             else
                setter.S2 = StatusView.SetterSectorType.None;
 
 
-            if (driver.CurrentLap.Sector3 != 0)
+            if (driver.CurrentLap.Sector3Ms != 0)
+            {
                setter.S3 = driver.CurrentLap.Sector3 < driver.FastestLap.Sector3 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+
+               if (((int)driver.CurrentLap.Sector3Ms - driver.FastestLap.Sector3Ms) > 1250)
+               {
+                  setter.S3 = StatusView.SetterSectorType.Red;
+               }
+            }
+               
             else
                setter.S3 = StatusView.SetterSectorType.None;
 
-            if (driver.CurrentLap.Invalid)
+            if (driver.CurrentLap.Sector1Ms == 0)
             {
-               setter.S1 = StatusView.SetterSectorType.Red;
-               setter.S2 = StatusView.SetterSectorType.Red;
-               setter.S2 = StatusView.SetterSectorType.Red;
+               setter.Delta = 0;
             }
             else
             {
-               
-               if (driver.CurrentLap.Sector1Ms == 0)
+               Int32 delta = (int)driver.CurrentLap.Sector1Ms - (int)driver.FastestLap.Sector1Ms;
+
+
+               if (driver.CurrentLap.Sector2Ms > 0)
                {
-                  setter.Delta = 0;
+                  delta += (int)driver.CurrentLap.Sector2Ms - (int)driver.FastestLap.Sector2Ms;
                }
-               else
+
+               if (driver.CurrentLap.Sector3Ms > 0)
                {
-                  Int32 delta = (int)driver.CurrentLap.Sector1Ms - (int) driver.FastestLap.Sector1Ms;
-
-
-                  if (driver.CurrentLap.Sector2Ms > 0)
-                  {
-                     delta += (int)driver.CurrentLap.Sector2Ms - (int)driver.FastestLap.Sector2Ms;
-                  }
-
-                  if (driver.CurrentLap.Sector3Ms > 0)
-                  {
-                     delta += (int)driver.CurrentLap.Sector3Ms - (int)driver.FastestLap.Sector3Ms;
-                  }
-                  setter.Delta = delta;
+                  delta += (int)driver.CurrentLap.Sector3Ms - (int)driver.FastestLap.Sector3Ms;
                }
+               setter.Delta = delta;
+            }
+
+            if (driver.CurrentLap.Invalid)
+            {
+               setter.LapInvalid = true;
             }
          }
          return setter;

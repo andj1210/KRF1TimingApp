@@ -61,6 +61,7 @@ namespace adjsw.F12023
             S3 = SetterSectorType.None;
             Delta = -213;
             SpecialText = "";
+            LapInvalid = false;
          }
 
          // we need id for freezestate after lap housekeeping
@@ -71,6 +72,7 @@ namespace adjsw.F12023
 
          public bool Quali { get; set; }
          public bool Player { get; set; }
+         public bool LapInvalid { get; set; }
 
          // if Quali
          public SetterSectorType S1 { get; set; }
@@ -250,7 +252,19 @@ namespace adjsw.F12023
                {
                   m_StartFreeze();
                }
-               m_text.Background = NewTimeBrush;
+
+               if (setter.LapInvalid)
+               {
+                  m_text.Background = RedSectorBrush;
+               }
+               else
+               {
+                  m_text.Background = NewTimeBrush;
+               }
+            }
+            else if (setter.LapInvalid)
+            {
+               m_text.Background = RedSectorBrush;
             }
             else
             {
