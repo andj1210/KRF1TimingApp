@@ -1,3 +1,10 @@
+V0.62
+- Fixed UDP Button 1 random detection, by wrongly interpret PacketEventData
+- (probably) Fixed all rounding issues with internal floating point representation of lap times 
+
+V0.61
+- Fixed detection of generic multiplayer name
+
 V0.60
 - Update to 2022 telemetry version
 - UI appearance

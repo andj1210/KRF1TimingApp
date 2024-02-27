@@ -22,17 +22,17 @@ set tempfolder=zipme_temp\
 
 if exist %tempfolder%/ rm %tempfolder% -R
 mkdir %tempfolder%
-mkdir %tempfolder%\f1gamesessiondisplay
+mkdir %tempfolder%\krf1timing
 
-copy ..\_build\bin\F1GameSessionDisplay.exe %tempfolder%\f1gamesessiondisplay\F1GameSessionDisplay.exe
-copy ..\_build\bin\F12022UdpParser.dll %tempfolder%\f1gamesessiondisplay\F12022UdpParser.dll
-copy ..\_build\bin\Newtonsoft.Json.dll %tempfolder%\f1gamesessiondisplay\Newtonsoft.Json.dll
-copy ..\_build\bin\Razorvine.Pickle.dll %tempfolder%\f1gamesessiondisplay\Razorvine.Pickle.dll
-copy ..\changelog.txt %tempfolder%\f1gamesessiondisplay\.
-copy ..\LICENSE.md %tempfolder%\f1gamesessiondisplay\.
-copy ..\LICENSE.*.* %tempfolder%\f1gamesessiondisplay\.
-copy ..\namemappings.json.example %tempfolder%\f1gamesessiondisplay\.
-copy ..\README.md %tempfolder%\f1gamesessiondisplay\.
+copy ..\_build\bin\Krf1Timing.exe %tempfolder%\krf1timing\Krf1Timing.exe
+copy ..\_build\bin\adjsw.F1Udp.23.dll %tempfolder%\krf1timing\adjsw.F1Udp.23.dll
+copy ..\_build\bin\Newtonsoft.Json.dll %tempfolder%\krf1timing\Newtonsoft.Json.dll
+copy ..\_build\bin\Razorvine.Pickle.dll %tempfolder%\krf1timing\Razorvine.Pickle.dll
+copy ..\changelog.txt %tempfolder%\krf1timing\.
+copy ..\LICENSE.md %tempfolder%\krf1timing\.
+copy ..\LICENSE.*.* %tempfolder%\krf1timing\.
+copy ..\namemappings.json.example %tempfolder%\krf1timing\.
+copy ..\README.md %tempfolder%\krf1timing\.
 
 echo "Remove temp files"
 cd %tempfolder%
