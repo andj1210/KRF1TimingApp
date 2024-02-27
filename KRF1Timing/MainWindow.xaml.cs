@@ -603,8 +603,8 @@ namespace adjsw.F12023
          if (e.Key == Key.L)
             m_grid.LeaderVisible = !m_grid.LeaderVisible;
 
-//          if (e.Key == Key.D)
-//             m_grid.DeltaVisible = !m_grid.DeltaVisible;
+         if (e.Key == Key.D)
+            m_grid.StatusVisible = !m_grid.StatusVisible;
 
          if (e.Key == Key.Space)
             ToggleView();

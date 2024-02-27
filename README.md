@@ -22,7 +22,7 @@ After the program has been started, the view can be changed with the space bar o
 Keymapping:
 - F11           - toggle fullscreen
 - s             - save a race report as text file
-- d             - enable disable the delta of other cars relative delta to the player (factoring in all penalties)
+- d             - enable disable the status/delta of other cars relative delta to the player (factoring in all penalties)
 - l             - enable disable the delta to leader for all cars including player
 - i             - enable / disable interval (the time diff to the car ahead)
 - m             - toggle between namemappings from file "namemappings.json" placed into the program directory
