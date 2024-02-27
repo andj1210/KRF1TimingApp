@@ -3,7 +3,7 @@
 This repository contains a software to display the leaderboard and car status for the F1-23 game on a second monitor by utilizing the game Telemetry output.
 
 ### Installation
-The binaries are provided in form of one DLL and one executable. They can be extracted to any directory.
+The binaries are provided in form of a zipped file containing DLLs and one executable. They can be extracted to any directory, but it should have write permissions (for race reports). It is recommended to extract to the personal document folder, or any other filder with write permissions.
 On a Windows 10 machine usually just the executable must be started and everything should be working.
 In case the program does not start, please install the Visual Studio C++ Redistributable (vc_redist.x86.exe) for Visual Studio 2022:
 - [vc_redist.x86.exe](https://aka.ms/vs/17/release/vc_redist.x86.exe)
@@ -22,7 +22,7 @@ After the program has been started, the view can be changed with the space bar o
 Keymapping:
 - F11           - toggle fullscreen
 - s             - save a race report as text file
-- d             - enable disable the delta of other cars relative delta to the player (factoring in all penalties)
+- d             - enable disable the status/delta of other cars relative delta to the player (factoring in all penalties)
 - l             - enable disable the delta to leader for all cars including player
 - i             - enable / disable interval (the time diff to the car ahead)
 - m             - toggle between namemappings from file "namemappings.json" placed into the program directory
@@ -52,14 +52,19 @@ For each car the following columns are displayed:
 - Leader
   - The time or number of laps the car is behind the current leader. For Q/P sessions it is focussed arround the fastest lap. For Q/P also the sector times of the fastest lap for each car is shown as columns S1, S2, S3. 
 - Status 
-- Delta
-The Circle is colored red, gray, or green.
- Red: The last sector of the opponent was 0.050 seconds or more faster than the player.
- Gray: The last sector of the opponent was within +-0.050 seconds of the player.
- Green: The last sector of the player was 0.050 seconds or more faster than the opponent.
-Next to the circle, the time between the player and the oponent in seconds. A positive number meaning the opponent is ahead (number colored red), a negative number meaning the opponent is behind (number colored red).
-The delta time column is also used for special status like PIT or DNF.
-**Be aware, the delta is only updated sector by sector. Thus After passing or being passed the delta does not reflect this instantly!**
+  - During Q/P Session
+    - Shows the drivers status: Pit/Garage, Outlap
+	- On Hotlap/inlap: 
+	  - After each sector shows a filled rectangle for Personal Best = green, Worse = yellow, Way off (>1,25s) = red which usually indicates Inlap
+	  - After each sector the delta up to that sector in seconds + milliseconds (green: improving, red: slower)
+	  - After each set time the Time is marked in blue(ish) color to indicate a lap has finished for 5 seconds
+	  - When a hotlap is/becomes invalid, the lap delta Text is colored in red background
+  - During Race
+    - showing special state: Retired, Pitting
+	- or the delta time to the **Player car** in seconds and tenth of seconds, updated only after each sector
+    - A positive number indicating the opponent is ahead (number colored red), a negative number indicating the opponent is behind (number colored red).
+	- **time penalties are factored in**, thus the delta can be green even if the oponent is ahead on Track
+	- **Be aware, the delta is only updated sector by sector. Thus After passing or being passed the delta does not reflect this instantly!**
 - Name
 The driver name. Since the names are not reported by the game for online lobbies, the drivers are named by their team and their car number instead. This is a limitation by the Telemetry data. 
 - Tyre
@@ -79,12 +84,12 @@ Additional "DNF" and "DSQ" are added to the column if a car retired / disqualifi
 Display the tyre and engine temperatures. Furthermore displays the tyre wear and wing damage. Behind the Rear wing the personal penalty time is shown.
 
 ### Limitations
-- Human driver names are mostly not available in the telemetry (per default), therefore teamname + car number is shown as name if the actual player name is not available. Also a custom mapping file has can be used.
-- The information during practice or qualifying is not particular useful, yet.
+- Human driver names are mostly not available in the telemetry (per default), therefore teamname + car number is shown as name if the actual player name is not available. A custom mapping file has can be used. Or the driver can be "right clicked" in order to change name in Textbox.
 - When the start of the session is not captured, the raceboard will show incorrect data (i.e. number of drivers, deltas, etc.)
 - The lap infos in racereport may contain rounding errors, so that sector 1-3 not always sum exactly the lap time
-- Gaps / Delta times are only updated once per sector
-- The data is focused on the driver participating in the race, no particular support for spectator mode
+- Gaps / Delta times in Status are only updated once per sector
+- During race Delta to leader can be between 0 and 65536 ms, above that value it wraps over and can therefore be misleading  
+- The data is focused on the driver participating in the race, no particular support for spectator mode. Single player Flashback or Fast Forward can lead to inconsistent data.
 
 ### Compilation
 The .sln file should compile out of the box with Visual Studio 2022.

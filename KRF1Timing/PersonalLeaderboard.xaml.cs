@@ -112,6 +112,22 @@ namespace adjsw.F12023
          }
       }
 
+      public bool StatusVisible
+      {
+         get { return m_statusColumn.Visibility == System.Windows.Visibility.Visible; }
+         set
+         {
+            if (value)
+            {
+               m_statusColumn.Visibility = System.Windows.Visibility.Visible;
+            }
+            else
+            {
+               m_statusColumn.Visibility = System.Windows.Visibility.Collapsed;
+            }
+         }
+      }
+
       public bool Quali
       {
          get { return m_isQuali; }

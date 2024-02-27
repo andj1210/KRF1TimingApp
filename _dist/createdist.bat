@@ -6,14 +6,14 @@ REM "zip" needs to be in the path (cygwin enviroment)
 echo "Create Filename"
 Set /A nr=0
 
-Set fnam=%date:~6,4%-%date:~3,2%-%date:~0,2%_f1gamesessiondisplay.zip 
+Set fnam=%date:~6,4%-%date:~3,2%-%date:~0,2%_krf1_timing.zip 
 if exist %fnam% goto :increment
 goto :zip
 
 :increment
 Set /A nr= nr + 1
 echo %fnam%
-Set fnam=%date:~6,4%-%date:~3,2%-%date:~0,2%-%nr%_f1gamesessiondisplay.zip 
+Set fnam=%date:~6,4%-%date:~3,2%-%date:~0,2%-%nr%_krf1_timing.zip 
 if exist %fnam% goto :increment
 
 :zip
