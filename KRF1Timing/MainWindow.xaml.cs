@@ -1,8 +1,6 @@
 ﻿// Copyright 2018-2020 Andreas Jung
 // SPDX-License-Identifier: GPL-3.0-only
 
-using adjsw.F12022;
-using adjsw.F12023;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
@@ -15,7 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace adjsw.F12023
+namespace adjsw.F12024
 {
    /// <summary>
    /// Interaktionslogik für MainWindow.xaml
@@ -38,7 +36,7 @@ namespace adjsw.F12023
 
          m_grid.ItemsSource = m_driversList;
 
-         m_mapper = new adjsw.F12023.F1UdpClrMapper();
+         m_mapper = new adjsw.F12024.F1UdpClrMapper();
          m_mapper.InsertTestData();
 
          if (!String.IsNullOrEmpty(App.PlaybackFile))
@@ -977,7 +975,7 @@ namespace adjsw.F12023
       private F1UdpClrMapper m_mapper = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer();
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
-      private ObservableCollection<adjsw.F12023.DriverData> m_driversList = new ObservableCollection<adjsw.F12023.DriverData>();
+      private ObservableCollection<adjsw.F12024.DriverData> m_driversList = new ObservableCollection<adjsw.F12024.DriverData>();
       private CollectionViewSource m_driverListViewSource = new CollectionViewSource();
       private bool m_sessionClassificationHandled = false;
       private int m_nameMappingNextIdx = 0;

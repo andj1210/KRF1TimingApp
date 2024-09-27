@@ -3,7 +3,7 @@
 
 using System.Windows;
 
-namespace adjsw.F12023
+namespace adjsw.F12024
 {
     /// <summary>
     /// Interaktionslogik für "App.xaml"

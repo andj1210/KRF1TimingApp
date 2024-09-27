@@ -6,7 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
-namespace adjsw.F12022
+namespace adjsw.F12024
 {
     public class UdpEventClientEventArgs
     {

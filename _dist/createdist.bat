@@ -25,7 +25,7 @@ mkdir %tempfolder%
 mkdir %tempfolder%\krf1timing
 
 copy ..\_build\bin\Krf1Timing.exe %tempfolder%\krf1timing\Krf1Timing.exe
-copy ..\_build\bin\adjsw.F1Udp.23.dll %tempfolder%\krf1timing\adjsw.F1Udp.23.dll
+copy ..\_build\bin\adjsw.F1Udp.24.dll %tempfolder%\krf1timing\adjsw.F1Udp.24.dll
 copy ..\_build\bin\Newtonsoft.Json.dll %tempfolder%\krf1timing\Newtonsoft.Json.dll
 copy ..\_build\bin\Razorvine.Pickle.dll %tempfolder%\krf1timing\Razorvine.Pickle.dll
 copy ..\changelog.txt %tempfolder%\krf1timing\.

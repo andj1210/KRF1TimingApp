@@ -1,9 +1,9 @@
-﻿<UserControl x:Class="adjsw.F12023.StatusView"
+﻿<UserControl x:Class="adjsw.F12024.StatusView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:adjsw.F12023"
+             xmlns:local="clr-namespace:adjsw.F12024"
              mc:Ignorable="d" 
              d:DesignHeight="30" d:DesignWidth="180">
     <Grid MinHeight="35">

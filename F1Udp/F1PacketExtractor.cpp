@@ -6,7 +6,7 @@
 #include <fstream>
 #include <type_traits>
 
-unsigned F12023_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
+unsigned F12024_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
 {
    if (len < sizeof(PacketHeader))
       return len;
@@ -16,7 +16,7 @@ unsigned F12023_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned le
       *pType = type;
 
    memcpy(&lastHeader, pData, sizeof(PacketHeader));
-   if ((lastHeader.m_packetFormat != 2023) || (lastHeader.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
+   if ((lastHeader.m_packetFormat != 2024) || (lastHeader.m_packetVersion != 1)) // m_packetversion refers probably to each individual packet type, for now they should all be "1"
       return len;
 
    if (sessionUID != lastHeader.m_sessionUID)
@@ -24,7 +24,7 @@ unsigned F12023_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned le
       if (lastHeader.m_sessionUID != 0)
       {
          auto hdr = lastHeader;
-         *this = F12023_PacketExtractor();
+         *this = F12024_PacketExtractor();
          lastHeader = hdr;
       }
    }
@@ -71,7 +71,7 @@ unsigned F12023_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned le
          if (!strncmp((const char*)event.m_eventStringCode, "SSTA", 4))
          {
             auto eventCpy = this->event;
-            *this = F12023_PacketExtractor();
+            *this = F12024_PacketExtractor();
             this->event = eventCpy;
             this->lastHeader = event.m_header;
          }
