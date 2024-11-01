@@ -127,8 +127,14 @@ namespace adjsw::F12024
       Q3,
       ShortQ,
       OSQ,
+      SprintShootout1,
+      SprintShootout2,
+      SprintShootout3,
+      ShortSprintShootout,
+      OneShotSprintShootout,
       Race,
       Race2,
+      Race3,
       TimeTrial
    };
 

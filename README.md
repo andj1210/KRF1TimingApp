@@ -1,6 +1,6 @@
 # KRF1 Timing App
 
-This repository contains a software to display the leaderboard and car status for the F1-23 game on a second monitor by utilizing the game Telemetry output.
+This repository contains a software to display the leaderboard and car status for the F1-24 game on a second monitor by utilizing the game Telemetry output.
 
 ### Installation
 The binaries are provided in form of a zipped file containing DLLs and one executable. They can be extracted to any directory, but it should have write permissions (for race reports). It is recommended to extract to the personal document folder, or any other filder with write permissions.

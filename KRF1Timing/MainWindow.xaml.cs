@@ -26,7 +26,7 @@ namespace adjsw.F12024
       {
          InitializeComponent();
 
-         Title = "KRF1 Timing App for F1-23 V0.7.0";
+         Title = "KRF1 Timing App for F1-24 V0.8.0";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(50);
@@ -135,6 +135,7 @@ namespace adjsw.F12024
 
          var edit = new TextBox();
          edit.Text = header;
+         edit.KeyDown += Edit_ChangeName_KeyDown;
          var button = new Button();
          button.Content = "ok";
          var wrap = new WrapPanel();
@@ -165,6 +166,14 @@ namespace adjsw.F12024
          }
          m_ctxMenu.IsOpen = true;
          m_ctxMenuReferencedDriver = driver;
+      }
+
+      private void Edit_ChangeName_KeyDown(object sender, KeyEventArgs e)
+      {
+         if (e.Key == Key.Enter)
+         {
+            Button_ChangeName_Click(null, null); // same as button event -> update new name
+         }
       }
 
       private void Button_ChangeName_Click(object sender, RoutedEventArgs e)
@@ -314,7 +323,10 @@ namespace adjsw.F12024
          UpdateGrid();
          UpdateCarStatus();
 
-         if (m_mapper.SessionInfo.Session == SessionType.Race)
+         if (m_mapper.SessionInfo.Session == SessionType.Race ||
+            m_mapper.SessionInfo.Session == SessionType.Race2 ||
+            m_mapper.SessionInfo.Session == SessionType.Race3
+            )
          {
             if (m_mapper.Classification != null)
             {
@@ -346,12 +358,15 @@ namespace adjsw.F12024
             case SessionType.Q1:
             case SessionType.Q2:
             case SessionType.Q3:
+            case SessionType.SprintShootout1:
+            case SessionType.SprintShootout2:
+            case SessionType.SprintShootout3:
             case SessionType.ShortQ:
+            case SessionType.ShortSprintShootout:
                qualySession = true;
                break;
 
             default:
-            case SessionType.OSQ: // this is not meant to show the fastest lap, since only 1 lap show sector deltas...
                qualySession = false;
                break;
          }
@@ -597,6 +612,10 @@ namespace adjsw.F12024
             SaveReportJson();
          }
 
+         if (e.Key == Key.R)
+         {
+            // enable UDP recording
+         }
 
          if (e.Key == Key.L)
             m_grid.LeaderVisible = !m_grid.LeaderVisible;
@@ -988,7 +1007,7 @@ namespace adjsw.F12024
 
       private static string s_splashText =
 @"
-KRF1 Timing App for F1-23
+KRF1 Timing App for F1-24
 Copyright 2018-2024 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify

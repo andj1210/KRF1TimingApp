@@ -72,29 +72,23 @@ namespace adjsw.F12024
                text += ")";
                break;
             case SessionType.Q1:
-               text += "(";
-               text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
-               text += ")";
-               break;
             case SessionType.Q2:
-               text += " (";
-               text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
-               text += ")";
-               break;
             case SessionType.Q3:
-               text += " (";
-               text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
-               text += ")";
-               break;
+            case SessionType.SprintShootout1:
+            case SessionType.SprintShootout2:
+            case SessionType.SprintShootout3:
             case SessionType.ShortQ:
+            case SessionType.ShortSprintShootout:
                text += " (";
                text += TimeSpan.FromSeconds(dat.RemainingTime).ToString("c");
                text += ")";
                break;
             case SessionType.OSQ:
+            case SessionType.OneShotSprintShootout:
                break;
             case SessionType.Race:
             case SessionType.Race2:
+            case SessionType.Race3:
                text += " - Lap ";
                text += dat.CurrentLap;
                text += " / ";

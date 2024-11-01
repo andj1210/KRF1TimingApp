@@ -1,3 +1,6 @@
+V0.80
+- Release for F1 24
+
 V0.62
 - Fixed UDP Button 1 random detection, by wrongly interpret PacketEventData
 - (probably) Fixed all rounding issues with internal floating point representation of lap times 
