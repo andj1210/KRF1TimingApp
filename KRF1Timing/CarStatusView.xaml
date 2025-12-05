@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:adjsw.F12024"
              mc:Ignorable="d" 
              Height="550" Width="425">
-    <Canvas>
+    <Canvas x:Name="canv">
         <Canvas.Style>
             <Style>
                 <Setter Property="TextBlock.FontSize" Value="20" />

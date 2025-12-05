@@ -286,21 +286,47 @@ namespace adjsw.F12024
       private void ToggleView()
       {
          // toggle sequence:
+         var transform = m_carStatus.RenderTransform as ScaleTransform;
+         if (transform == null)
+         {
+            transform = new ScaleTransform();
+            m_carStatus.RenderTransform = transform;
+         }
+
          // 1. leaderboard only -> 2. both -> 3. catstatus only -> 1. ...
 
          if ((m_grid.Visibility == Visibility.Visible) && (m_carStatus.Visibility == Visibility.Visible))
          {
+
+            transform.ScaleX = 2.5;
+            transform.ScaleY = 2.5;
+            transform.CenterX = 320;
             m_grid.Visibility = Visibility.Collapsed;
             m_carStatus.Visibility = Visibility.Visible;
+            DockPanel.SetDock(m_carStatus, Dock.Top);
+            m_carStatus.HorizontalAlignment = HorizontalAlignment.Left;
+            m_carStatus.HorizontalContentAlignment = HorizontalAlignment.Left;
+            m_carStatus.Width = 100;
          }
-
          else if (m_grid.Visibility == Visibility.Visible)
          {
+            DockPanel.SetDock(m_carStatus, Dock.Right);
+            m_carStatus.canv.RenderTransform = null;
+            transform.ScaleX = 1.0;
+            transform.ScaleY = 1.0;
+            transform.CenterX = 0;
+
             m_carStatus.Visibility = Visibility.Visible;
             m_grid.Visibility = Visibility.Visible;            
          }
          else
          {
+            DockPanel.SetDock(m_carStatus, Dock.Right);
+            m_carStatus.canv.RenderTransform = null;
+            transform.ScaleX = 1.0;
+            transform.ScaleY = 1.0;
+            transform.CenterX = 0;
+
             m_grid.Visibility = Visibility.Visible;
             m_carStatus.Visibility = Visibility.Collapsed;
          }
