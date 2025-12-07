@@ -13,7 +13,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace adjsw.F12024
+namespace adjsw.F12025
 {
    /// <summary>
    /// Interaktionslogik für MainWindow.xaml
@@ -26,7 +26,7 @@ namespace adjsw.F12024
       {
          InitializeComponent();
 
-         Title = "KRF1 Timing App for F1-24 V0.8.0";
+         Title = "KRF1 Timing App for F1-25 V0.9.0";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(50);
@@ -36,7 +36,7 @@ namespace adjsw.F12024
 
          m_grid.ItemsSource = m_driversList;
 
-         m_mapper = new adjsw.F12024.F1UdpClrMapper();
+         m_mapper = new adjsw.F12025.F1UdpClrMapper();
          m_mapper.InsertTestData();
 
          if (!String.IsNullOrEmpty(App.PlaybackFile))
@@ -294,24 +294,30 @@ namespace adjsw.F12024
          }
 
          // 1. leaderboard only -> 2. both -> 3. catstatus only -> 1. ...
-
          if ((m_grid.Visibility == Visibility.Visible) && (m_carStatus.Visibility == Visibility.Visible))
          {
+            double resolutionScale = 1.05; // for 1080x1920 tilted FHD (9:16)
 
-            transform.ScaleX = 2.5;
-            transform.ScaleY = 2.5;
-            transform.CenterX = 320;
+            if (this.ActualHeight < 1081)
+            {
+               resolutionScale = 0.7; // for 1920x1080 regular (16:9)
+            }
+            else if (this.ActualHeight < 1441)
+            {
+               resolutionScale = 0.90; // for 2560x1440 regular (16:9)
+            }
+
+            transform.ScaleX = 3.00 * resolutionScale;
+            transform.ScaleY = 3.00 * resolutionScale;
+            transform.CenterX = 152 * resolutionScale;
+
             m_grid.Visibility = Visibility.Collapsed;
             m_carStatus.Visibility = Visibility.Visible;
             DockPanel.SetDock(m_carStatus, Dock.Top);
-            m_carStatus.HorizontalAlignment = HorizontalAlignment.Left;
-            m_carStatus.HorizontalContentAlignment = HorizontalAlignment.Left;
-            m_carStatus.Width = 100;
          }
          else if (m_grid.Visibility == Visibility.Visible)
          {
             DockPanel.SetDock(m_carStatus, Dock.Right);
-            m_carStatus.canv.RenderTransform = null;
             transform.ScaleX = 1.0;
             transform.ScaleY = 1.0;
             transform.CenterX = 0;
@@ -322,7 +328,6 @@ namespace adjsw.F12024
          else
          {
             DockPanel.SetDock(m_carStatus, Dock.Right);
-            m_carStatus.canv.RenderTransform = null;
             transform.ScaleX = 1.0;
             transform.ScaleY = 1.0;
             transform.CenterX = 0;
@@ -1020,7 +1025,7 @@ namespace adjsw.F12024
       private F1UdpClrMapper m_mapper = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer();
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
-      private ObservableCollection<adjsw.F12024.DriverData> m_driversList = new ObservableCollection<adjsw.F12024.DriverData>();
+      private ObservableCollection<adjsw.F12025.DriverData> m_driversList = new ObservableCollection<adjsw.F12025.DriverData>();
       private CollectionViewSource m_driverListViewSource = new CollectionViewSource();
       private bool m_sessionClassificationHandled = false;
       private int m_nameMappingNextIdx = 0;
@@ -1033,8 +1038,8 @@ namespace adjsw.F12024
 
       private static string s_splashText =
 @"
-KRF1 Timing App for F1-24
-Copyright 2018-2024 Andreas Jung
+KRF1 Timing App for F1-25
+Copyright 2018-2025 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

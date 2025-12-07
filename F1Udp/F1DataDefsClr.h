@@ -7,7 +7,7 @@ using namespace System::Collections::Generic;
 #include <string.h>
 #include <list>
 
-namespace adjsw::F12024
+namespace adjsw::F12025
 {
    public enum class F1Team : int
    {
@@ -472,11 +472,11 @@ namespace adjsw::F12024
          AllowLapHistoryQuali = true;
       }
 
-      void SetNameFromTelemetry(const char(&pName)[48])
+      void SetNameFromTelemetry(const char(&pName)[32])
       {
          if (strcmp(pName, m_driverNameNative))
          {
-            strncpy_s(m_driverNameNative,48, pName, 48);
+            strncpy_s(m_driverNameNative, 32, pName, 32);
             unsigned sz = strlen(m_driverNameNative);
             array<Byte>^ arr = gcnew array<Byte>(sz);
             for (unsigned i = 0; i < sz; ++i)

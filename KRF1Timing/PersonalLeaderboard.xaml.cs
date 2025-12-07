@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace adjsw.F12024
+namespace adjsw.F12025
 {
    /// <summary>
    /// Personal Leaderboard displays the leaderboard with the focus on the player, which means
@@ -137,11 +137,11 @@ namespace adjsw.F12024
             {
                m_isQuali = value;
 
-               var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12024.QualifyingAwareConverter;
+               var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12025.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
-               converter = this.Resources["DeltaTimeConverter"] as adjsw.F12024.QualifyingAwareConverter;
+               converter = this.Resources["DeltaTimeConverter"] as adjsw.F12025.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
-               converter = this.Resources["StatusConverter"] as adjsw.F12024.QualifyingAwareConverter;
+               converter = this.Resources["StatusConverter"] as adjsw.F12025.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
 
                if (m_isQuali)

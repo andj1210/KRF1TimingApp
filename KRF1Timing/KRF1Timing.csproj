@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{12169BD2-CF99-462B-BA86-FA567B628771}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>adjsw.F12024</RootNamespace>
+    <RootNamespace>adjsw.F12025</RootNamespace>
     <AssemblyName>Krf1Timing</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

@@ -4,7 +4,7 @@
 using System;
 using System.Reflection;
 
-namespace adjsw.F12024
+namespace adjsw.F12025
 {
     // a simple utility to make a deep copy of an managed object
     public class ReflectionCloner

@@ -1,7 +1,7 @@
-﻿<Application x:Class="adjsw.F12024.App"
+﻿<Application x:Class="adjsw.F12025.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:adjsw.F12024"
+             xmlns:local="clr-namespace:adjsw.F12025"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

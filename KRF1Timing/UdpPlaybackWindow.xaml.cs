@@ -16,7 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 
-namespace adjsw.F12024
+namespace adjsw.F12025
 {
    /// <summary>
    /// Interaktionslogik für UdpPlaybackWindow.xaml
