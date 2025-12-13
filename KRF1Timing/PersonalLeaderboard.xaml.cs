@@ -133,7 +133,9 @@ namespace adjsw.F12025
          get { return m_isQuali; }
          set
          {
-            if (m_isQuali != value)
+            if ((m_isQuali != value) 
+               || (m_isQuali == true) // for changing S1-S3 enabled or not
+               )
             {
                m_isQuali = value;
 
@@ -146,10 +148,19 @@ namespace adjsw.F12025
 
                if (m_isQuali)
                {
-                  m_fastestLapS1Column.Visibility = System.Windows.Visibility.Visible;
-                  m_fastestLapS2Column.Visibility = System.Windows.Visibility.Visible;
-                  m_fastestLapS3Column.Visibility = System.Windows.Visibility.Visible;
-                  m_statusColumn.Width = 195;
+                  if (ActualWidth > 1080)
+                  {
+                     m_fastestLapS1Column.Visibility = System.Windows.Visibility.Visible;
+                     m_fastestLapS2Column.Visibility = System.Windows.Visibility.Visible;
+                     m_fastestLapS3Column.Visibility = System.Windows.Visibility.Visible;
+                  }
+                  else
+                  {
+                     m_fastestLapS1Column.Visibility = System.Windows.Visibility.Collapsed;
+                     m_fastestLapS2Column.Visibility = System.Windows.Visibility.Collapsed;
+                     m_fastestLapS3Column.Visibility = System.Windows.Visibility.Collapsed;
+                  }
+                  m_statusColumn.Width = 205;
                }
                else
                {

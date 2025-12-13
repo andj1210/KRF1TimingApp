@@ -16,8 +16,8 @@
                 <TextBlock Margin="5" x:Name="m_infoTxt"  Foreground="Black" FontSize="16" FontWeight="Bold">LICENSE</TextBlock>
             </StackPanel>            
         </Border>
-        <DockPanel x:Name="m_dockPanel" HorizontalAlignment="Center">
-            <local:CarStatusView DockPanel.Dock="Right" Margin="20" Grid.Column="1" x:Name="m_carStatus" HorizontalAlignment="Center" VerticalAlignment="Center"  Width="450"></local:CarStatusView>
+        <DockPanel x:Name="m_dockPanel" HorizontalAlignment="Center" LastChildFill="False">
+            <local:CarStatusView DockPanel.Dock="Right" Margin="20" Grid.Column="1" x:Name="m_carStatus" Width="450"></local:CarStatusView>
             <local:PersonalLeaderboard DockPanel.Dock="Left" Grid.Column="0" x:Name="m_grid" Visibility="Collapsed"></local:PersonalLeaderboard>            
         </DockPanel>
     </Grid>

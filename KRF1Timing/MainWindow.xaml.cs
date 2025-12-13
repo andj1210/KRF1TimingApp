@@ -22,6 +22,16 @@ namespace adjsw.F12025
    {
       public string ip = "";
 
+      enum ViewType
+      {
+         Board,
+         BoardAndCarHorizontal,
+         BoardAndCarVertical,
+         Car,
+
+         Count
+      }
+
       public MainWindow()
       {
          InitializeComponent();
@@ -293,47 +303,68 @@ namespace adjsw.F12025
             m_carStatus.RenderTransform = transform;
          }
 
-         // 1. leaderboard only -> 2. both -> 3. catstatus only -> 1. ...
-         if ((m_grid.Visibility == Visibility.Visible) && (m_carStatus.Visibility == Visibility.Visible))
+         int viewInt = (int)m_viewType;
+         ++viewInt;
+         m_viewType = (ViewType)viewInt;
+         if (m_viewType == ViewType.Count)
+            m_viewType = ViewType.Board;
+
+
+         switch (m_viewType)
          {
-            double resolutionScale = 1.05; // for 1080x1920 tilted FHD (9:16)
+            case ViewType.Board:
+               DockPanel.SetDock(m_carStatus, Dock.Right);
+               transform.ScaleX = 1.0;
+               transform.ScaleY = 1.0;
+               transform.CenterX = 0;
 
-            if (this.ActualHeight < 1081)
-            {
-               resolutionScale = 0.7; // for 1920x1080 regular (16:9)
-            }
-            else if (this.ActualHeight < 1441)
-            {
-               resolutionScale = 0.90; // for 2560x1440 regular (16:9)
-            }
+               m_grid.Visibility = Visibility.Visible;
+               m_carStatus.Visibility = Visibility.Collapsed;
+               break;
+            case ViewType.BoardAndCarHorizontal:
+               transform.ScaleX = 1.0;
+               transform.ScaleY = 1.0;
+               transform.CenterX = 0;
 
-            transform.ScaleX = 3.00 * resolutionScale;
-            transform.ScaleY = 3.00 * resolutionScale;
-            transform.CenterX = 152 * resolutionScale;
+               m_carStatus.Visibility = Visibility.Visible;
+               m_grid.Visibility = Visibility.Visible;
+               break;
+            case ViewType.BoardAndCarVertical:
+               DockPanel.SetDock(m_grid, Dock.Top);
+               DockPanel.SetDock(m_carStatus, Dock.Bottom );
+               transform.ScaleX = 1.0;
+               transform.ScaleY = 1.0;
+               transform.CenterX = 0;
 
-            m_grid.Visibility = Visibility.Collapsed;
-            m_carStatus.Visibility = Visibility.Visible;
-            DockPanel.SetDock(m_carStatus, Dock.Top);
-         }
-         else if (m_grid.Visibility == Visibility.Visible)
-         {
-            DockPanel.SetDock(m_carStatus, Dock.Right);
-            transform.ScaleX = 1.0;
-            transform.ScaleY = 1.0;
-            transform.CenterX = 0;
+               m_carStatus.Visibility = Visibility.Visible;
+               m_grid.Visibility = Visibility.Visible;
+               break;
+            case ViewType.Car:
+               DockPanel.SetDock(m_grid, Dock.Left);
+               DockPanel.SetDock(m_carStatus, Dock.Right);
 
-            m_carStatus.Visibility = Visibility.Visible;
-            m_grid.Visibility = Visibility.Visible;            
-         }
-         else
-         {
-            DockPanel.SetDock(m_carStatus, Dock.Right);
-            transform.ScaleX = 1.0;
-            transform.ScaleY = 1.0;
-            transform.CenterX = 0;
+               double resolutionScale = 1.05; // for 1080x1920 tilted FHD (9:16)
 
-            m_grid.Visibility = Visibility.Visible;
-            m_carStatus.Visibility = Visibility.Collapsed;
+               if (this.ActualHeight < 1081)
+               {
+                  resolutionScale = 0.7; // for 1920x1080 regular (16:9)
+               }
+               else if (this.ActualHeight < 1441)
+               {
+                  resolutionScale = 0.90; // for 2560x1440 regular (16:9)
+               }
+
+               transform.ScaleX = 3.00 * resolutionScale;
+               transform.ScaleY = 3.00 * resolutionScale;
+               transform.CenterX = 152 * resolutionScale;
+
+               m_grid.Visibility = Visibility.Collapsed;
+               m_carStatus.Visibility = Visibility.Visible;
+               DockPanel.SetDock(m_carStatus, Dock.Top);
+               break;
+
+            default:
+               break;
          }
       }
 
@@ -1035,6 +1066,8 @@ namespace adjsw.F12025
       private bool m_autosave = true;
       private ContextMenu m_ctxMenu = null;
       private DriverData m_ctxMenuReferencedDriver = null;
+      private ViewType m_viewType = ViewType.Car; // on startup will toggle to next view, which will be board only
+
 
       private static string s_splashText =
 @"
