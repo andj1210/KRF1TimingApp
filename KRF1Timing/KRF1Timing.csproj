@@ -99,6 +99,9 @@
     <Compile Include="StatusView.xaml.cs">
       <DependentUpon>StatusView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Trackmap.xaml.cs">
+      <DependentUpon>Trackmap.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UdpPlaybackData.cs" />
     <Compile Include="PersonalLeaderboard.xaml.cs">
       <DependentUpon>PersonalLeaderboard.xaml</DependentUpon>
@@ -136,6 +139,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="StatusView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Trackmap.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

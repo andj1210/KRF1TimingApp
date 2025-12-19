@@ -32,6 +32,21 @@ namespace adjsw.F12025
          Count
       }
 
+      public class JsonEntry
+      {
+         public string SessionInfo { get; set; }
+         public string Track { get; set; }
+         public int Laps { get; set; } // only for race
+         public DriverData[] Drivers { get; set; }
+         public string[] DriverTag { get; set; }
+      }
+
+
+      public ConcurrentQueue<byte[]> PacketQue
+      {
+         get { return m_packetQue; }
+      }
+
       public MainWindow()
       {
          InitializeComponent();
@@ -39,7 +54,7 @@ namespace adjsw.F12025
          Title = "KRF1 Timing App for F1-25 V0.9.0";
 
          m_pollTimer.Tick += PollUpdates_Tick;
-         m_pollTimer.Interval = TimeSpan.FromMilliseconds(50);
+         m_pollTimer.Interval = TimeSpan.FromMilliseconds(40);
          m_pollTimer.IsEnabled = true;
 
          m_infoBoxTimer.Tick += m_InfoBoxTimer_Tick;
@@ -65,6 +80,7 @@ namespace adjsw.F12025
 
          UpdateGrid();
          UpdateCarStatus();
+         UpdateTrackmap();
          ToggleView();
 
          ShowInfoBox(s_splashText, TimeSpan.FromSeconds(10));
@@ -85,18 +101,12 @@ namespace adjsw.F12025
          m_grid.DeltaVisible = false;
       }
 
-      public ConcurrentQueue<byte[]> PacketQue
+      private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
       {
-         get { return m_packetQue; }
-      }
-
-      private void OnGridClick(object sender, MouseButtonEventArgs e)
-      {
-         DriverData driver = m_grid.DriverUnderMouse as DriverData;
-         if (driver != null)
-         {
-            ShowContextMenuMapper(driver);
-         }
+         if (m_udpClient != null)
+            m_udpClient.Dispose();
+         if (m_playbackWindow != null)
+            m_playbackWindow.Close();
       }
 
       private void ShowContextMenuMapper(DriverData driver)
@@ -186,113 +196,6 @@ namespace adjsw.F12025
          }
       }
 
-      private void Button_ChangeName_Click(object sender, RoutedEventArgs e)
-      {
-         string newName = "";
-         foreach (var child in m_ctxMenu.Items)
-         {
-            var wrap = child as WrapPanel;
-            if (wrap != null)
-            {
-               foreach (var innerChild in wrap.Children)
-               {
-                  var tb = innerChild as TextBox;
-                  if (tb != null)
-                     newName = tb.Text;
-               }
-            }
-         }
-
-         if (string.IsNullOrEmpty(newName))
-         {
-            m_ctxMenu.IsOpen = false;
-            return;
-         }
-
-         // find existing mapping and overwrite:
-         bool exchangedMapping = false;
-         for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
-         {
-            var mapping = m_runtimeMapping.Mappings[i];
-            if (
-                (mapping.DriverNumber == m_ctxMenuReferencedDriver.DriverNr) &&
-                (mapping.Team == m_ctxMenuReferencedDriver.Team)
-                )
-            {
-               m_runtimeMapping.Mappings[i].Name = newName;
-               exchangedMapping = true;
-            }
-         }
-
-         if (!exchangedMapping)
-         {
-            DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
-            Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
-            var addMapping = new DriverNameMapping();
-            addMapping.Name = newName;
-            addMapping.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
-            addMapping.Team = m_ctxMenuReferencedDriver.Team;
-            newMappingsArray[newMappingsArray.Length - 1] = addMapping;
-            m_runtimeMapping.Mappings = newMappingsArray;
-         }
-
-         m_mapper.SetDriverNameMappings(null);
-         m_mapper.SetDriverNameMappings(m_runtimeMapping);
-         m_ctxMenu.IsOpen = false;
-      }
-
-      private void OnMappingCtxMenuClick(object sender, RoutedEventArgs e)
-      {
-         var itemLb = sender as Label;
-         if (itemLb != null)
-         {
-            var originalMapping = itemLb.Content as DriverNameMapping;
-            //var originalMapping = item.Items.CurrentItem as DriverNameMapping;
-
-            if (originalMapping != null)
-            {
-               DriverNameMapping mappingToDriver = ReflectionCloner.DeepCopy(originalMapping);
-               mappingToDriver.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
-               mappingToDriver.Team = m_ctxMenuReferencedDriver.Team;
-
-
-               bool exchangedMapping = false;
-               for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
-               {
-                  var mapping = m_runtimeMapping.Mappings[i];
-                  if (
-                      (mapping.DriverNumber == mappingToDriver.DriverNumber) &&
-                      (mapping.Team == mappingToDriver.Team)
-                      )
-                  {
-                     m_runtimeMapping.Mappings[i] = mappingToDriver;
-                     exchangedMapping = true;
-                  }
-               }
-
-               if (!exchangedMapping)
-               {
-                  DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
-
-                  Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
-                  newMappingsArray[newMappingsArray.Length - 1] = mappingToDriver;
-                  m_runtimeMapping.Mappings = newMappingsArray;
-               }
-
-               m_mapper.SetDriverNameMappings(null);
-               m_mapper.SetDriverNameMappings(m_runtimeMapping);
-            }
-         }
-      }
-
-      private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-      {
-         if (m_udpClient != null)
-            m_udpClient.Dispose();
-         if (m_playbackWindow != null)
-            m_playbackWindow.Close();
-      }
-
       private void ToggleView()
       {
          // toggle sequence:
@@ -368,87 +271,13 @@ namespace adjsw.F12025
          }
       }
 
-      private void PollUpdates_Tick(object sender, EventArgs e)
+      private void M_driverListViewSource_Filter(object sender, FilterEventArgs e)
       {
-         bool updated = false;
-         byte[] newData;
-         while (m_packetQue.TryDequeue(out newData))
-         {
-            m_mapper.Proceed(newData);
-            updated = true;
-         }
-
-         if (!updated)
-            return;
-
-         m_grid.SessionSource = m_mapper.SessionInfo;
-         UpdateGrid();
-         UpdateCarStatus();
-
-         if (m_mapper.SessionInfo.Session == SessionType.Race ||
-            m_mapper.SessionInfo.Session == SessionType.Race2 ||
-            m_mapper.SessionInfo.Session == SessionType.Race3
-            )
-         {
-            if (m_mapper.Classification != null)
-            {
-               if (!m_sessionClassificationHandled)
-               {
-                  if (!m_autosave)
-                     ShowInfoBox("The Race has finished.\r\n Click in the window and hit\r\n---\"s\"---\r\nto save the race report.", TimeSpan.FromSeconds(10));
-                  else
-                  {
-                     SaveReport();
-                     SaveReportJson();
-                  }
-                  m_sessionClassificationHandled = true;
-               }
-            }
-            else
-            {
-               m_sessionClassificationHandled = false;
-            }
-         }
-
-         bool qualySession = false;
-         switch (m_mapper.SessionInfo.Session)
-         {
-            case SessionType.P1:
-            case SessionType.P2:
-            case SessionType.P3:
-            case SessionType.ShortPractice:
-            case SessionType.Q1:
-            case SessionType.Q2:
-            case SessionType.Q3:
-            case SessionType.SprintShootout1:
-            case SessionType.SprintShootout2:
-            case SessionType.SprintShootout3:
-            case SessionType.ShortQ:
-            case SessionType.ShortSprintShootout:
-               qualySession = true;
-               break;
-
-            default:
-               qualySession = false;
-               break;
-         }
-         m_grid.Quali = qualySession;
-
-         if (m_mapper.Udp1Action)
-         {
-            m_mapper.Udp1Action = false;
-
-            if (m_udpClient != null)
-            {
-               // accept button input only in live mode...
-               ToggleView();
-            }
-         }
-      }
-
-      private void OnUdpReceive(object sender, UdpEventClientEventArgs e)
-      {
-         m_packetQue.Enqueue(e.data);
+         DriverData d = e.Item as DriverData;
+         if (d == null)
+            e.Accepted = false;
+         else
+            e.Accepted = d.Present;
       }
 
       private void UpdateGrid()
@@ -478,15 +307,6 @@ namespace adjsw.F12025
                   m_driversList[driver.Pos - 1] = driver;
             }
          }
-      }
-
-      private void M_driverListViewSource_Filter(object sender, FilterEventArgs e)
-      {
-         DriverData d = e.Item as DriverData;
-         if (d == null)
-            e.Accepted = false;
-         else
-            e.Accepted = d.Present;
       }
 
       private void UpdateCarStatus()
@@ -547,6 +367,11 @@ namespace adjsw.F12025
                break;
             }
          }
+      }
+
+      private void UpdateTrackmap()
+      {
+         m_trackmap.Update(m_mapper.Drivers);
       }
 
       public Color ColorFromHSV(double hue, double saturation, double value)
@@ -649,73 +474,6 @@ namespace adjsw.F12025
          {
             double hueInterval = hueMin - hueMax;
             return hueMin - hueInterval * (actualValue - min) / (float)interval;
-         }
-      }
-
-      private void OnKeyDown(object sender, KeyEventArgs e)
-      {
-         if (e.Key == Key.F11)
-         {
-            if (WindowStyle == WindowStyle.None)
-            {
-               WindowStyle = WindowStyle.SingleBorderWindow;
-               WindowState = WindowState.Normal;
-            }
-            else
-            {
-               WindowStyle = WindowStyle.None;
-               WindowState = WindowState.Maximized;
-            }
-         }
-
-         if (e.Key == Key.S)
-         {
-            SaveReport();
-            SaveReportJson();
-         }
-
-         if (e.Key == Key.R)
-         {
-            // enable UDP recording
-         }
-
-         if (e.Key == Key.L)
-            m_grid.LeaderVisible = !m_grid.LeaderVisible;
-
-         if (e.Key == Key.D)
-            m_grid.StatusVisible = !m_grid.StatusVisible;
-
-         if (e.Key == Key.Space)
-            ToggleView();
-
-         if (e.Key == Key.M)
-         {
-            m_LoadNameMappings(true); // always reload in case text changed
-
-            if (m_nameMappings != null)
-            {
-               if (m_nameMappingNextIdx >= m_nameMappings.Length)
-               {
-                  m_nameMappingNextIdx = 0;
-                  m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping); ;
-                  ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
-               }
-
-               else if (m_nameMappings.Length >= m_nameMappingNextIdx)
-               {
-                  m_runtimeMapping = ReflectionCloner.DeepCopy<DriverNameMappings>(m_nameMappings[m_nameMappingNextIdx]);
-                  ShowInfoBox("Drivername Mapping selected: " + m_runtimeMapping.LeagueName, TimeSpan.FromSeconds(2));
-                  m_nameMappingNextIdx++;
-               }
-               else
-               {
-                  m_runtimeMapping = null;
-               }
-            }
-            else
-               m_runtimeMapping = null;
-
-            m_mapper.SetDriverNameMappings(m_runtimeMapping);
          }
       }
 
@@ -947,17 +705,6 @@ namespace adjsw.F12025
       }
 
 
-      public class JsonEntry
-      {
-         public string SessionInfo { get; set; }
-         public string Track { get; set; }
-         public int Laps { get; set; } // only for race
-
-         public DriverData[] Drivers { get; set; }
-         public string[] DriverTag { get; set; }
-      }
-
-
       private void SaveReportJson()
       {
          if (m_mapper.Classification == null)
@@ -1050,11 +797,270 @@ namespace adjsw.F12025
          }
       }
 
+      private void PollUpdates_Tick(object sender, EventArgs e)
+      {
+         bool updated = false;
+         byte[] newData;
+         while (m_packetQue.TryDequeue(out newData))
+         {
+            m_mapper.Proceed(newData);
+            updated = true;
+         }
+
+         if (!updated)
+            return;
+
+         m_grid.SessionSource = m_mapper.SessionInfo;
+         UpdateGrid();
+         UpdateCarStatus();
+         UpdateTrackmap();
+
+         if (m_mapper.SessionInfo.Session == SessionType.Race ||
+            m_mapper.SessionInfo.Session == SessionType.Race2 ||
+            m_mapper.SessionInfo.Session == SessionType.Race3
+            )
+         {
+            if (m_mapper.Classification != null)
+            {
+               if (!m_sessionClassificationHandled)
+               {
+                  if (!m_autosave)
+                     ShowInfoBox("The Race has finished.\r\n Click in the window and hit\r\n---\"s\"---\r\nto save the race report.", TimeSpan.FromSeconds(10));
+                  else
+                  {
+                     SaveReport();
+                     SaveReportJson();
+                  }
+                  m_sessionClassificationHandled = true;
+               }
+            }
+            else
+            {
+               m_sessionClassificationHandled = false;
+            }
+         }
+
+         bool qualySession = false;
+         switch (m_mapper.SessionInfo.Session)
+         {
+            case SessionType.P1:
+            case SessionType.P2:
+            case SessionType.P3:
+            case SessionType.ShortPractice:
+            case SessionType.Q1:
+            case SessionType.Q2:
+            case SessionType.Q3:
+            case SessionType.SprintShootout1:
+            case SessionType.SprintShootout2:
+            case SessionType.SprintShootout3:
+            case SessionType.ShortQ:
+            case SessionType.ShortSprintShootout:
+               qualySession = true;
+               break;
+
+            default:
+               qualySession = false;
+               break;
+         }
+         m_grid.Quali = qualySession;
+
+         if (m_mapper.UdpAction[0])
+         {
+            m_mapper.UdpAction[0] = false;
+
+            if (m_udpClient != null)
+            {
+               // accept button input only in live mode...
+               ToggleView();
+            }
+         }
+      }
+
+      private void OnKeyDown(object sender, KeyEventArgs e)
+      {
+         if (e.Key == Key.F11)
+         {
+            if (WindowStyle == WindowStyle.None)
+            {
+               WindowStyle = WindowStyle.SingleBorderWindow;
+               WindowState = WindowState.Normal;
+            }
+            else
+            {
+               WindowStyle = WindowStyle.None;
+               WindowState = WindowState.Maximized;
+            }
+         }
+
+         if (e.Key == Key.S)
+         {
+            SaveReport();
+            SaveReportJson();
+         }
+
+         if (e.Key == Key.R)
+         {
+            // enable UDP recording
+         }
+
+         if (e.Key == Key.L)
+            m_grid.LeaderVisible = !m_grid.LeaderVisible;
+
+         if (e.Key == Key.D)
+            m_grid.StatusVisible = !m_grid.StatusVisible;
+
+         if (e.Key == Key.Space)
+            ToggleView();
+
+         if (e.Key == Key.M)
+         {
+            m_LoadNameMappings(true); // always reload in case text changed
+
+            if (m_nameMappings != null)
+            {
+               if (m_nameMappingNextIdx >= m_nameMappings.Length)
+               {
+                  m_nameMappingNextIdx = 0;
+                  m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping); ;
+                  ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
+               }
+
+               else if (m_nameMappings.Length >= m_nameMappingNextIdx)
+               {
+                  m_runtimeMapping = ReflectionCloner.DeepCopy<DriverNameMappings>(m_nameMappings[m_nameMappingNextIdx]);
+                  ShowInfoBox("Drivername Mapping selected: " + m_runtimeMapping.LeagueName, TimeSpan.FromSeconds(2));
+                  m_nameMappingNextIdx++;
+               }
+               else
+               {
+                  m_runtimeMapping = null;
+               }
+            }
+            else
+               m_runtimeMapping = null;
+
+            m_mapper.SetDriverNameMappings(m_runtimeMapping);
+         }
+      }
+
+      private void OnUdpReceive(object sender, UdpEventClientEventArgs e)
+      {
+         m_packetQue.Enqueue(e.data);
+      }
+
+      private void OnMappingCtxMenuClick(object sender, RoutedEventArgs e)
+      {
+         var itemLb = sender as Label;
+         if (itemLb != null)
+         {
+            var originalMapping = itemLb.Content as DriverNameMapping;
+            //var originalMapping = item.Items.CurrentItem as DriverNameMapping;
+
+            if (originalMapping != null)
+            {
+               DriverNameMapping mappingToDriver = ReflectionCloner.DeepCopy(originalMapping);
+               mappingToDriver.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
+               mappingToDriver.Team = m_ctxMenuReferencedDriver.Team;
+
+
+               bool exchangedMapping = false;
+               for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
+               {
+                  var mapping = m_runtimeMapping.Mappings[i];
+                  if (
+                      (mapping.DriverNumber == mappingToDriver.DriverNumber) &&
+                      (mapping.Team == mappingToDriver.Team)
+                      )
+                  {
+                     m_runtimeMapping.Mappings[i] = mappingToDriver;
+                     exchangedMapping = true;
+                  }
+               }
+
+               if (!exchangedMapping)
+               {
+                  DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
+
+                  Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
+                  newMappingsArray[newMappingsArray.Length - 1] = mappingToDriver;
+                  m_runtimeMapping.Mappings = newMappingsArray;
+               }
+
+               m_mapper.SetDriverNameMappings(null);
+               m_mapper.SetDriverNameMappings(m_runtimeMapping);
+            }
+         }
+      }
+
+      private void Button_ChangeName_Click(object sender, RoutedEventArgs e)
+      {
+         string newName = "";
+         foreach (var child in m_ctxMenu.Items)
+         {
+            var wrap = child as WrapPanel;
+            if (wrap != null)
+            {
+               foreach (var innerChild in wrap.Children)
+               {
+                  var tb = innerChild as TextBox;
+                  if (tb != null)
+                     newName = tb.Text;
+               }
+            }
+         }
+
+         if (string.IsNullOrEmpty(newName))
+         {
+            m_ctxMenu.IsOpen = false;
+            return;
+         }
+
+         // find existing mapping and overwrite:
+         bool exchangedMapping = false;
+         for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
+         {
+            var mapping = m_runtimeMapping.Mappings[i];
+            if (
+                (mapping.DriverNumber == m_ctxMenuReferencedDriver.DriverNr) &&
+                (mapping.Team == m_ctxMenuReferencedDriver.Team)
+                )
+            {
+               m_runtimeMapping.Mappings[i].Name = newName;
+               exchangedMapping = true;
+            }
+         }
+
+         if (!exchangedMapping)
+         {
+            DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
+            Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
+            var addMapping = new DriverNameMapping();
+            addMapping.Name = newName;
+            addMapping.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
+            addMapping.Team = m_ctxMenuReferencedDriver.Team;
+            newMappingsArray[newMappingsArray.Length - 1] = addMapping;
+            m_runtimeMapping.Mappings = newMappingsArray;
+         }
+
+         m_mapper.SetDriverNameMappings(null);
+         m_mapper.SetDriverNameMappings(m_runtimeMapping);
+         m_ctxMenu.IsOpen = false;
+      }
+
+      private void OnGridClick(object sender, MouseButtonEventArgs e)
+      {
+         DriverData driver = m_grid.DriverUnderMouse as DriverData;
+         if (driver != null)
+         {
+            ShowContextMenuMapper(driver);
+         }
+      }
+
       private UdpEventClient m_udpClient = null;
       private UdpPlaybackWindow m_playbackWindow = null;
       private ConcurrentQueue<byte[]> m_packetQue = new ConcurrentQueue<byte[]>();
       private F1UdpClrMapper m_mapper = null;
-      private DispatcherTimer m_pollTimer = new DispatcherTimer();
+      private DispatcherTimer m_pollTimer = new DispatcherTimer(DispatcherPriority.Render);
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
       private ObservableCollection<adjsw.F12025.DriverData> m_driversList = new ObservableCollection<adjsw.F12025.DriverData>();
       private CollectionViewSource m_driverListViewSource = new CollectionViewSource();

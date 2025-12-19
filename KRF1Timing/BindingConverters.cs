@@ -138,7 +138,7 @@ namespace adjsw.F12025
             case F1Team.Renault:
                return Brushes.Yellow;
 
-            case F1Team.TorroRosso:
+            case F1Team.AlphaTauri:
                return new SolidColorBrush(Color.FromRgb(10, 100, 150));
 
             case F1Team.Haas:
