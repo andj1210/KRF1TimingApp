@@ -215,18 +215,21 @@ namespace adjsw.F12025
       {
          bool verticalLayout = ActualWidth > ActualHeight ? false : true;
 
+         Canvas.SetTop(m_rootCanvas, 0);
+         Canvas.SetLeft(m_rootCanvas, 0);
+         m_rootCanvas.Height = ActualHeight;
+         m_rootCanvas.Width = ActualWidth;
+
          switch (m_viewType)
          {
             case ViewType.Board:
-               UpdateRootGrid(1.0, 0, 1.0, 0.0);
-
                m_board.Visibility = Visibility.Visible;
                m_carStatus.Visibility = Visibility.Collapsed;
                m_trackmap.Visibility = Visibility.Collapsed;
 
-               Grid.SetRow(m_board, 0);
-               Grid.SetColumn(m_board, 0);
-               Grid.SetColumnSpan(m_board, 2);
+               m_board.MaxHeight = ActualHeight;
+               m_board.MaxWidth = ActualWidth;
+
                break;
             case ViewType.BoardAndCarMap:
                m_board.Visibility = Visibility.Visible;
@@ -234,108 +237,70 @@ namespace adjsw.F12025
                m_trackmap.Visibility = Visibility.Visible;
                if (verticalLayout)
                {
-                  UpdateRootGrid(0.5, 0.5, 0.5, 0.5);
-                  Grid.SetRow(m_board, 0);
-                  Grid.SetColumn(m_board, 0);
-                  Grid.SetRowSpan(m_board, 1);
-                  Grid.SetColumnSpan(m_board, 2);
+                  double y1 = ActualHeight * 1 / 2;
+                  m_board.MaxHeight = y1;
+                  m_board.MaxWidth = ActualWidth;
 
-                  Grid.SetRow(m_trackmapContainer, 1);
-                  Grid.SetColumn(m_trackmapContainer, 0);
-                  Grid.SetRowSpan(m_trackmapContainer, 1);
-                  Grid.SetColumnSpan(m_trackmapContainer, 1);
+                  Canvas.SetTop(m_trackmap, y1);
+                  Canvas.SetLeft(m_trackmap, 20);
 
-                  Grid.SetRow(m_carStatusContainer, 1);
-                  Grid.SetColumn(m_carStatusContainer, 1);
-                  Grid.SetRowSpan(m_carStatusContainer, 1);
-                  Grid.SetColumnSpan(m_carStatusContainer, 1);
+                  Canvas.SetTop(m_carStatus, y1+60);
+                  Canvas.SetLeft(m_carStatus, ActualWidth / 2);
 
-                  UpdateScaleCarMap(1.0);
                }
                else
                {
-                  UpdateRootGrid(0.5, 0.5, 0.75, 0.25);
+                  double x1 = ActualWidth * 3 / 4;
+                  m_board.MaxHeight = ActualHeight;
+                  m_board.MaxWidth = x1;
 
-                  Grid.SetRow(m_board, 0);
-                  Grid.SetColumn(m_board, 0);
-                  Grid.SetRowSpan(m_board, 2);
-                  Grid.SetColumnSpan(m_board, 1);
+                  Canvas.SetTop(m_trackmap, 0);
+                  Canvas.SetLeft(m_trackmap, x1);
 
-                  Grid.SetRow(m_trackmapContainer, 0);
-                  Grid.SetColumn(m_trackmapContainer, 1);
-                  Grid.SetRowSpan(m_trackmapContainer, 1);
-                  Grid.SetColumnSpan(m_trackmapContainer, 1);
+                  Canvas.SetTop(m_carStatus, ActualHeight / 2);
+                  Canvas.SetLeft(m_carStatus, x1+10);
 
-                  Grid.SetRow(m_carStatusContainer, 1);
-                  Grid.SetColumn(m_carStatusContainer, 1);
-                  Grid.SetRowSpan(m_carStatusContainer, 1);
-                  Grid.SetColumnSpan(m_carStatusContainer, 1);
-
-                  if (ActualWidth < 1500)
+                  if (ActualWidth < 1281)
+                  {
+                     // for 1280*1024 4:3
                      UpdateScaleCarMap(0.75);
+                  }
                   else
                      UpdateScaleCarMap(1.0);
+
                }
 
                m_carStatus.Visibility = Visibility.Visible;
                m_board.Visibility = Visibility.Visible;
                break;
             case ViewType.CarMap:
-
-               /*
-               DockPanel.SetDock(m_board, Dock.Left);
-               DockPanel.SetDock(m_carStatus, Dock.Right);
-
-               double resolutionScale = 1.05; // for 1080x1920 tilted FHD (9:16)
-
-               if (this.ActualHeight < 1081)
-               {
-                  resolutionScale = 0.7; // for 1920x1080 regular (16:9)
-               }
-               else if (this.ActualHeight < 1441)
-               {
-                  resolutionScale = 0.90; // for 2560x1440 regular (16:9)
-               }
-
-               transform.ScaleX = 3.00 * resolutionScale;
-               transform.ScaleY = 3.00 * resolutionScale;
-               transform.CenterX = 152 * resolutionScale;
-
-               m_board.Visibility = Visibility.Collapsed;
-               m_carStatus.Visibility = Visibility.Visible;
-               DockPanel.SetDock(m_carStatus, Dock.Top);
-               */
-               UpdateScaleCarMap(1.25);
                m_board.Visibility = Visibility.Collapsed;
                m_carStatus.Visibility = Visibility.Visible;
                m_trackmap.Visibility = Visibility.Visible;
                if (verticalLayout)
                {
-                  UpdateRootGrid(0.5, 0.5, 1.0, 0.0);
+                  Canvas.SetTop(m_trackmap, 50);
+                  Canvas.SetLeft(m_trackmap, 250);
 
-                  Grid.SetRow(m_trackmapContainer, 0);
-                  Grid.SetColumn(m_trackmapContainer, 0);
-                  Grid.SetRowSpan(m_trackmapContainer, 1);
-                  Grid.SetColumnSpan(m_trackmapContainer, 2);
-
-                  Grid.SetRow(m_carStatusContainer, 1);
-                  Grid.SetColumn(m_carStatusContainer, 0);
-                  Grid.SetRowSpan(m_carStatusContainer, 1);
-                  Grid.SetColumnSpan(m_carStatusContainer, 2);
+                  Canvas.SetTop(m_carStatus, ActualHeight / 2 + 30);
+                  Canvas.SetLeft(m_carStatus, 250);
+                  UpdateScaleCarMap(1.25);
                }
                else
                {
-                  UpdateRootGrid(1.0, 0.0, 0.5, 0.5);
+                  Canvas.SetTop(m_trackmap, 50);
+                  if (ActualWidth > 1280)
+                     Canvas.SetLeft(m_trackmap, 250);
+                  else
+                     Canvas.SetLeft(m_trackmap, 20);
 
-                  Grid.SetRow(m_trackmapContainer, 0);
-                  Grid.SetColumn(m_trackmapContainer, 0);
-                  Grid.SetRowSpan(m_trackmapContainer, 2);
-                  Grid.SetColumnSpan(m_trackmapContainer, 1);
+                     Canvas.SetTop(m_carStatus, 150);
+                  Canvas.SetLeft(m_carStatus, ActualWidth / 2);
+                  UpdateScaleCarMap(1.5);
 
-                  Grid.SetRow(m_carStatusContainer, 0);
-                  Grid.SetColumn(m_carStatusContainer, 1);
-                  Grid.SetRowSpan(m_carStatusContainer, 2);
-                  Grid.SetColumnSpan(m_carStatusContainer, 2);
+                  if (ActualWidth > 1920)
+                     UpdateScaleCarMap(2);
+
                }
                break;
 
@@ -464,10 +429,6 @@ namespace adjsw.F12025
 
       private void UpdateRootGrid(double r0, double r1, double c0, double c1)
       {
-         m_rootGrid.RowDefinitions[0].Height = new GridLength(r0, GridUnitType.Star);
-         m_rootGrid.RowDefinitions[1].Height = new GridLength(r1, GridUnitType.Star);
-         m_rootGrid.ColumnDefinitions[0].Width = new GridLength(c0, GridUnitType.Star);
-         m_rootGrid.ColumnDefinitions[1].Width = new GridLength(c1, GridUnitType.Star);
       }
 
       public Color ColorFromHSV(double hue, double saturation, double value)

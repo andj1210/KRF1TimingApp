@@ -182,7 +182,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Tyre" MinWidth="185">
+                <DataGridTemplateColumn Header="Tyre" MinWidth="120">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <UserControl HorizontalAlignment="Left">
