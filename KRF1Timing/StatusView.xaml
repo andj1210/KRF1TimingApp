@@ -15,7 +15,7 @@
         </Grid.ColumnDefinitions>
         <Rectangle Grid.Column="0" Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS1" Fill="LightGreen">
         </Rectangle>
-        <Rectangle Grid.Column="1" Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS2" Fill="#FFE232EC">
+        <Rectangle Grid.Column="1" Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS2" Fill="#FFAD22CE">
         </Rectangle>
         <Rectangle Grid.Column="2" Margin="4" Stroke="Black" Width="20" Height="20" Name="m_rectS3" Fill="Yellow">
         </Rectangle>

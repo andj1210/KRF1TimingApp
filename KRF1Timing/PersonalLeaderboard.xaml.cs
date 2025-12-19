@@ -148,7 +148,7 @@ namespace adjsw.F12025
 
                if (m_isQuali)
                {
-                  if (ActualWidth > 1080)
+                  if (ActualWidth > 1100)
                   {
                      m_fastestLapS1Column.Visibility = System.Windows.Visibility.Visible;
                      m_fastestLapS2Column.Visibility = System.Windows.Visibility.Visible;

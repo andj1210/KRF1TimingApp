@@ -280,9 +280,13 @@ namespace adjsw::F12025
 
       // for race
       property int TotalLaps { int get() { return m_totalLaps; } void set(int val) { if (val != m_totalLaps) { m_totalLaps = val; NPC("TotalLaps"); } } };
-      property int CurrentLap { int get() { return m_currentLap; } void set(int val) { if (val != m_currentLap) { m_currentLap = val; NPC("CurrentLap"); } } };   
+      property int CurrentLap { int get() { return m_currentLap; } void set(int val) { if (val != m_currentLap) { m_currentLap = val; NPC("CurrentLap"); } } };
 
-      property float TrackLength {float get() { return m_currentLap; } void set(float val) { if (val != m_currentLap) { m_currentLap = val; NPC("CurrentLap"); } }}
+      property double FastestSector1 { double get() { return m_fastestSector1; } void set(double val) { if (val != m_fastestSector1) { m_fastestSector1 = val; NPC("FastestSector1"); } } };
+      property double FastestSector2 { double get() { return m_fastestSector2; } void set(double val) { if (val != m_fastestSector2) { m_fastestSector2 = val; NPC("FastestSector2"); } } };
+      property double FastestSector3 { double get() { return m_fastestSector3; } void set(double val) { if (val != m_fastestSector3) { m_fastestSector3 = val; NPC("FastestSector3"); } } };
+
+      property float TrackLength {float get() { return m_trackLength; } void set(float val) { if (val != m_trackLength) { m_trackLength = val; NPC("TrackLength"); } }}
 
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
@@ -295,6 +299,9 @@ namespace adjsw::F12025
       int m_totalLaps{ 2 };
       int m_currentLap{ 1 };
       float m_trackLength{ 3500.f };
+      double m_fastestSector1{ 999.0 };
+      double m_fastestSector2{ 999.0 };
+      double m_fastestSector3{ 999.0 };
    };
 
 
@@ -436,11 +443,12 @@ namespace adjsw::F12025
    public ref class DriverData : public System::ComponentModel::INotifyPropertyChanged
    {
    public:
-      DriverData()
+      DriverData(SessionInfo^ inf)
       {
          m_driverNameNative = new char[48];
          Reset();
          m_carDetail = gcnew CarDetail;
+         m_sessionInfo = inf;
       }
       ~DriverData() { delete m_driverNameNative; }
 
@@ -514,6 +522,9 @@ namespace adjsw::F12025
       property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
       property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };
       property float TrackPositionPerc{ float get() { return m_trackPosPerc; } void set(float val) { if ((val != m_trackPosPerc) && (val > 0.f)) { m_trackPosPerc = val; NPC("TrackPositionPerc"); } } }
+      
+      property SessionInfo^ Session {SessionInfo^ get() { return m_sessionInfo; }}
+
 
       // quali
       property bool AllowLapHistoryQuali;
@@ -559,6 +570,7 @@ namespace adjsw::F12025
       float m_timedeltaToLeader;
       CarDetail^ m_carDetail;
       float m_trackPosPerc{ 0.f };
+      SessionInfo^ m_sessionInfo;
 
       int m_hasPitted{ 0 };      // for tyre age, which is not directly available in non complete telemetry.
    };

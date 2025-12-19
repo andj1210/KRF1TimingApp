@@ -136,7 +136,10 @@
                                     <MultiBinding Converter="{StaticResource StatusConverter}">
                                         <Binding Path="TimedeltaToPlayer" />
                                         <Binding Path="CurrentLap" />
-                                        <Binding Path="Status" />
+                                        <Binding Path="Status"/>
+                                        <Binding Path="Session.FastestSector1"/>
+                                        <Binding Path="Session.FastestSector2"/>
+                                        <Binding Path="Session.FastestSector3"/>
                                         <Binding Path=""/>
                                     </MultiBinding>
                                 </app:StatusView.StatusInfo>

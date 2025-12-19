@@ -288,7 +288,7 @@ namespace adjsw.F12025
       {
          StatusView.Setter setter = new StatusView.Setter();
 
-         var dat = values?[3] as DriverData;
+         var dat = values?[6] as DriverData;
          if (null == dat)
          {
             setter.SpecialText = "|?";
@@ -367,18 +367,18 @@ namespace adjsw.F12025
          if (driver.FastestLap.Lap < 1.0)
          {
             if (driver.CurrentLap.Sector1 != 0)
-               setter.S1 = StatusView.SetterSectorType.Green;
+               setter.S1 = (driver.CurrentLap.Sector1 <= driver.Session.FastestSector1) ? StatusView.SetterSectorType.Purple :  StatusView.SetterSectorType.Green;
             else
                setter.S1 = StatusView.SetterSectorType.None;
 
             if (driver.CurrentLap.Sector2 != 0)
-               setter.S2 = StatusView.SetterSectorType.Green;
+               setter.S2 = (driver.CurrentLap.Sector2 <= driver.Session.FastestSector2) ? StatusView.SetterSectorType.Purple : StatusView.SetterSectorType.Green;
             else
                setter.S2 = StatusView.SetterSectorType.None;
 
 
             if (driver.CurrentLap.Sector3 != 0)
-               setter.S3 = StatusView.SetterSectorType.Green;
+               setter.S3 = (driver.CurrentLap.Sector3 <= driver.Session.FastestSector3) ? StatusView.SetterSectorType.Purple : StatusView.SetterSectorType.Green;
             else
                setter.S3 = StatusView.SetterSectorType.None;
 
@@ -395,6 +395,8 @@ namespace adjsw.F12025
             if (driver.CurrentLap.Sector1 != 0)
             {
                setter.S1 = driver.CurrentLap.Sector1 < driver.FastestLap.Sector1 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+               if (driver.CurrentLap.Sector1 <= driver.Session.FastestSector1)
+                  setter.S1 = StatusView.SetterSectorType.Purple;
 
                if (((int)driver.CurrentLap.Sector1Ms - driver.FastestLap.Sector1Ms) > 1250)
                {
@@ -407,6 +409,8 @@ namespace adjsw.F12025
             if (driver.CurrentLap.Sector2 != 0)
             {
                setter.S2 = driver.CurrentLap.Sector2 < driver.FastestLap.Sector2 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+               if (driver.CurrentLap.Sector2 <= driver.Session.FastestSector2)
+                  setter.S2 = StatusView.SetterSectorType.Purple;
 
                if (((int)driver.CurrentLap.Sector2Ms - driver.FastestLap.Sector2Ms) > 1250)
                {
@@ -420,6 +424,8 @@ namespace adjsw.F12025
             if (driver.CurrentLap.Sector3Ms != 0)
             {
                setter.S3 = driver.CurrentLap.Sector3 < driver.FastestLap.Sector3 ? StatusView.SetterSectorType.Green : StatusView.SetterSectorType.Yellow;
+               if (driver.CurrentLap.Sector3 <= driver.Session.FastestSector3)
+                  setter.S3 = StatusView.SetterSectorType.Purple;
 
                if (((int)driver.CurrentLap.Sector3Ms - driver.FastestLap.Sector3Ms) > 1250)
                {

@@ -427,10 +427,6 @@ namespace adjsw.F12025
          m_trackmap.Update(m_mapper.Drivers, m_board.DriverUnderMouse as DriverData);
       }
 
-      private void UpdateRootGrid(double r0, double r1, double c0, double c1)
-      {
-      }
-
       public Color ColorFromHSV(double hue, double saturation, double value)
       {
          int hi = Convert.ToInt32(Math.Floor(hue / 60)) % 6;
@@ -871,6 +867,7 @@ namespace adjsw.F12025
          UpdateDriverGrid();
          UpdateCarStatus();
          UpdateTrackmap();
+         UpdateLayout();
 
          if (m_mapper.SessionInfo.Session == SessionType.Race ||
             m_mapper.SessionInfo.Session == SessionType.Race2 ||

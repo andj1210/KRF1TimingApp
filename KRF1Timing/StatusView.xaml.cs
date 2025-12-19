@@ -18,7 +18,7 @@ namespace adjsw.F12025
       private static Brush RedSectorBrush = Brushes.Red;
       private static Brush YellowSectorBrush = Brushes.Yellow;
       private static Brush GreenSectorBrush = Brushes.Green;
-      private static Brush PurpleSectorBrush = Brushes.DeepPink;
+      private static Brush PurpleSectorBrush = new SolidColorBrush(Color.FromRgb(173, 34, 206));
       private static Brush NewTimeBrush = Brushes.LightSteelBlue;
 
       private static readonly int s_lockTicks = 3 * 5; // = 3*333 ms + 5 = 5 seconds
