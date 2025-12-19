@@ -17,7 +17,7 @@ namespace adjsw::F12025
    Williams,
    AstonMartin,
    Renault,
-   TorroRosso,
+   AlphaTauri,
    Haas,   
    McLaren,
    Sauber,
@@ -280,7 +280,9 @@ namespace adjsw::F12025
 
       // for race
       property int TotalLaps { int get() { return m_totalLaps; } void set(int val) { if (val != m_totalLaps) { m_totalLaps = val; NPC("TotalLaps"); } } };
-      property int CurrentLap { int get() { return m_currentLap; } void set(int val) { if (val != m_currentLap) { m_currentLap = val; NPC("CurrentLap"); } } };
+      property int CurrentLap { int get() { return m_currentLap; } void set(int val) { if (val != m_currentLap) { m_currentLap = val; NPC("CurrentLap"); } } };   
+
+      property float TrackLength {float get() { return m_currentLap; } void set(float val) { if (val != m_currentLap) { m_currentLap = val; NPC("CurrentLap"); } }}
 
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
@@ -291,7 +293,8 @@ namespace adjsw::F12025
       bool m_sessionFinished{ false };
       int m_remainingSeconds{ 0 };
       int m_totalLaps{ 2 };
-      int m_currentLap{ 1 };      
+      int m_currentLap{ 1 };
+      float m_trackLength{ 3500.f };
    };
 
 
@@ -463,7 +466,6 @@ namespace adjsw::F12025
          Present = false;
          VisualTyres = gcnew List<F1VisualTyre>();
          PitPenalties = gcnew List<SessionEvent^>();
-         m_lapTiresFitted = 1;
          m_hasPitted = false;
 
          TimedeltaToLeader = 0;
@@ -498,7 +500,7 @@ namespace adjsw::F12025
       property F1Tyre Tyre {F1Tyre get() { return m_tyre; } void set(F1Tyre val) { if (val != m_tyre) { m_tyre = val; NPC("Tyre"); } } };
       property F1VisualTyre VisualTyre {F1VisualTyre get() { return m_visualTyre; } void set(F1VisualTyre val) { if (val != m_visualTyre) { m_visualTyre = val; NPC("VisualTyre"); } } };
       property List<F1VisualTyre>^ VisualTyres {List<F1VisualTyre>^ get() { return m_visualTyres; } void set(List<F1VisualTyre>^ val) { m_visualTyres = val; NPC("VisualTyres"); } };
-      property List<SessionEvent^>^ PitPenalties {List<SessionEvent^>^ get() { return m_otherPenalties; } void set(List<SessionEvent^>^ val) { m_otherPenalties = val; NPC("PitPenalties"); } };
+      property List<SessionEvent^>^ PitPenalties {List<SessionEvent^>^ get() { return m_otherPenalties; } void set(List<SessionEvent^>^ val) { m_otherPenalties = val; NPC("PitPenalties"); } }; // penalties, that will be served by pitstop
       property int TyreAge {int get() { return m_tyreAge; } void set(int val) { if (val != m_tyreAge) { m_tyreAge = val; NPC("TyreAge"); } } };
       property float TyreDamage {float get() { return m_tyreDamage; } void set(float val) { if (val != m_tyreDamage) { m_tyreDamage = val; NPC("TyreDamage"); } } };
       property int Pos {int get() { return m_pos; } void set(int val) { if (val != m_pos) { m_pos = val; NPC("Pos"); } } };
@@ -510,7 +512,8 @@ namespace adjsw::F12025
       property float TimedeltaToPlayer {float get() { return m_timedeltaToPlayer; } void set(float val) { if (val != m_timedeltaToPlayer) { m_timedeltaToPlayer = val; NPC("TimedeltaToPlayer"); } } };
       property float LastTimedeltaToPlayer {float get() { return m_lastTimedeltaToPlayer; } void set(float val) { if (val != m_lastTimedeltaToPlayer) { m_lastTimedeltaToPlayer = val; NPC("LastTimedeltaToPlayer"); } } };
       property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
-      property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };      
+      property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };
+      property float TrackPositionPerc{ float get() { return m_trackPosPerc; } void set(float val) { if ((val != m_trackPosPerc) && (val > 0.f)) { m_trackPosPerc = val; NPC("TrackPositionPerc"); } } }
 
       // quali
       property bool AllowLapHistoryQuali;
@@ -520,9 +523,8 @@ namespace adjsw::F12025
 
       property CarDetail^ WearDetail {CarDetail^ get() { return m_carDetail; } void set(CarDetail^ val) { m_carDetail = val; } };
 
-      // temporary state only for the UDP mapper
-      // It is used to compute the age of tires by some pitlane heuristics. (tyre age should directly be present in telemetry, but actually is dummy value when using reduced telemetry.)
-      property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} };     
+      
+      property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} }; // temporary state only for the UDP mapper, for penalty serving heuristics
 
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
@@ -556,7 +558,8 @@ namespace adjsw::F12025
       float m_lastTimedeltaToPlayer;
       float m_timedeltaToLeader;
       CarDetail^ m_carDetail;
-      int m_lapTiresFitted{ 1 }; // for tyre age, which is not directly available in non complete telemetry.
+      float m_trackPosPerc{ 0.f };
+
       int m_hasPitted{ 0 };      // for tyre age, which is not directly available in non complete telemetry.
    };
 

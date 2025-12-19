@@ -25,10 +25,8 @@ namespace adjsw.F12025
       enum ViewType
       {
          Board,
-         BoardAndCarHorizontal,
-         BoardAndCarVertical,
-         Car,
-
+         BoardAndCarMap,
+         CarMap,
          Count
       }
 
@@ -59,7 +57,7 @@ namespace adjsw.F12025
 
          m_infoBoxTimer.Tick += m_InfoBoxTimer_Tick;
 
-         m_grid.ItemsSource = m_driversList;
+         m_board.ItemsSource = m_driversList;
 
          m_mapper = new adjsw.F12025.F1UdpClrMapper();
          m_mapper.InsertTestData();
@@ -78,16 +76,16 @@ namespace adjsw.F12025
             m_udpClient.ReceiveEvent += OnUdpReceive;
          }
 
-         UpdateGrid();
+         UpdateDriverGrid();
          UpdateCarStatus();
-         UpdateTrackmap();
-         ToggleView();
+         UpdateTrackmap();         
 
          ShowInfoBox(s_splashText, TimeSpan.FromSeconds(10));
 
+         Loaded += MainWindow_Loaded;
          Closing += MainWindow_Closing;
 
-         m_grid.DataGridRightClick += OnGridClick;
+         m_board.DataGridRightClick += OnGridClick;
 
          //m_CreateTestJsonMappingFile();
          m_LoadNameMappings(false);
@@ -98,7 +96,12 @@ namespace adjsw.F12025
          m_nameMappingNextIdx = 0;
          m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping);
 
-         m_grid.DeltaVisible = false;
+         m_board.DeltaVisible = false;
+      }
+
+      private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+      {
+         UpdateLayout();
       }
 
       private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -199,51 +202,88 @@ namespace adjsw.F12025
       private void ToggleView()
       {
          // toggle sequence:
-         var transform = m_carStatus.RenderTransform as ScaleTransform;
-         if (transform == null)
-         {
-            transform = new ScaleTransform();
-            m_carStatus.RenderTransform = transform;
-         }
-
          int viewInt = (int)m_viewType;
          ++viewInt;
          m_viewType = (ViewType)viewInt;
          if (m_viewType == ViewType.Count)
             m_viewType = ViewType.Board;
 
+         UpdateLayout();
+      }
+
+      private void UpdateLayout()
+      {
+         bool verticalLayout = ActualWidth > ActualHeight ? false : true;
 
          switch (m_viewType)
          {
             case ViewType.Board:
-               DockPanel.SetDock(m_carStatus, Dock.Right);
-               transform.ScaleX = 1.0;
-               transform.ScaleY = 1.0;
-               transform.CenterX = 0;
+               UpdateRootGrid(1.0, 0, 1.0, 0.0);
 
-               m_grid.Visibility = Visibility.Visible;
+               m_board.Visibility = Visibility.Visible;
                m_carStatus.Visibility = Visibility.Collapsed;
+               m_trackmap.Visibility = Visibility.Collapsed;
+
+               Grid.SetRow(m_board, 0);
+               Grid.SetColumn(m_board, 0);
+               Grid.SetColumnSpan(m_board, 2);
                break;
-            case ViewType.BoardAndCarHorizontal:
-               transform.ScaleX = 1.0;
-               transform.ScaleY = 1.0;
-               transform.CenterX = 0;
+            case ViewType.BoardAndCarMap:
+               m_board.Visibility = Visibility.Visible;
+               m_carStatus.Visibility = Visibility.Visible;
+               m_trackmap.Visibility = Visibility.Visible;
+               if (verticalLayout)
+               {
+                  UpdateRootGrid(0.5, 0.5, 0.5, 0.5);
+                  Grid.SetRow(m_board, 0);
+                  Grid.SetColumn(m_board, 0);
+                  Grid.SetRowSpan(m_board, 1);
+                  Grid.SetColumnSpan(m_board, 2);
+
+                  Grid.SetRow(m_trackmapContainer, 1);
+                  Grid.SetColumn(m_trackmapContainer, 0);
+                  Grid.SetRowSpan(m_trackmapContainer, 1);
+                  Grid.SetColumnSpan(m_trackmapContainer, 1);
+
+                  Grid.SetRow(m_carStatusContainer, 1);
+                  Grid.SetColumn(m_carStatusContainer, 1);
+                  Grid.SetRowSpan(m_carStatusContainer, 1);
+                  Grid.SetColumnSpan(m_carStatusContainer, 1);
+
+                  UpdateScaleCarMap(1.0);
+               }
+               else
+               {
+                  UpdateRootGrid(0.5, 0.5, 0.75, 0.25);
+
+                  Grid.SetRow(m_board, 0);
+                  Grid.SetColumn(m_board, 0);
+                  Grid.SetRowSpan(m_board, 2);
+                  Grid.SetColumnSpan(m_board, 1);
+
+                  Grid.SetRow(m_trackmapContainer, 0);
+                  Grid.SetColumn(m_trackmapContainer, 1);
+                  Grid.SetRowSpan(m_trackmapContainer, 1);
+                  Grid.SetColumnSpan(m_trackmapContainer, 1);
+
+                  Grid.SetRow(m_carStatusContainer, 1);
+                  Grid.SetColumn(m_carStatusContainer, 1);
+                  Grid.SetRowSpan(m_carStatusContainer, 1);
+                  Grid.SetColumnSpan(m_carStatusContainer, 1);
+
+                  if (ActualWidth < 1500)
+                     UpdateScaleCarMap(0.75);
+                  else
+                     UpdateScaleCarMap(1.0);
+               }
 
                m_carStatus.Visibility = Visibility.Visible;
-               m_grid.Visibility = Visibility.Visible;
+               m_board.Visibility = Visibility.Visible;
                break;
-            case ViewType.BoardAndCarVertical:
-               DockPanel.SetDock(m_grid, Dock.Top);
-               DockPanel.SetDock(m_carStatus, Dock.Bottom );
-               transform.ScaleX = 1.0;
-               transform.ScaleY = 1.0;
-               transform.CenterX = 0;
+            case ViewType.CarMap:
 
-               m_carStatus.Visibility = Visibility.Visible;
-               m_grid.Visibility = Visibility.Visible;
-               break;
-            case ViewType.Car:
-               DockPanel.SetDock(m_grid, Dock.Left);
+               /*
+               DockPanel.SetDock(m_board, Dock.Left);
                DockPanel.SetDock(m_carStatus, Dock.Right);
 
                double resolutionScale = 1.05; // for 1080x1920 tilted FHD (9:16)
@@ -261,14 +301,62 @@ namespace adjsw.F12025
                transform.ScaleY = 3.00 * resolutionScale;
                transform.CenterX = 152 * resolutionScale;
 
-               m_grid.Visibility = Visibility.Collapsed;
+               m_board.Visibility = Visibility.Collapsed;
                m_carStatus.Visibility = Visibility.Visible;
                DockPanel.SetDock(m_carStatus, Dock.Top);
+               */
+               UpdateScaleCarMap(1.25);
+               m_board.Visibility = Visibility.Collapsed;
+               m_carStatus.Visibility = Visibility.Visible;
+               m_trackmap.Visibility = Visibility.Visible;
+               if (verticalLayout)
+               {
+                  UpdateRootGrid(0.5, 0.5, 1.0, 0.0);
+
+                  Grid.SetRow(m_trackmapContainer, 0);
+                  Grid.SetColumn(m_trackmapContainer, 0);
+                  Grid.SetRowSpan(m_trackmapContainer, 1);
+                  Grid.SetColumnSpan(m_trackmapContainer, 2);
+
+                  Grid.SetRow(m_carStatusContainer, 1);
+                  Grid.SetColumn(m_carStatusContainer, 0);
+                  Grid.SetRowSpan(m_carStatusContainer, 1);
+                  Grid.SetColumnSpan(m_carStatusContainer, 2);
+               }
+               else
+               {
+                  UpdateRootGrid(1.0, 0.0, 0.5, 0.5);
+
+                  Grid.SetRow(m_trackmapContainer, 0);
+                  Grid.SetColumn(m_trackmapContainer, 0);
+                  Grid.SetRowSpan(m_trackmapContainer, 2);
+                  Grid.SetColumnSpan(m_trackmapContainer, 1);
+
+                  Grid.SetRow(m_carStatusContainer, 0);
+                  Grid.SetColumn(m_carStatusContainer, 1);
+                  Grid.SetRowSpan(m_carStatusContainer, 2);
+                  Grid.SetColumnSpan(m_carStatusContainer, 2);
+               }
                break;
 
             default:
                break;
          }
+      }
+
+      private void UpdateScaleCarMap(double scale)
+      {
+         var transform = m_carStatus.RenderTransform as ScaleTransform;
+         if (transform == null)
+         {
+            transform = new ScaleTransform();
+            m_carStatus.RenderTransform = transform;
+            m_trackmap.RenderTransform = transform;
+         }
+
+         transform.ScaleX = scale;
+         transform.ScaleY = scale;
+         transform.CenterX = -100 + 100*scale;
       }
 
       private void M_driverListViewSource_Filter(object sender, FilterEventArgs e)
@@ -280,7 +368,7 @@ namespace adjsw.F12025
             e.Accepted = d.Present;
       }
 
-      private void UpdateGrid()
+      private void UpdateDriverGrid()
       {
          if (m_driversList.Count != m_mapper.CountDrivers)
          {
@@ -290,12 +378,12 @@ namespace adjsw.F12025
                m_driversList.Add(m_mapper.Drivers[i]);
             }
 
-            m_grid.ItemsSource = null;
-            m_grid.ItemsSource = m_driversList;
+            m_board.ItemsSource = null;
+            m_board.ItemsSource = m_driversList;
 
-            if (m_grid.TheDataGrid.SelectedItem != null)
+            if (m_board.TheDataGrid.SelectedItem != null)
             {
-               m_grid.TheDataGrid.SelectedItem = null; // avoid bluemarking from user for a selected row which cannot get removed afterwards
+               m_board.TheDataGrid.SelectedItem = null; // avoid bluemarking from user for a selected row which cannot get removed afterwards
             }
          }
 
@@ -371,7 +459,15 @@ namespace adjsw.F12025
 
       private void UpdateTrackmap()
       {
-         m_trackmap.Update(m_mapper.Drivers);
+         m_trackmap.Update(m_mapper.Drivers, m_board.DriverUnderMouse as DriverData);
+      }
+
+      private void UpdateRootGrid(double r0, double r1, double c0, double c1)
+      {
+         m_rootGrid.RowDefinitions[0].Height = new GridLength(r0, GridUnitType.Star);
+         m_rootGrid.RowDefinitions[1].Height = new GridLength(r1, GridUnitType.Star);
+         m_rootGrid.ColumnDefinitions[0].Width = new GridLength(c0, GridUnitType.Star);
+         m_rootGrid.ColumnDefinitions[1].Width = new GridLength(c1, GridUnitType.Star);
       }
 
       public Color ColorFromHSV(double hue, double saturation, double value)
@@ -810,8 +906,8 @@ namespace adjsw.F12025
          if (!updated)
             return;
 
-         m_grid.SessionSource = m_mapper.SessionInfo;
-         UpdateGrid();
+         m_board.SessionSource = m_mapper.SessionInfo;
+         UpdateDriverGrid();
          UpdateCarStatus();
          UpdateTrackmap();
 
@@ -862,7 +958,7 @@ namespace adjsw.F12025
                qualySession = false;
                break;
          }
-         m_grid.Quali = qualySession;
+         m_board.Quali = qualySession;
 
          if (m_mapper.UdpAction[0])
          {
@@ -904,10 +1000,10 @@ namespace adjsw.F12025
          }
 
          if (e.Key == Key.L)
-            m_grid.LeaderVisible = !m_grid.LeaderVisible;
+            m_board.LeaderVisible = !m_board.LeaderVisible;
 
          if (e.Key == Key.D)
-            m_grid.StatusVisible = !m_grid.StatusVisible;
+            m_board.StatusVisible = !m_board.StatusVisible;
 
          if (e.Key == Key.Space)
             ToggleView();
@@ -1049,7 +1145,7 @@ namespace adjsw.F12025
 
       private void OnGridClick(object sender, MouseButtonEventArgs e)
       {
-         DriverData driver = m_grid.DriverUnderMouse as DriverData;
+         DriverData driver = m_board.DriverUnderMouse as DriverData;
          if (driver != null)
          {
             ShowContextMenuMapper(driver);
@@ -1072,7 +1168,7 @@ namespace adjsw.F12025
       private bool m_autosave = true;
       private ContextMenu m_ctxMenu = null;
       private DriverData m_ctxMenuReferencedDriver = null;
-      private ViewType m_viewType = ViewType.Car; // on startup will toggle to next view, which will be board only
+      private ViewType m_viewType = ViewType.BoardAndCarMap; // on startup will toggle to next view, which will be board only
 
 
       private static string s_splashText =

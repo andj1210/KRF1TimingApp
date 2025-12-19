@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:adjsw.F12025"
         mc:Ignorable="d"
         Background="#FF383838"
-        Title="t.b.d. src" Height="1080" Width="1920" KeyDown="OnKeyDown" x:Name="wnd" x:FieldModifier="public">
+        Title="t.b.d. src" Width="1280" Height="1024" KeyDown="OnKeyDown" x:Name="wnd" x:FieldModifier="public">
     <Window.Resources>
     </Window.Resources>
     <Grid Height="Auto">
@@ -16,10 +16,22 @@
                 <TextBlock Margin="5" x:Name="m_infoTxt"  Foreground="Black" FontSize="16" FontWeight="Bold">LICENSE</TextBlock>
             </StackPanel>            
         </Border>
-        <DockPanel x:Name="m_dockPanel" HorizontalAlignment="Center" LastChildFill="False">
-            <local:CarStatusView DockPanel.Dock="Right" Margin="20" Grid.Column="1" x:Name="m_carStatus" Width="450"></local:CarStatusView>
-            <local:PersonalLeaderboard DockPanel.Dock="Left" Grid.Column="0" x:Name="m_grid" Visibility="Collapsed"></local:PersonalLeaderboard>
-            <local:Trackmap DockPanel.Dock="Bottom" x:Name="m_trackmap"></local:Trackmap> 
-        </DockPanel>
+        <Grid x:Name="m_rootGrid" HorizontalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="1.0"></RowDefinition>
+                <RowDefinition Height="0.0"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.8"></ColumnDefinition>
+                <ColumnDefinition Width="0.2"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <local:PersonalLeaderboard x:Name="m_board" Visibility="Collapsed" HorizontalAlignment="Left" HorizontalContentAlignment="Left"></local:PersonalLeaderboard>
+            <Border BorderBrush="Black" BorderThickness="1" x:Name="m_carStatusContainer">
+                <local:CarStatusView Margin="20, 0, 0, 0" x:Name="m_carStatus" Width="450"></local:CarStatusView>
+            </Border>
+            <Border BorderBrush="Black" BorderThickness="1" x:Name="m_trackmapContainer">
+                <local:Trackmap Margin="10, -10, 0, 0" x:Name="m_trackmap"></local:Trackmap>
+            </Border>
+        </Grid>
     </Grid>
 </Window>

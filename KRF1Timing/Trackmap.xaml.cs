@@ -32,20 +32,20 @@ namespace adjsw.F12025
          InitializeComponent();
       }
 
-      public void Update(DriverData[] dat)
+      public void Update(DriverData[] dat, DriverData highlight)
       {
          if (dat != null)
          {
             m_SetSize(dat.Length);
             for (int i = 0; i < dat.Length; i++)
             {
-               m_UpdateDriver(dat[i], m_ellipses[i]);
+               m_UpdateDriver(dat[i], m_ellipses[i], dat[i] == highlight);
             }
          }
       }
 
 
-      private void m_UpdateDriver(DriverData d, Ellipse e)
+      private void m_UpdateDriver(DriverData d, Ellipse e, bool highlight)
       {
          // according to ui layout
          double xCenter = 400 / 2.0; 
@@ -132,7 +132,23 @@ namespace adjsw.F12025
 
          Canvas.SetTop(e, y);
          Canvas.SetLeft(e, x);
-         Canvas.SetZIndex(e, 25 - d.Pos);
+
+         if (highlight)
+         {
+            int ms = DateTime.Now.Millisecond % 1000;
+            if (ms < 500)
+            {
+               e.StrokeThickness = 4.0;
+            }
+            else
+            {
+               e.StrokeThickness = 1.0;
+            }
+         }
+         else
+            e.StrokeThickness = 1.0;
+
+         Canvas.SetZIndex(e, highlight ? 26 : 25 - d.Pos);
       }
 
       private void m_SetSize(int size)

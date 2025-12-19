@@ -180,6 +180,9 @@ namespace adjsw.F12025
          get
          {
             HitTestResult hitTestResult = VisualTreeHelper.HitTest(m_grid, Mouse.GetPosition(m_grid));
+            if (null == hitTestResult)
+               return null;
+
             DataGridRow dataGridRow = hitTestResult.VisualHit.GetParentOfType<DataGridRow>();
             int index = -1;
 
