@@ -1,6 +1,6 @@
 # KRF1 Timing App
 
-This repository contains a software to display the leaderboard and car status for the F1-24 game on a second monitor by utilizing the game Telemetry output.
+This repository contains a software to display the leaderboard and car status for the F1-25 game on a second monitor by utilizing the game Telemetry output.
 
 ### Installation
 The binaries are provided in form of a zipped file containing DLLs and one executable. They can be extracted to any directory, but it should have write permissions (for race reports). It is recommended to extract to the personal document folder, or any other filder with write permissions.
@@ -8,7 +8,7 @@ On a Windows 10 machine usually just the executable must be started and everythi
 In case the program does not start, please install the Visual Studio C++ Redistributable (vc_redist.x86.exe) for Visual Studio 2022:
 - [vc_redist.x86.exe](https://aka.ms/vs/17/release/vc_redist.x86.exe)
 
-Furthermore in the game the telemetry output must be enabled in mode "2023" to UDP port 20777.
+Furthermore in the game the telemetry output must be enabled in mode "2025" to UDP port 20777.
 
 ### Functions
 The program contains two different views and a combination of both.
