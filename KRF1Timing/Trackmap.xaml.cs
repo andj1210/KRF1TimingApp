@@ -30,18 +30,28 @@ namespace adjsw.F12025
       public Trackmap()
       {
          InitializeComponent();
+         m_playerMark.Width = 3;
+         m_playerMark.Fill = Brushes.Black;
+         m_playerMark.Visibility = Visibility.Collapsed;
+         m_playerMark.Stroke = Brushes.Black;
+         m_playerMark.StrokeThickness = 3;
+         m_canv.Children.Add(m_playerMark);
       }
 
       public void Update(DriverData[] dat, DriverData highlight)
       {
+         bool havePlayer = false;
          if (dat != null)
          {
             m_SetSize(dat.Length);
             for (int i = 0; i < dat.Length; i++)
             {
+               havePlayer |= dat[i].IsPlayer;
                m_UpdateDriver(dat[i], m_ellipses[i], dat[i] == highlight);
             }
          }
+         //if (!havePlayer)
+            m_playerMark.Visibility = Visibility.Collapsed;
       }
 
 
@@ -52,7 +62,6 @@ namespace adjsw.F12025
          double yCenter = xCenter + 100;
          double r = 375/2.0;
 
-         // probably some margin related errors, we need to correct here
          xCenter -= e.Height / 2;
          yCenter -= e.Width / 2;
 
@@ -129,7 +138,7 @@ namespace adjsw.F12025
 
          double x = xCenter + r * Math.Cos(rad);
          double y = yCenter + r * Math.Sin(rad);
-
+         Canvas.SetZIndex(e, highlight ? 26 : 25 - d.Pos);
          Canvas.SetTop(e, y);
          Canvas.SetLeft(e, x);
 
@@ -148,7 +157,24 @@ namespace adjsw.F12025
          else
             e.StrokeThickness = 1.0;
 
-         Canvas.SetZIndex(e, highlight ? 26 : 25 - d.Pos);
+         if (d.IsPlayer)
+         {
+            /* does not work properly 
+            m_playerMark.Visibility = Visibility.Visible;
+            m_playerMark.X1 = r * Math.Cos(rad);
+            m_playerMark.Y1 = r * Math.Sin(rad);
+            m_playerMark.X2 = 0;
+            m_playerMark.Y2 = 0;
+            Canvas.SetTop(m_playerMark, yCenter);
+            Canvas.SetLeft(m_playerMark, xCenter);
+            ...*/
+            int ms = DateTime.Now.Millisecond % 1000;
+            if (ms < 500)
+            {
+               e.Fill = Brushes.HotPink;
+            }
+            Canvas.SetZIndex(e, 25);
+         }
       }
 
       private void m_SetSize(int size)
@@ -200,6 +226,7 @@ namespace adjsw.F12025
       }
 
       private Ellipse[] m_ellipses = new Ellipse[0];
+      private Line m_playerMark = new Line();
       private SolidColorBrush m_brushTr = new SolidColorBrush(Color.FromRgb(10, 100, 150));
    }
 }

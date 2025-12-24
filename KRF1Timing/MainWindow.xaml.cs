@@ -49,7 +49,7 @@ namespace adjsw.F12025
       {
          InitializeComponent();
 
-         Title = "KRF1 Timing App for F1-25 V0.9.0";
+         Title = "KRF1 Timing App for F1-25 V0.90.0";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(40);
@@ -260,7 +260,7 @@ namespace adjsw.F12025
                   Canvas.SetTop(m_carStatus, ActualHeight / 2);
                   Canvas.SetLeft(m_carStatus, x1+10);
 
-                  if (ActualWidth < 1281)
+                  if (ActualWidth < 1350)
                   {
                      // for 1280*1024 4:3
                      UpdateScaleCarMap(0.75);
@@ -289,7 +289,7 @@ namespace adjsw.F12025
                else
                {
                   Canvas.SetTop(m_trackmap, 50);
-                  if (ActualWidth > 1280)
+                  if (ActualWidth > 1350)
                      Canvas.SetLeft(m_trackmap, 250);
                   else
                      Canvas.SetLeft(m_trackmap, 20);
