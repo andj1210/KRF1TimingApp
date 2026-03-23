@@ -118,6 +118,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="DriverNameContextMenu.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -129,6 +133,9 @@
     <Compile Include="BindingConverters.cs" />
     <Compile Include="CarStatusView.xaml.cs">
       <DependentUpon>CarStatusView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DriverNameContextMenu.xaml.cs">
+      <DependentUpon>DriverNameContextMenu.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>

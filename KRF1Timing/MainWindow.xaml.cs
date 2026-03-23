@@ -49,7 +49,7 @@ namespace adjsw.F12025
       {
          InitializeComponent();
 
-         Title = "KRF1 Timing App for F1-25 V0.90.0";
+         Title = "KRF1 Timing App for F1-25 V0.91.0";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(40);
@@ -86,6 +86,7 @@ namespace adjsw.F12025
          Closing += MainWindow_Closing;
 
          m_board.DataGridRightClick += OnGridClick;
+         m_driverCtxMenu.NameChosen += OnDriverNameChosen;
 
          //m_CreateTestJsonMappingFile();
          m_LoadNameMappings(false);
@@ -110,93 +111,6 @@ namespace adjsw.F12025
             m_udpClient.Dispose();
          if (m_playbackWindow != null)
             m_playbackWindow.Close();
-      }
-
-      private void ShowContextMenuMapper(DriverData driver)
-      {
-         if (m_ctxMenu != null)
-         {
-            m_ctxMenu.IsOpen = false;
-         }
-         else
-         {
-            m_ctxMenu = new ContextMenu();
-         }
-
-         // clean old context menu
-         // in case we have registered event handlers we should unregister, as it leaks otherwise
-         foreach (var item in m_ctxMenu.Items)
-         {
-            var oldWrap = item as WrapPanel;
-            if (oldWrap != null)
-            {
-               foreach (var innerChild in oldWrap.Children)
-               {
-                  var btn = innerChild as Button;
-                  if (btn != null)
-                     btn.Click -= Button_ChangeName_Click;
-               }
-            }
-
-
-            MenuItem oldItem = item as MenuItem;
-            if (null != oldItem)
-            {
-               foreach (var itemNested in oldItem.Items)
-               {
-                  var labelOld = itemNested as Label;
-
-                  if (null != labelOld)
-                     labelOld.MouseLeftButtonDown -= OnMappingCtxMenuClick;
-               }
-            }
-         }
-         m_ctxMenu.Items.Clear();
-
-         // (re)create context menu items
-         string header = driver.Name + " | " + driver.DriverNr + " | " + driver.Team.ToString("g");
-
-         var edit = new TextBox();
-         edit.Text = header;
-         edit.KeyDown += Edit_ChangeName_KeyDown;
-         var button = new Button();
-         button.Content = "ok";
-         var wrap = new WrapPanel();
-
-         wrap.Children.Add(edit);
-         wrap.Children.Add(button);
-         button.Click += Button_ChangeName_Click;
-
-         var label = new Label();
-         label.Content = header;
-         m_ctxMenu.Items.Add(header);
-         m_ctxMenu.Items.Add(new Separator());
-         m_ctxMenu.Items.Add(wrap);
-
-         foreach (var mappinglist in m_nameMappings)
-         {
-            MenuItem newItem = new MenuItem();
-            newItem.Header = mappinglist.LeagueName;
-            foreach (var mapping in mappinglist.Mappings)
-            {
-               Label nested = new Label();
-               nested.Content = mapping;
-               nested.MouseLeftButtonDown += OnMappingCtxMenuClick;
-               newItem.Items.Add(nested);
-            }
-
-            m_ctxMenu.Items.Add(newItem);
-         }
-         m_ctxMenu.IsOpen = true;
-         m_ctxMenuReferencedDriver = driver;
-      }
-
-      private void Edit_ChangeName_KeyDown(object sender, KeyEventArgs e)
-      {
-         if (e.Key == Key.Enter)
-         {
-            Button_ChangeName_Click(null, null); // same as button event -> update new name
-         }
       }
 
       private void ToggleView()
@@ -848,6 +762,18 @@ namespace adjsw.F12025
                m_nameMappings[0] = dummy;
             }
          }
+
+         try
+         {
+            var json = File.ReadAllText("namemappingsdyn.json");
+            m_nameMappingsDynamic = Newtonsoft.Json.JsonConvert.DeserializeObject<DriverNameDynamicMappings>(json) as DriverNameDynamicMappings;
+         }
+         catch (Exception ex)
+         {
+            // non existence of the dynamic mapping file is not an error, so don´t bother the user with a dialog
+            m_nameMappingsDynamic = new DriverNameDynamicMappings();
+         }
+
       }
 
       private void PollUpdates_Tick(object sender, EventArgs e)
@@ -1002,81 +928,47 @@ namespace adjsw.F12025
          m_packetQue.Enqueue(e.data);
       }
 
-      private void OnMappingCtxMenuClick(object sender, RoutedEventArgs e)
+      private void OnGridClick(object sender, MouseButtonEventArgs e)
       {
-         var itemLb = sender as Label;
-         if (itemLb != null)
+         DriverData driver = m_board.DriverUnderMouse as DriverData;
+         if (driver != null)
          {
-            var originalMapping = itemLb.Content as DriverNameMapping;
-            //var originalMapping = item.Items.CurrentItem as DriverNameMapping;
-
-            if (originalMapping != null)
-            {
-               DriverNameMapping mappingToDriver = ReflectionCloner.DeepCopy(originalMapping);
-               mappingToDriver.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
-               mappingToDriver.Team = m_ctxMenuReferencedDriver.Team;
-
-
-               bool exchangedMapping = false;
-               for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
-               {
-                  var mapping = m_runtimeMapping.Mappings[i];
-                  if (
-                      (mapping.DriverNumber == mappingToDriver.DriverNumber) &&
-                      (mapping.Team == mappingToDriver.Team)
-                      )
-                  {
-                     m_runtimeMapping.Mappings[i] = mappingToDriver;
-                     exchangedMapping = true;
-                  }
-               }
-
-               if (!exchangedMapping)
-               {
-                  DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
-
-                  Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
-                  newMappingsArray[newMappingsArray.Length - 1] = mappingToDriver;
-                  m_runtimeMapping.Mappings = newMappingsArray;
-               }
-
-               m_mapper.SetDriverNameMappings(null);
-               m_mapper.SetDriverNameMappings(m_runtimeMapping);
-            }
+            m_driverCtxMenu.Show(driver, m_nameMappingsDynamic, m_nameMappings);
          }
       }
 
-      private void Button_ChangeName_Click(object sender, RoutedEventArgs e)
+      private void OnDriverNameChosen(DriverData driver, string newName)
       {
-         string newName = "";
-         foreach (var child in m_ctxMenu.Items)
+         SetNewNameToReferencedDriver(driver, newName);
+         m_nameMappingsDynamic.Add(driver.DriverNr, newName);
+         StoreDynamicMappings();
+      }
+
+      private void StoreDynamicMappings()
+      {
+         try
          {
-            var wrap = child as WrapPanel;
-            if (wrap != null)
-            {
-               foreach (var innerChild in wrap.Children)
-               {
-                  var tb = innerChild as TextBox;
-                  if (tb != null)
-                     newName = tb.Text;
-               }
-            }
+            string filename = "namemappingsdyn.json";
+            var jsonText = Newtonsoft.Json.JsonConvert.SerializeObject(m_nameMappingsDynamic, Newtonsoft.Json.Formatting.Indented);
+            File.WriteAllText(filename, jsonText);
          }
 
-         if (string.IsNullOrEmpty(newName))
+         catch(Exception ex)
          {
-            m_ctxMenu.IsOpen = false;
-            return;
+            ShowInfoBox("Error storing dynamic mappings: \"namemappingsdyn.json\":\r\n" + ex.Message, TimeSpan.FromSeconds(3));
          }
+      }
 
+      private void SetNewNameToReferencedDriver(DriverData driver, string newName)
+      {
          // find existing mapping and overwrite:
          bool exchangedMapping = false;
          for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
          {
             var mapping = m_runtimeMapping.Mappings[i];
             if (
-                (mapping.DriverNumber == m_ctxMenuReferencedDriver.DriverNr) &&
-                (mapping.Team == m_ctxMenuReferencedDriver.Team)
+                (mapping.DriverNumber == driver.DriverNr) &&
+                (mapping.Team == driver.Team)
                 )
             {
                m_runtimeMapping.Mappings[i].Name = newName;
@@ -1090,24 +982,14 @@ namespace adjsw.F12025
             Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
             var addMapping = new DriverNameMapping();
             addMapping.Name = newName;
-            addMapping.DriverNumber = m_ctxMenuReferencedDriver.DriverNr;
-            addMapping.Team = m_ctxMenuReferencedDriver.Team;
+            addMapping.DriverNumber = driver.DriverNr;
+            addMapping.Team = driver.Team;
             newMappingsArray[newMappingsArray.Length - 1] = addMapping;
             m_runtimeMapping.Mappings = newMappingsArray;
          }
 
          m_mapper.SetDriverNameMappings(null);
          m_mapper.SetDriverNameMappings(m_runtimeMapping);
-         m_ctxMenu.IsOpen = false;
-      }
-
-      private void OnGridClick(object sender, MouseButtonEventArgs e)
-      {
-         DriverData driver = m_board.DriverUnderMouse as DriverData;
-         if (driver != null)
-         {
-            ShowContextMenuMapper(driver);
-         }
       }
 
       private UdpEventClient m_udpClient = null;
@@ -1122,10 +1004,10 @@ namespace adjsw.F12025
       private int m_nameMappingNextIdx = 0;
       private DriverNameMappings m_emptyMapping;
       private DriverNameMappings[] m_nameMappings;
+      private DriverNameDynamicMappings m_nameMappingsDynamic;
       private DriverNameMappings m_runtimeMapping = null; // A volatile mapping which is altered during runtime by user intervention
       private bool m_autosave = true;
-      private ContextMenu m_ctxMenu = null;
-      private DriverData m_ctxMenuReferencedDriver = null;
+      private DriverNameContextMenu m_driverCtxMenu = new DriverNameContextMenu();
       private ViewType m_viewType = ViewType.BoardAndCarMap; // on startup will toggle to next view, which will be board only
 
 

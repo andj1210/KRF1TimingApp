@@ -610,6 +610,55 @@ namespace adjsw::F12025
       property array<DriverNameMapping^>^ Mappings; // each driver name mapping
    };
 
+   public ref class DriverNameDynamicMappings
+   {
+   public:
+      DriverNameDynamicMappings() { driverNameList = gcnew Dictionary<int, array<String^>^>(); }
+      void Add(int driverNumber, String^ name) { 
+         array<String^>^ mappings = nullptr;
+         if (driverNameList->TryGetValue(driverNumber, mappings))
+         {
+            for (unsigned i = 0; i < mappings->Length; ++i)
+            {
+               if (String::Equals(mappings[i], name))
+                  return; // already existent!
+            }
+
+            if (mappings->Length < 5)
+            {
+               array<String^>^ mappingsNew = gcnew array<String^>(mappings->Length + 1);
+               mappingsNew[0] = name;
+               for (unsigned i = 0; i < mappings->Length; ++i)
+               {
+                  mappingsNew[i + 1] = mappings[i];
+               }
+               driverNameList->Remove(driverNumber);
+               driverNameList->Add(driverNumber, mappingsNew);
+            }
+            else
+            {
+               // cap to 5 entries of history
+               array<String^>^ mappingsNew = gcnew array<String^>(5);
+               mappingsNew[0] = name;
+               mappingsNew[1] = mappings[0];
+               mappingsNew[2] = mappings[1];
+               mappingsNew[3] = mappings[2];
+               mappingsNew[4] = mappings[3];
+
+               driverNameList->Remove(driverNumber);
+               driverNameList->Add(driverNumber, mappingsNew);
+            }
+         }
+         else
+         {
+            mappings = gcnew array<String^>(1);
+            mappings[0] = name;
+            driverNameList->Add(driverNumber, mappings);
+         }
+      }
+      property Dictionary<int, array<String^>^>^ driverNameList;
+   };
+
 
    // reduced data model for result export
    public ref class DriverDataResult : public System::ComponentModel::INotifyPropertyChanged

@@ -2,7 +2,7 @@
 /F1RaceBoard/bin
 /F1RaceBoard/obj
 /F12018UdpParser/Release
-/.vs
+.vs
 /F12020UdpParser/Release
 /F12020UdpParser/Debug
 /_dist/*.zip
