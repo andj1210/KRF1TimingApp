@@ -35,7 +35,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\_build\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -57,6 +57,16 @@
   <PropertyGroup>
     <StartupObject>
     </StartupObject>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseDev|AnyCPU'">
+    <OutputPath>..\_build\ReleaseDev\</OutputPath>
+    <DefineConstants>TRACE;RELEASEDEV</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL" />
@@ -80,6 +90,7 @@
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -96,12 +107,20 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="RelayClient.cs" />
+    <Compile Include="RelayConfig.cs" />
+    <Compile Include="RelayProtocol.cs" />
+    <Compile Include="RelayUplink.cs" />
+    <Compile Include="ReportWriter.cs" />
     <Compile Include="StatusView.xaml.cs">
       <DependentUpon>StatusView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TrackLearner.cs" />
     <Compile Include="Trackmap.xaml.cs">
       <DependentUpon>Trackmap.xaml</DependentUpon>
     </Compile>
+    <Compile Include="TrackMapData.cs" />
+    <Compile Include="TrackMapStore.cs" />
     <Compile Include="UdpPlaybackData.cs" />
     <Compile Include="PersonalLeaderboard.xaml.cs">
       <DependentUpon>PersonalLeaderboard.xaml</DependentUpon>
@@ -114,6 +133,7 @@
     <Compile Include="UdpPlaybackWindow.xaml.cs">
       <DependentUpon>UdpPlaybackWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UdpSessionRecorder.cs" />
     <Page Include="CarStatusView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

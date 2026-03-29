@@ -3,8 +3,10 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,6 +29,7 @@ namespace adjsw.F12025
          Board,
          BoardAndCarMap,
          CarMap,
+         TrackOnly,
          Count
       }
 
@@ -39,15 +42,17 @@ namespace adjsw.F12025
          public string[] DriverTag { get; set; }
       }
 
-
-      public ConcurrentQueue<byte[]> PacketQue
-      {
-         get { return m_packetQue; }
-      }
+      public ConcurrentQueue<byte[]> PacketQue { get { return m_packetQue; } }
 
       public MainWindow()
       {
          InitializeComponent();
+
+#if DEBUG || RELEASEDEV
+         m_devExpander.Visibility = Visibility.Visible;
+#else
+         m_devExpander.Visibility = Visibility.Collapsed;
+#endif
 
          Title = "KRF1 Timing App for F1-25 V0.91.0";
 
@@ -61,6 +66,33 @@ namespace adjsw.F12025
 
          m_mapper = new adjsw.F12025.F1UdpClrMapper();
          m_mapper.InsertTestData();
+
+         // Create relay uplink eagerly if config file is present.
+         m_relayConfig = RelayConfig.TryLoad();
+         if (m_relayConfig != null)
+         {
+            m_remoteExpander.Visibility = Visibility.Visible;
+
+            m_relayUplink = new RelayUplink(m_relayConfig.Server, m_relayConfig.Port, m_mapper);
+
+            m_relayUplink.StatusChanged += status =>
+               Dispatcher.BeginInvoke(new Action(() =>
+               {
+                  if (!string.IsNullOrEmpty(status))
+                     ShowInfoBox("Relay: " + status, TimeSpan.FromSeconds(5));
+                  if (m_relayUplink != null && !string.IsNullOrEmpty(m_relayUplink.Password))
+                     m_SetStatusRow("relay", "RELAY:", m_relayUplink.Password, s_relayStatusBrush);
+                  else
+                     m_SetStatusRow("relay", null, null, null);
+               }));
+
+            m_relayUplink.Error += msg =>
+               Dispatcher.BeginInvoke(new Action(() =>
+               {
+                  m_SetStatusRow("relay", null, null, null);
+                  ShowInfoBox("Relay error:\r\n" + msg, TimeSpan.FromSeconds(5));
+               }));
+         }
 
          if (!String.IsNullOrEmpty(App.PlaybackFile))
          {
@@ -76,9 +108,11 @@ namespace adjsw.F12025
             m_udpClient.ReceiveEvent += OnUdpReceive;
          }
 
+         m_trackmap.PitExaggeration = true; // compile-time opt-in: exaggerate pit offset on real track map
+
          UpdateDriverGrid();
          UpdateCarStatus();
-         UpdateTrackmap();         
+         UpdateTrackmap();
 
          ShowInfoBox(s_splashText, TimeSpan.FromSeconds(10));
 
@@ -88,7 +122,11 @@ namespace adjsw.F12025
          m_board.DataGridRightClick += OnGridClick;
          m_driverCtxMenu.NameChosen += OnDriverNameChosen;
 
-         //m_CreateTestJsonMappingFile();
+         m_recorder.StatusChanged  += s => UpdateRecordingStatus();
+         m_recorder.RecordingError += msg => ShowInfoBox("Recording error:\r\n" + msg, TimeSpan.FromSeconds(5));
+
+         m_trackLearner.StatusChanged += msg => ShowInfoBox(msg, TimeSpan.FromSeconds(4));
+
          m_LoadNameMappings(false);
          DriverNameMappings dummy = new DriverNameMappings();
          dummy.LeagueName = "none";
@@ -109,8 +147,13 @@ namespace adjsw.F12025
       {
          if (m_udpClient != null)
             m_udpClient.Dispose();
+
          if (m_playbackWindow != null)
             m_playbackWindow.Close();
+
+         m_recorder.Dispose();
+         m_relayUplink?.Dispose();
+         m_relayClient?.Dispose();
       }
 
       private void ToggleView()
@@ -127,12 +170,21 @@ namespace adjsw.F12025
 
       private void UpdateLayout()
       {
-         bool verticalLayout = ActualWidth > ActualHeight ? false : true;
+         // we try to make it look about right on 4:3 1280x1024, 1080 & 1440 both in horizontal and vertical mode.
+
+         bool verticalLayout = ActualWidth <= ActualHeight;
+         bool dualMode = m_twoDriverMode;
 
          Canvas.SetTop(m_rootCanvas, 0);
          Canvas.SetLeft(m_rootCanvas, 0);
          m_rootCanvas.Height = ActualHeight;
          m_rootCanvas.Width = ActualWidth;
+
+         // Clear any leftover ScaleTransform from the trackmap
+         m_trackmap.RenderTransform = Transform.Identity;
+
+         // Default: hide second car; branches below re-show it in dual mode
+         m_carStatus2.Visibility = Visibility.Collapsed;
 
          switch (m_viewType)
          {
@@ -145,76 +197,161 @@ namespace adjsw.F12025
                m_board.MaxWidth = ActualWidth;
 
                break;
+
             case ViewType.BoardAndCarMap:
-               m_board.Visibility = Visibility.Visible;
+               m_board.Visibility    = Visibility.Visible;
                m_carStatus.Visibility = Visibility.Visible;
                m_trackmap.Visibility = Visibility.Visible;
+
                if (verticalLayout)
                {
-                  double y1 = ActualHeight * 1 / 2;
+                  double y1  = ActualHeight / 2.0;
+                  double tmH = ActualHeight - y1;
+
                   m_board.MaxHeight = y1;
-                  m_board.MaxWidth = ActualWidth;
+                  m_board.MaxWidth  = ActualWidth;
 
-                  Canvas.SetTop(m_trackmap, y1);
-                  Canvas.SetLeft(m_trackmap, 20);
+                  // Trackmap: left half of bottom area
+                  m_trackmap.Width  = ActualWidth / 2;
+                  m_trackmap.Height = tmH;
+                  Canvas.SetTop(m_trackmap,  y1);
+                  Canvas.SetLeft(m_trackmap, 0);
 
-                  Canvas.SetTop(m_carStatus, y1+60);
-                  Canvas.SetLeft(m_carStatus, ActualWidth / 2);
-
-               }
-               else
-               {
-                  double x1 = ActualWidth * 3 / 4;
-                  m_board.MaxHeight = ActualHeight;
-                  m_board.MaxWidth = x1;
-
-                  Canvas.SetTop(m_trackmap, 0);
-                  Canvas.SetLeft(m_trackmap, x1);
-
-                  Canvas.SetTop(m_carStatus, ActualHeight / 2);
-                  Canvas.SetLeft(m_carStatus, x1+10);
-
-                  if (ActualWidth < 1350)
+                  if (dualMode)
                   {
-                     // for 1280*1024 4:3
-                     UpdateScaleCarMap(0.75);
+                     double scale    = Math.Min(Math.Min(ActualWidth / 2.05 / (2 * 365.0), tmH / 500.0), 1.0);
+                     double car1Left = ActualWidth / 2;
+                     double car1Top  = y1 + 30;
+                     Canvas.SetTop(m_carStatus,   car1Top);
+                     Canvas.SetLeft(m_carStatus,  car1Left);
+                     Canvas.SetTop(m_carStatus2,  car1Top);
+                     Canvas.SetLeft(m_carStatus2, car1Left + 362 * scale);
+                     m_carStatus2.Visibility = Visibility.Visible;
+                     UpdateScaleCarMap(scale);
                   }
                   else
-                     UpdateScaleCarMap(1.0);
-
-               }
-
-               m_carStatus.Visibility = Visibility.Visible;
-               m_board.Visibility = Visibility.Visible;
-               break;
-            case ViewType.CarMap:
-               m_board.Visibility = Visibility.Collapsed;
-               m_carStatus.Visibility = Visibility.Visible;
-               m_trackmap.Visibility = Visibility.Visible;
-               if (verticalLayout)
-               {
-                  Canvas.SetTop(m_trackmap, 50);
-                  Canvas.SetLeft(m_trackmap, 250);
-
-                  Canvas.SetTop(m_carStatus, ActualHeight / 2 + 30);
-                  Canvas.SetLeft(m_carStatus, 250);
-                  UpdateScaleCarMap(1.25);
+                  {
+                     Canvas.SetTop(m_carStatus,  y1 + 60);
+                     Canvas.SetLeft(m_carStatus, ActualWidth / 2);
+                  }
                }
                else
                {
-                  Canvas.SetTop(m_trackmap, 50);
-                  if (ActualWidth > 1350)
-                     Canvas.SetLeft(m_trackmap, 250);
+                  double x1 = dualMode ? ActualWidth * 0.75 : ActualWidth * 0.75;
+
+                  m_board.MaxHeight = ActualHeight;
+                  m_board.MaxWidth  = x1;
+
+                  // Trackmap: top half of right panel
+                  double tmW = ActualWidth - x1;
+                  m_trackmap.Width  = tmW;
+                  m_trackmap.Height = ActualHeight / 2;
+                  Canvas.SetTop(m_trackmap,  0);
+                  Canvas.SetLeft(m_trackmap, x1);
+
+                  if (dualMode)
+                  {
+                     double scale    = Math.Min(
+                        Math.Min(tmW / (2.05 * 365.0), ActualHeight / 2.0 / 500.0), 
+                        1.0);
+
+                     double car1Left = x1 + 5;
+                     double car1Top  = ActualHeight / 2;
+                     Canvas.SetTop(m_carStatus,   car1Top);
+                     Canvas.SetLeft(m_carStatus,  car1Left);
+                     Canvas.SetTop(m_carStatus2,  car1Top);
+                     Canvas.SetLeft(m_carStatus2, car1Left + 362 * scale);
+                     m_carStatus2.Visibility = Visibility.Visible;
+                     UpdateScaleCarMap(scale);
+                  }
                   else
-                     Canvas.SetLeft(m_trackmap, 20);
+                  {
+                     Canvas.SetTop(m_carStatus,  ActualHeight / 2);
+                     Canvas.SetLeft(m_carStatus, x1 + 10);
 
-                     Canvas.SetTop(m_carStatus, 150);
-                  Canvas.SetLeft(m_carStatus, ActualWidth / 2);
-                  UpdateScaleCarMap(1.5);
+                     // for 1280×1024 4:3 screens
+                     UpdateScaleCarMap(ActualWidth < 1350 ? 0.75 : 1.0);
+                  }
+               }
+               break;
 
-                  if (ActualWidth > 1920)
-                     UpdateScaleCarMap(2);
+            case ViewType.CarMap:
+               m_board.Visibility     = Visibility.Collapsed;
+               m_carStatus.Visibility = Visibility.Visible;
+               m_trackmap.Visibility  = Visibility.Visible;
 
+               if (verticalLayout)
+               {
+                  double tmH = ActualHeight / 2;
+                  m_trackmap.Width  = ActualWidth;
+                  m_trackmap.Height = tmH;
+                  Canvas.SetTop(m_trackmap,  0);
+                  Canvas.SetLeft(m_trackmap, 0);
+
+                  if (dualMode)
+                  {
+                     double scale    = Math.Min(Math.Min(ActualWidth / (2 * 365.0), tmH / 500.0), 1.25);
+                     double totalW   = 2 * 365 * scale;
+                     double car1Left = (ActualWidth - totalW) / 2;
+                     double car1Top  = tmH + 30;
+                     Canvas.SetTop(m_carStatus,   car1Top);
+                     Canvas.SetLeft(m_carStatus,  car1Left);
+                     Canvas.SetTop(m_carStatus2,  car1Top);
+                     Canvas.SetLeft(m_carStatus2, car1Left + 365 * scale);
+                     m_carStatus2.Visibility = Visibility.Visible;
+                     UpdateScaleCarMap(scale);
+                  }
+                  else
+                  {
+                     Canvas.SetTop(m_carStatus,  tmH + 30);
+                     Canvas.SetLeft(m_carStatus, (ActualWidth - 365) / 2);
+                     UpdateScaleCarMap(1.25);
+                  }
+               }
+               else
+               {
+                  double tmW = ActualWidth / 2;
+                  m_trackmap.Width  = tmW;
+                  m_trackmap.Height = ActualHeight;
+                  Canvas.SetTop(m_trackmap,  0);
+                  Canvas.SetLeft(m_trackmap, 0);
+
+                  if (dualMode)
+                  {
+                     double scale    = Math.Min(Math.Min(tmW / (2 * 365.0), ActualHeight / 500.0), 1.5);
+                     double car1Left = ActualWidth / 2;
+                     double car1Top  = (ActualHeight - 500 * scale) / 2;
+                     Canvas.SetTop(m_carStatus,   car1Top);
+                     Canvas.SetLeft(m_carStatus,  car1Left);
+                     Canvas.SetTop(m_carStatus2,  car1Top);
+                     Canvas.SetLeft(m_carStatus2, car1Left + 365 * scale);
+                     m_carStatus2.Visibility = Visibility.Visible;
+                     UpdateScaleCarMap(scale);
+                  }
+                  else
+                  {
+                     Canvas.SetTop(m_carStatus,  150);
+                     Canvas.SetLeft(m_carStatus, ActualWidth / 2);
+                     UpdateScaleCarMap(ActualWidth > 1920 ? 2.0 : 1.5);
+                  }
+               }
+               break;
+
+            case ViewType.TrackOnly:
+               m_board.Visibility     = Visibility.Collapsed;
+               m_carStatus.Visibility = Visibility.Collapsed;
+               m_trackmap.Visibility  = Visibility.Visible;
+
+               // Reset the car-map transform so it does not interfere
+               UpdateScaleCarMap(1.0);
+
+               // Give the trackmap the full window area (minus small border)
+               {
+                  const double border = 20;
+                  m_trackmap.Width  = Math.Max(100, ActualWidth  - border * 2);
+                  m_trackmap.Height = Math.Max(100, ActualHeight - border * 2);
+                  Canvas.SetLeft(m_trackmap, border);
+                  Canvas.SetTop (m_trackmap, border);
                }
                break;
 
@@ -225,26 +362,22 @@ namespace adjsw.F12025
 
       private void UpdateScaleCarMap(double scale)
       {
-         var transform = m_carStatus.RenderTransform as ScaleTransform;
+         m_ApplyCarStatusScale(m_carStatus, scale);
+         m_ApplyCarStatusScale(m_carStatus2, scale);
+      }
+
+      private void m_ApplyCarStatusScale(CarStatusView view, double scale)
+      {
+         var transform = view.RenderTransform as ScaleTransform;
          if (transform == null)
          {
             transform = new ScaleTransform();
-            m_carStatus.RenderTransform = transform;
-            m_trackmap.RenderTransform = transform;
+            view.RenderTransform = transform;
          }
 
          transform.ScaleX = scale;
          transform.ScaleY = scale;
-         transform.CenterX = -100 + 100*scale;
-      }
-
-      private void M_driverListViewSource_Filter(object sender, FilterEventArgs e)
-      {
-         DriverData d = e.Item as DriverData;
-         if (d == null)
-            e.Accepted = false;
-         else
-            e.Accepted = d.Present;
+         transform.CenterX = -100 + 100 * scale;
       }
 
       private void UpdateDriverGrid()
@@ -278,67 +411,86 @@ namespace adjsw.F12025
 
       private void UpdateCarStatus()
       {
+         bool hasSecondary = false;
          foreach (var driver in m_mapper.Drivers)
          {
-            if (driver.IsPlayer)
+            if (driver.IsPlayer || driver.IsMainDriver)
+               m_FillCarStatus(m_carStatus, driver);
+
+            else if (driver.IsSecondaryDriver)
             {
-               m_carStatus.txt_tyre_fl.Text = "" + driver.WearDetail.WearFrontLeft;
-               m_carStatus.txt_tyre_fl.Background = DamageToToColor(driver.WearDetail.WearFrontLeft);
-
-               m_carStatus.txt_tyre_fr.Text = "" + driver.WearDetail.WearFrontRight;
-               m_carStatus.txt_tyre_fr.Background = DamageToToColor(driver.WearDetail.WearFrontRight);
-
-               m_carStatus.txt_tyre_rl.Text = "" + driver.WearDetail.WearRearLeft;
-               m_carStatus.txt_tyre_rl.Background = DamageToToColor(driver.WearDetail.WearRearLeft);
-
-               m_carStatus.txt_tyre_rr.Text = "" + driver.WearDetail.WearRearRight;
-               m_carStatus.txt_tyre_rr.Background = DamageToToColor(driver.WearDetail.WearRearRight);
-
-               m_carStatus.txt_wing_fl.Text = "" + driver.WearDetail.DamageFrontLeft;
-               m_carStatus.txt_wing_fl.Background = DamageToToColor(driver.WearDetail.DamageFrontLeft);
-
-               m_carStatus.txt_wing_fr.Text = "" + driver.WearDetail.DamageFrontRight;
-               m_carStatus.txt_wing_fr.Background = DamageToToColor(driver.WearDetail.DamageFrontRight);
-
-               m_carStatus.txt_penalty.Text = "" + driver.PenaltySeconds + " s";
-               if (driver.PenaltySeconds > 0)
-               {
-                  m_carStatus.txt_penalty.Foreground = Brushes.Red;
-               }
-               else
-               {
-                  m_carStatus.txt_penalty.Foreground = Brushes.Green;
-               }
-
-               m_carStatus.txt_temp_fl_inner.Text = "" + driver.WearDetail.TempFrontLeftInner + "°C";
-               m_carStatus.txt_temp_fl_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontLeftInner);
-               m_carStatus.txt_temp_fl_surface.Text = "" + driver.WearDetail.TempFrontLeftOuter + "°C";
-               m_carStatus.txt_temp_fl_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontLeftOuter);
-               m_carStatus.txt_temp_fr_inner.Text = "" + driver.WearDetail.TempFrontRightInner + "°C";
-               m_carStatus.txt_temp_fr_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontRightInner);
-               m_carStatus.txt_temp_fr_surface.Text = "" + driver.WearDetail.TempFrontRightOuter + "°C";
-               m_carStatus.txt_temp_fr_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontRightOuter);
-
-               m_carStatus.txt_temp_rl_inner.Text = "" + driver.WearDetail.TempRearLeftInner + "°C";
-               m_carStatus.txt_temp_rl_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearLeftInner);
-               m_carStatus.txt_temp_rl_surface.Text = "" + driver.WearDetail.TempRearLeftOuter + "°C";
-               m_carStatus.txt_temp_rl_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearLeftOuter);
-               m_carStatus.txt_temp_rr_inner.Text = "" + driver.WearDetail.TempRearRightInner + "°C";
-               m_carStatus.txt_temp_rr_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearRightInner);
-               m_carStatus.txt_temp_rr_surface.Text = "" + driver.WearDetail.TempRearRightOuter + "°C";
-               m_carStatus.txt_temp_rr_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearRightOuter);
-
-               m_carStatus.txt_temp_engine.Text = "" + driver.WearDetail.TempEngine + "°C";
-               m_carStatus.txt_temp_engine.Background = EngineToColor(driver.WearDetail.TempEngine);
-
-               break;
+               m_FillCarStatus(m_carStatus2, driver);
+               hasSecondary = true;
             }
          }
+         m_twoDriverMode = hasSecondary;
       }
 
-      private void UpdateTrackmap()
+      private void m_FillCarStatus(CarStatusView view, DriverData driver)
       {
-         m_trackmap.Update(m_mapper.Drivers, m_board.DriverUnderMouse as DriverData);
+         view.txt_tyre_fl.Text = "" + driver.WearDetail.WearFrontLeft;
+         view.txt_tyre_fl.Background = DamageToToColor(driver.WearDetail.WearFrontLeft);
+
+         view.txt_tyre_fr.Text = "" + driver.WearDetail.WearFrontRight;
+         view.txt_tyre_fr.Background = DamageToToColor(driver.WearDetail.WearFrontRight);
+
+         view.txt_tyre_rl.Text = "" + driver.WearDetail.WearRearLeft;
+         view.txt_tyre_rl.Background = DamageToToColor(driver.WearDetail.WearRearLeft);
+
+         view.txt_tyre_rr.Text = "" + driver.WearDetail.WearRearRight;
+         view.txt_tyre_rr.Background = DamageToToColor(driver.WearDetail.WearRearRight);
+
+         view.txt_wing_fl.Text = "" + driver.WearDetail.DamageFrontLeft;
+         view.txt_wing_fl.Background = DamageToToColor(driver.WearDetail.DamageFrontLeft);
+
+         view.txt_wing_fr.Text = "" + driver.WearDetail.DamageFrontRight;
+         view.txt_wing_fr.Background = DamageToToColor(driver.WearDetail.DamageFrontRight);
+
+         view.txt_driver_name.Text = driver.Name;
+         view.tyre_compound.Update(driver.VisualTyre);
+         view.SetCarImage(driver.Team);
+
+         view.txt_temp_fl_inner.Text = "" + driver.WearDetail.TempFrontLeftInner + "°C";
+         view.txt_temp_fl_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontLeftInner);
+         view.txt_temp_fl_surface.Text = "" + driver.WearDetail.TempFrontLeftOuter + "°C";
+         view.txt_temp_fl_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontLeftOuter);
+         view.txt_temp_fr_inner.Text = "" + driver.WearDetail.TempFrontRightInner + "°C";
+         view.txt_temp_fr_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontRightInner);
+         view.txt_temp_fr_surface.Text = "" + driver.WearDetail.TempFrontRightOuter + "°C";
+         view.txt_temp_fr_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempFrontRightOuter);
+
+         view.txt_temp_rl_inner.Text = "" + driver.WearDetail.TempRearLeftInner + "°C";
+         view.txt_temp_rl_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearLeftInner);
+         view.txt_temp_rl_surface.Text = "" + driver.WearDetail.TempRearLeftOuter + "°C";
+         view.txt_temp_rl_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearLeftOuter);
+         view.txt_temp_rr_inner.Text = "" + driver.WearDetail.TempRearRightInner + "°C";
+         view.txt_temp_rr_inner.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearRightInner);
+         view.txt_temp_rr_surface.Text = "" + driver.WearDetail.TempRearRightOuter + "°C";
+         view.txt_temp_rr_surface.Background = TyreToColor(driver.Tyre, driver.WearDetail.TempRearRightOuter);
+
+         view.txt_temp_engine.Text = "" + driver.WearDetail.TempEngine + "°C";
+         view.txt_temp_engine.Background = EngineToColor(driver.WearDetail.TempEngine);
+      }
+
+      private void UpdateTrackmap(bool motionUpdate = false)
+      {         
+         m_trackmap.ActiveTrack = m_mapper.SessionInfo.EventTrack; // switch between circle and real layout
+         m_trackmap.Update(m_mapper.Drivers, m_board.DriverUnderMouse as DriverData, motionUpdate);
+         
+         if (m_trackLearner.IsActive && (m_mapper.Drivers != null))
+         {
+            // Feed the track learner (uses the first present driver - typically the only one in TT)
+            foreach (var d in m_mapper.Drivers)
+            {
+               if (d.Present)
+               {
+                  m_trackLearner.Update(d,
+                     m_mapper.SessionInfo.EventTrack,
+                     m_mapper.SessionInfo.EventTrack.ToString("g"));
+                  break;
+               }
+            }
+         }
       }
 
       public Color ColorFromHSV(double hue, double saturation, double value)
@@ -376,7 +528,7 @@ namespace adjsw.F12025
 
          float damage = damageInt / 100.0f;
 
-         // map ~62% to full red already
+         // map ~60% to full red already
          damage *= 1.7f;
          if (damage > 1.0f)
             damage = 1.0f;
@@ -393,14 +545,16 @@ namespace adjsw.F12025
                     SkalarToHueIterp(80, 110, 240, 120, temp)
                     , 1, 1)
                 );
+
          else if (temp < 120)
             return new SolidColorBrush(ColorFromHSV(120, 1, 1));
+
          else
             return new SolidColorBrush(
                 ColorFromHSV(
                     SkalarToHueIterp(120, 150, 120, 0, temp)
                     , 1, 1)
-                    );
+                );
       }
 
       private SolidColorBrush TyreToColor(F1Tyre tyre, int temp)
@@ -444,279 +598,15 @@ namespace adjsw.F12025
          }
       }
 
-      private string To_H_MM_SS_mmm_String(double inputSeconds)
+      private void ActionSaveReportImpl()
       {
-         string str = "";
-         int hour = (int)inputSeconds / 3600;
-         inputSeconds -= hour * 3600.0;
-         int minutes = (int)inputSeconds / 60;
-         int seconds = (int)inputSeconds % 60;
-         int milliseconds = (int)((inputSeconds % 1) * 1000);
-
-         str += string.Format("{0,1}", hour);
-         str += string.Format(":{0,2:00}", minutes);
-         str += string.Format(":{0,2:00}", seconds);
-         str += string.Format(".{0:000}", milliseconds);
-         return str;
-      }
-
-      // TODO
-      private void SaveReport()
-      {
-         StringBuilder sb = new StringBuilder();
-         var sep = "--------------------------------------------------------------";
-         var session = m_mapper.SessionInfo;
-         var countDrivers = m_mapper.CountDrivers;
-         var drivers = m_mapper.Drivers;
-         var events = m_mapper.EventList.Events;
-         string nl = "\r\n";
-
-         if (events.Count == 0)
-         {
-            ShowInfoBox("Event Report not saved - no data!", TimeSpan.FromSeconds(3));
-            return;
-         }
-
-         // header
-         sb.Append("Racereport by " + Title + nl);
-         sb.Append(session.EventTrack.ToString("g") + " " + session.Session.ToString("g") + nl + events[0].TimeCode + nl);
-         sb.Append(session.TotalLaps + " Laps" + nl);
-
-         // classification
-         sb.Append(nl + nl + nl + "--------------------------------------CLASSIFICATION----------------------------------" + nl);
-         if (m_mapper.Classification == null)
-         {
-            sb.Append("No race result available" + nl);
-         }
+         string txtPath = ReportWriter.SaveReport(m_mapper, Title);
+         if (txtPath != null)
+            ShowInfoBox(txtPath + "\r\nThe race report has been saved.", TimeSpan.FromSeconds(3));
          else
-         {
-            int maxDriverNameLen = 4; // "Name"
-            ClassificationData winner = null;
-            foreach (var result in m_mapper.Classification)
-            {
-               if (result.Driver.Name.Length > maxDriverNameLen)
-                  maxDriverNameLen = result.Driver.Name.Length;
+            ShowInfoBox("Event Report not saved - no data!", TimeSpan.FromSeconds(3));
 
-               if (result.Position == 1)
-                  winner = result;
-            }
-            // "|POS | Name | LAPS | Track Time  | PEN | Total Time |"
-            sb.Append("|POS |");
-            sb.Append(" ");
-            int addspaces1 = maxDriverNameLen - 4;
-            int addspaces2 = addspaces1 / 2 + addspaces1 % 2;
-            addspaces1 /= 2;
-            for (int i = 0; i < addspaces1; ++i)
-               sb.Append(" ");
-            sb.Append("Name");
-            for (int i = 0; i < addspaces2; ++i)
-               sb.Append(" ");
-
-            sb.Append(" | LAPS | Track Time  |    Delta    | PEN | Total Time  |    Delta    |" + nl);
-            sb.Append("--------------------------------------------------------------------------------------" + nl);
-
-            double leaderTimeTrack = 0.0;
-            double leaderTimeTotal = 0.0;
-            int leaderLaps = 0;
-
-            for (int i = 0; i < m_mapper.Classification.Length; ++i)
-            {
-               foreach (var result in m_mapper.Classification)
-               {
-                  if (result.Position != (i + 1))
-                     continue;
-
-                  if (i == 0)
-                  {
-                     leaderTimeTrack = result.TotalRaceTime;
-                     leaderTimeTotal = leaderTimeTrack + result.PenaltiesTime;
-                     leaderLaps = result.NumLaps;
-                  }
-
-                  sb.Append(string.Format("| {0,2} ", result.Position));
-                  sb.Append(string.Format("| {0,-" + maxDriverNameLen + "} ", result.Driver.Name)); // todo align column width!
-                  sb.Append(string.Format("|  {0,2}  ", result.NumLaps));
-
-                  sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime) + " ");
-
-                  if (i == 0)
-                  {
-                     sb.Append("| ----------  ");
-                  }
-                  else
-                  {
-                     if (result.NumLaps == leaderLaps)
-                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime - leaderTimeTrack) + " ");
-                     else
-                        sb.Append("|   +" + (leaderLaps - result.NumLaps).ToString("D2") + "L      ");
-                  }
-
-
-                  if (result.PenaltiesTime > 0)
-                     sb.Append("| " + string.Format("{0,2}s ", result.PenaltiesTime));
-                  else
-                     sb.Append("|     ");
-
-                  sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime + result.PenaltiesTime) + " ");
-
-                  if (i == 0)
-                  {
-                     sb.Append("| ----------  |");
-                  }
-                  else
-                  {
-                     if (result.NumLaps == leaderLaps)
-                        sb.Append("| " + To_H_MM_SS_mmm_String(result.TotalRaceTime + result.PenaltiesTime - leaderTimeTotal) + " |");
-                     else
-                        sb.Append("|   +" + (leaderLaps - result.NumLaps).ToString("D2") + "L      |");
-                  }
-
-
-                  sb.Append(nl);
-               }
-            }
-         }
-
-         // laptimes
-         sb.Append(nl + nl + nl + "------------------------------LAPS----------------------------" + nl);
-         sb.Append("--***Warning*** Laptimes may have rounding issues of +/- 1ms--" + nl);
-         sb.Append("--------------------------------------------------------------" + nl + nl);
-
-         for (int i = 0; i < countDrivers; ++i)
-         {
-            var driver = drivers[i];
-            sb.Append("Driver: " + driver.Name + nl + sep + nl);
-            sb.Append("|LAP | SECTOR1 | SECTOR2 | SECTOR3 | Lap Time | Penalties|" + nl);
-            sb.Append(sep + nl);
-
-            for (int j = 0; j < driver.LapNr; ++j)
-            {
-               if (j < driver.Laps.Length)
-               {
-                  var lap = driver.Laps[j];
-                  if (j == driver.LapNr)
-                     if (lap.Lap == 0)
-                        continue;
-
-                  sb.Append(
-                     string.Format("| {0,2} | {1,7} | {2,7} | {3,7} | {4} |",
-                      j + 1, 
-                      lap.To_SS_MMMM(lap.Sector1Ms), 
-                      lap.To_SS_MMMM(lap.Sector2Ms), 
-                      lap.To_SS_MMMM(lap.Sector3Ms), 
-                      lap.To_M_SS_MMMM(lap.LapMs)));
-
-                  foreach (var ev in driver.Laps[j].Incidents)
-                  {
-                     sb.Append(ev.PenaltyType.ToString("g") + ",");
-                  }
-                  sb.Append(nl);
-               }
-            }
-
-            sb.Append(sep + nl + nl + nl);
-
-         }
-
-         // Inicdents
-         sb.Append(nl + nl + nl + "---------------------------INCIDENTS--------------------------" + nl);
-         sb.Append("LAP | INCIDENT" + nl);
-
-         foreach (var ev in events)
-         {
-            string driver = "N/A";
-            if (ev.CarIndex <= countDrivers)
-            {
-               driver = drivers[ev.CarIndex].Name;
-            }
-
-            string lapStr = string.Format(" {0,2} | ", ev.LapNum);
-            if (ev.LapNum == 0)
-            {
-               lapStr = " -- |";
-            }
-
-
-            switch (ev.Type)
-            {
-               case EventType.ChequeredFlag:
-               case EventType.SessionStarted:
-               case EventType.SessionEnded:
-                  sb.Append(lapStr + ev.Type.ToString("g") + nl);
-                  break;
-               case EventType.FastestLap:
-               case EventType.Retirement:
-               case EventType.RaceWinner:
-                  sb.Append(lapStr + driver + ": " + ev.Type.ToString("g") + nl);
-                  break;
-
-
-               case EventType.PenaltyIssued:
-                  sb.Append(lapStr + driver + ": " + ev.PenaltyType.ToString("g") + " for " + ev.InfringementType.ToString("g") + nl);
-                  break;
-
-               case EventType.DRSenabled:
-               case EventType.TeamMateInPits:
-               case EventType.SpeedTrapTriggered:
-               case EventType.DRSdisabled:
-                  // don´t care
-                  break;
-
-            }
-         }
-         sb.Append(sep + nl);
-
-         string filename = DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + "_report.txt";
-         File.WriteAllText(filename, sb.ToString());
-         ShowInfoBox(filename + "\r\nThe race report has been saved.", TimeSpan.FromSeconds(3));
-      }
-
-
-      private void SaveReportJson()
-      {
-         if (m_mapper.Classification == null)
-            return;
-
-         var json = new ResultExport();
-         json.Events = m_mapper.EventList;
-         json.EventTrack = m_mapper.SessionInfo.EventTrack;
-         json.TotalLaps = m_mapper.SessionInfo.TotalLaps;
-         json.Session = m_mapper.SessionInfo.Session;
-
-         // merge drivers into the reduced export model
-         json.Drivers = new DriverDataResult[m_mapper.Classification.Length];
-
-         for (int i = 0; i < m_mapper.Classification.Length; ++i)
-         {
-            json.Drivers[i] = new DriverDataResult();
-            DriverDataResult driverResult = json.Drivers[i];
-            ClassificationData classification = m_mapper.Classification[i];
-            DriverData driverSession = m_mapper.Classification[i].Driver;
-
-            driverResult.DriverTag = driverSession.DriverTag;
-            driverResult.DriverNr = driverSession.DriverNr;
-            driverResult.Team = driverSession.Team;
-            driverResult.Name = driverSession.Name;
-            driverResult.PitPenalties = driverSession.PitPenalties;
-            driverResult.VisualTyres = driverSession.VisualTyres;
-
-            driverResult.Pos = classification.Position;
-            driverResult.PenaltySeconds = classification.PenaltiesTime;
-            driverResult.RaceTimeOnTrack = (int)(classification.TotalRaceTime * 1000 + 0.5);
-
-            driverResult.Laps = new LapData[classification.NumLaps];
-            for (int j = 0; j < driverResult.Laps.Length; ++j)
-            {
-               driverResult.Laps[j] = driverSession.Laps[j];
-            }
-
-            driverResult.BugtimeRacedirector = 0;
-            driverResult.PenaltySecondsRacedirector = 0;
-         }
-
-         string filename = DateTime.Now.ToString("yyyy-MM-dd_HHmmss") + "_report.json";
-         var jsonText = Newtonsoft.Json.JsonConvert.SerializeObject(json, Newtonsoft.Json.Formatting.Indented);
-         File.WriteAllText(filename, jsonText);
+         ReportWriter.SaveReportJson(m_mapper);
       }
 
       private void ShowInfoBox(string text, TimeSpan autoCloseTime)
@@ -779,12 +669,41 @@ namespace adjsw.F12025
       private void PollUpdates_Tick(object sender, EventArgs e)
       {
          bool updated = false;
+         bool motionUpdate = false;
          byte[] newData;
          while (m_packetQue.TryDequeue(out newData))
          {
-            m_mapper.Proceed(newData);
-            updated = true;
+            // 1. Parse - (session UID is updated inside the mapper)
+            updated |= m_mapper.Proceed(newData);
+            motionUpdate |= (int)m_mapper.LastPacketType == 0;
+
+            // 2. Check for session change AFTER parsing so the new UID is already
+            //    committed. If changed, the recorder opens a new file NOW ...
+            ulong currentUID = m_mapper.SessionUID;
+            if ((currentUID != 0) && (currentUID != m_lastSessionUID))
+            {
+               m_lastSessionUID = currentUID;
+               m_recorder.NotifySessionChanged(currentUID);
+               m_trackLearner.NotifySessionChanged();
+            }
+
+            // 3. ... so this packet (the one that triggered the change) lands
+            //    in the new file, not the old one.
+            m_recorder.WritePacket(newData);
+
+            // 4. Relay uplink: feed the filter (queues for sending if connected)
+            m_relayUplink?.FetchPacket();
          }
+
+         // Drain secondary engineer queue — feeds only CarDamage/CarStatus into the
+         // mapper for the second driver's car index via ProceedSecondary.
+         byte[] secData;
+         while (m_packetQueSecondary.TryDequeue(out secData))
+         {
+            updated |= m_mapper.ProceedSecondary(secData);
+         }
+
+         UpdateTrackmap(motionUpdate); // trackmap might be in interpolation mode, therefore we might want to re render even if there is no new data...
 
          if (!updated)
             return;
@@ -792,7 +711,6 @@ namespace adjsw.F12025
          m_board.SessionSource = m_mapper.SessionInfo;
          UpdateDriverGrid();
          UpdateCarStatus();
-         UpdateTrackmap();
          UpdateLayout();
 
          if (m_mapper.SessionInfo.Session == SessionType.Race ||
@@ -808,8 +726,7 @@ namespace adjsw.F12025
                      ShowInfoBox("The Race has finished.\r\n Click in the window and hit\r\n---\"s\"---\r\nto save the race report.", TimeSpan.FromSeconds(10));
                   else
                   {
-                     SaveReport();
-                     SaveReportJson();
+                     ActionSaveReportImpl();
                   }
                   m_sessionClassificationHandled = true;
                }
@@ -858,74 +775,380 @@ namespace adjsw.F12025
 
       private void OnKeyDown(object sender, KeyEventArgs e)
       {
-         if (e.Key == Key.F11)
+         if (e.Key == Key.F11)    ActionToggleFullscreen();
+         if (e.Key == Key.S)      ActionSaveReport();
+         if (e.Key == Key.L)      ActionToggleLeader();
+         if (e.Key == Key.D)      ActionToggleStatus();
+         if (e.Key == Key.Space)  ToggleView();
+         if (e.Key == Key.M)      ActionCycleMapping();
+
+#if DEBUG || RELEASEDEV
+         if (e.Key == Key.R) ActionToggleRecording();
+         if (e.Key == Key.T) ActionToggleTrackLearning();
+#endif
+
+         if (m_relayConfig != null)
          {
-            if (WindowStyle == WindowStyle.None)
+            if (e.Key == Key.U) ActionToggleRelayUplink();
+            if (e.Key == Key.I) ActionToggleRelayEngineer();
+            if (e.Key == Key.O) ActionToggleSecondaryEngineer();
+         }
+      }
+
+      private void ActionToggleFullscreen()
+      {
+         if (WindowStyle == WindowStyle.None)
+         {
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            WindowState = WindowState.Normal;
+         }
+         else
+         {
+            WindowStyle = WindowStyle.None;
+            WindowState = WindowState.Maximized;
+         }
+      }
+
+      private void ActionSaveReport() => ActionSaveReportImpl();
+
+      private void ActionToggleRecording()
+      {
+         m_recorder.Toggle();
+         if (m_recorder.IsRecording)
+            ShowInfoBox("UDP Recording started.\r\nFiles -> recordings/<sessionId>.pkl", TimeSpan.FromSeconds(3));
+         else
+            ShowInfoBox("UDP Recording stopped.", TimeSpan.FromSeconds(2));
+      }
+
+      private void ActionToggleTrackLearning()
+      {
+         m_trackLearner.Toggle(
+            m_mapper.SessionInfo.EventTrack,
+            m_mapper.SessionInfo.EventTrack.ToString("g"));
+      }
+
+      /// <summary>
+      /// Adds, updates, or removes a named row in the status overlay (bottom-right corner).
+      /// Pass a null/empty value to remove the row. The overlay border hides itself
+      /// automatically when no rows remain.
+      /// </summary>
+      private void m_SetStatusRow(string key, string label, string value, Brush valueBrush)
+      {
+         if (string.IsNullOrEmpty(value))
+         {
+            if (m_statusRowLookup.TryGetValue(key, out var old))
             {
-               WindowStyle = WindowStyle.SingleBorderWindow;
-               WindowState = WindowState.Normal;
+               m_statusRowsPanel.Children.Remove(old.Row);
+               m_statusRowLookup.Remove(key);
             }
-            else
+         }
+         else if (m_statusRowLookup.TryGetValue(key, out var entry))
+         {
+            entry.ValueBlock.Text       = value;
+            entry.ValueBlock.Foreground = valueBrush;
+         }
+         else
+         {
+            var labelBlock = new TextBlock
             {
-               WindowStyle = WindowStyle.None;
-               WindowState = WindowState.Maximized;
+               Text              = label + " ",
+               FontFamily        = new FontFamily("Courier New"),
+               FontSize          = 14,
+               Foreground        = new SolidColorBrush(Color.FromRgb(0x88, 0x88, 0x88)),
+               VerticalAlignment = VerticalAlignment.Center
+            };
+            var valueBlock = new TextBlock
+            {
+               Text              = value,
+               FontFamily        = new FontFamily("Courier New"),
+               FontSize          = 14,
+               FontWeight        = FontWeights.Bold,
+               Foreground        = valueBrush,
+               VerticalAlignment = VerticalAlignment.Center
+            };
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(labelBlock);
+            row.Children.Add(valueBlock);
+            m_statusRowsPanel.Children.Add(row);
+            m_statusRowLookup[key] = (row, valueBlock);
+         }
+
+         m_statusOverlay.Visibility = m_statusRowLookup.Count > 0
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+      }
+
+      private void ActionToggleRelayUplink()
+      {
+         if (m_relayUplink == null)
+         {
+            ShowInfoBox("Relay not available.\r\nPlace relay_config.json in app folder.", TimeSpan.FromSeconds(4));
+            return;
+         }
+
+         if (m_relayUplink.IsConnected)
+         {
+            var result = System.Windows.MessageBox.Show(
+               "Do you want to stop sharing your Telemetry?",
+               "Disconnect from " + m_relayConfig.Server,
+               MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+               return;
+
+            m_relayUplink.Disconnect();
+            m_SetStatusRow("relay", null, null, null);
+            ShowInfoBox("Relay sharing stopped.", TimeSpan.FromSeconds(2));
+            return;
+         }
+         else
+         {
+            if (m_relayClient != null && m_relayClient.IsConnected)
+            {
+               ShowInfoBox("Cannot share while connected as Race Engineer.", TimeSpan.FromSeconds(4));
+               return;
+            }
+
+            var result = System.Windows.MessageBox.Show(
+               "Do you want to share your Telemetry?",
+               "Connect to " + m_relayConfig.Server,
+               MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+               return;
+
+            m_relayUplink.Connect();
+            ShowInfoBox("Connecting to relay server...", TimeSpan.FromSeconds(3));
+         }
+      }
+
+      private void ActionToggleRelayEngineer()
+      {
+         // Disconnect if already connected (also drops the secondary link)
+         if ((m_relayClient != null) && m_relayClient.IsConnected)
+         {
+            var result = System.Windows.MessageBox.Show(
+               "Do you want to disconnect from Second Driver?",
+               "Disconnect from " + m_relayConfig.Server,
+               MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+               return;
+
+            m_relayClient.Disconnect();
+            m_relayClient = null;
+            m_trackmap.InterpolationEnabled = false;
+            m_DisconnectSecondaryEngineer();
+            m_mapper.Mode = MapperMode.Direct;
+            ShowInfoBox("Engineer relay disconnected.", TimeSpan.FromSeconds(2));
+            return;
+         }
+
+         if ((m_relayUplink != null) && m_relayUplink.IsConnected)
+         {
+            ShowInfoBox("Cannot connect as Race Engineer while sharing Telemetry.", TimeSpan.FromSeconds(4));
+            return;
+         }
+
+         if (m_relayConfig == null)
+         {
+            m_relayConfig = RelayConfig.TryLoad();
+            if (m_relayConfig == null)
+            {
+               ShowInfoBox("Relay not available.\r\nPlace relay_config.json in app folder.", TimeSpan.FromSeconds(4));
+               return;
             }
          }
 
-         if (e.Key == Key.S)
-         {
-            SaveReport();
-            SaveReportJson();
-         }
+         // Prompt for password
+         string password = Microsoft.VisualBasic.Interaction.InputBox(
+            "Enter the driver's relay password:",
+            "Engineer Relay Connect",
+            "");
 
-         if (e.Key == Key.R)
-         {
-            // enable UDP recording
-         }
+         if (string.IsNullOrWhiteSpace(password))
+            return;
 
-         if (e.Key == Key.L)
-            m_board.LeaderVisible = !m_board.LeaderVisible;
+         m_relayClient = new RelayClient(m_relayConfig.Server, m_relayConfig.Port, password.Trim(), m_packetQue);
 
-         if (e.Key == Key.D)
-            m_board.StatusVisible = !m_board.StatusVisible;
-
-         if (e.Key == Key.Space)
-            ToggleView();
-
-         if (e.Key == Key.M)
-         {
-            m_LoadNameMappings(true); // always reload in case text changed
-
-            if (m_nameMappings != null)
+         m_relayClient.StatusChanged += status =>
+            Dispatcher.BeginInvoke(new Action(() =>
             {
-               if (m_nameMappingNextIdx >= m_nameMappings.Length)
+               if (!string.IsNullOrEmpty(status))
                {
-                  m_nameMappingNextIdx = 0;
-                  m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping); ;
-                  ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
-               }
-
-               else if (m_nameMappings.Length >= m_nameMappingNextIdx)
-               {
-                  m_runtimeMapping = ReflectionCloner.DeepCopy<DriverNameMappings>(m_nameMappings[m_nameMappingNextIdx]);
-                  ShowInfoBox("Drivername Mapping selected: " + m_runtimeMapping.LeagueName, TimeSpan.FromSeconds(2));
-                  m_nameMappingNextIdx++;
+                  ShowInfoBox("Engineer: " + status, TimeSpan.FromSeconds(4));
+                  m_SetStatusRow("engineer", "ENGINEER:", status, s_engineerStatusBrush);
                }
                else
                {
-                  m_runtimeMapping = null;
+                  m_SetStatusRow("engineer", null, null, null);
                }
+            }));
+
+         m_relayClient.Error += msg =>
+            Dispatcher.BeginInvoke(new Action(() =>
+               ShowInfoBox("Engineer error:\r\n" + msg, TimeSpan.FromSeconds(5))));
+
+         m_relayClient.Connect();
+         m_mapper.Mode = MapperMode.Engineer1;
+         ShowInfoBox("Connecting as engineer...", TimeSpan.FromSeconds(3));
+         m_trackmap.InterpolationEnabled = true;
+      }
+
+      private void ActionToggleSecondaryEngineer()
+      {
+         // Disconnect if already connected
+         if (m_relayClientSecondary != null && m_relayClientSecondary.IsConnected)
+         {
+            var result = System.Windows.MessageBox.Show(
+               "Do you want to disconnect from Second Driver?",
+               "Disconnect from " + m_relayConfig.Server,
+               MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (result != MessageBoxResult.Yes)
+               return;
+
+            m_DisconnectSecondaryEngineer();
+            ShowInfoBox("Second driver disconnected.", TimeSpan.FromSeconds(2));
+            return;
+         }
+
+         // Require a live primary engineer connection first
+         if (m_relayClient == null || !m_relayClient.IsConnected)
+         {
+            ShowInfoBox("Connect as Race Engineer first.", TimeSpan.FromSeconds(3));
+            return;
+         }
+
+         if (m_relayConfig == null)
+         {
+            ShowInfoBox("Relay not available.\r\nPlace relay_config.json in app folder.", TimeSpan.FromSeconds(4));
+            return;
+         }
+
+         string password = Microsoft.VisualBasic.Interaction.InputBox(
+            "Enter the second driver's relay password:",
+            "Second Driver Connect",
+            "");
+
+         if (string.IsNullOrWhiteSpace(password))
+            return;
+
+         m_relayClientSecondary = new RelayClient(
+            m_relayConfig.Server, m_relayConfig.Port, password.Trim(),
+            m_packetQueSecondary, secondary: true);
+
+         m_relayClientSecondary.StatusChanged += status =>
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+               if (!string.IsNullOrEmpty(status))
+               {
+                  ShowInfoBox("Second driver: " + status, TimeSpan.FromSeconds(4));
+                  m_SetStatusRow("engineer2", "ENGINEER 2:", status, s_engineer2StatusBrush);
+               }
+               else
+               {
+                  m_SetStatusRow("engineer2", null, null, null);
+               }
+            }));
+
+         m_relayClientSecondary.Error += msg =>
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+               m_SetStatusRow("engineer2", null, null, null);
+               ShowInfoBox("Second driver error:\r\n" + msg, TimeSpan.FromSeconds(5));
+            }));
+
+         m_relayClientSecondary.Connect();
+         m_mapper.Mode = MapperMode.Engineer2;
+         ShowInfoBox("Connecting to second driver...", TimeSpan.FromSeconds(3));
+      }
+
+      private void m_DisconnectSecondaryEngineer()
+      {
+         if (m_relayClientSecondary != null)
+         {
+            m_relayClientSecondary.Disconnect();
+            m_relayClientSecondary = null;
+         }
+         m_mapper.SecondaryDriverIndex = -1;
+         m_mapper.Mode = MapperMode.Engineer1;   // primary link still active; caller sets Direct if not
+         m_SetStatusRow("engineer2", null, null, null);
+      }
+
+      private void ActionToggleLeader()
+      {
+         m_board.LeaderVisible = !m_board.LeaderVisible;
+      }
+
+      private void ActionToggleStatus()
+      {
+         m_board.StatusVisible = !m_board.StatusVisible;
+      }
+
+      private void ActionCycleMapping()
+      {
+         m_LoadNameMappings(true); // always reload in case text changed
+
+         if (m_nameMappings != null)
+         {
+            if (m_nameMappingNextIdx >= m_nameMappings.Length)
+            {
+               m_nameMappingNextIdx = 0;
+               m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping);
+               ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
+            }
+            else if (m_nameMappings.Length >= m_nameMappingNextIdx)
+            {
+               m_runtimeMapping = ReflectionCloner.DeepCopy<DriverNameMappings>(m_nameMappings[m_nameMappingNextIdx]);
+               ShowInfoBox("Drivername Mapping selected: " + m_runtimeMapping.LeagueName, TimeSpan.FromSeconds(2));
+               m_nameMappingNextIdx++;
             }
             else
+            {
                m_runtimeMapping = null;
-
-            m_mapper.SetDriverNameMappings(m_runtimeMapping);
+            }
          }
+         else
+            m_runtimeMapping = null;
+
+         m_mapper.SetDriverNameMappings(m_runtimeMapping);
       }
+
+      private void OnSidebarHotspot_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+      {
+         m_sidebar.Visibility = Visibility.Visible;
+      }
+
+      private void OnSidebar_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+      {
+         m_sidebar.Visibility = Visibility.Collapsed;
+      }
+
+      private void OnSidebar_ToggleView(object sender, RoutedEventArgs e)           => ToggleView();
+      private void OnSidebar_ToggleLeader(object sender, RoutedEventArgs e)         => ActionToggleLeader();
+      private void OnSidebar_ToggleStatus(object sender, RoutedEventArgs e)         => ActionToggleStatus();
+      private void OnSidebar_SaveReport(object sender, RoutedEventArgs e)           => ActionSaveReport();
+      private void OnSidebar_CycleMapping(object sender, RoutedEventArgs e)         => ActionCycleMapping();
+      private void OnSidebar_ToggleFullscreen(object sender, RoutedEventArgs e)     => ActionToggleFullscreen();
+      private void OnSidebar_ToggleRecording(object sender, RoutedEventArgs e)      => ActionToggleRecording();
+      private void OnSidebar_ToggleTrackLearning(object sender, RoutedEventArgs e)  => ActionToggleTrackLearning();
+      private void OnSidebar_ToggleRelayUplink(object sender, RoutedEventArgs e)       => ActionToggleRelayUplink();
+      private void OnSidebar_ToggleRelayEngineer(object sender, RoutedEventArgs e)     => ActionToggleRelayEngineer();
+      private void OnSidebar_ToggleSecondaryEngineer(object sender, RoutedEventArgs e) => ActionToggleSecondaryEngineer();
 
       private void OnUdpReceive(object sender, UdpEventClientEventArgs e)
       {
          m_packetQue.Enqueue(e.data);
+      }
+
+      private void UpdateRecordingStatus()
+      {
+         const string baseTitle = "KRF1 Timing App for F1-25 V0.91.0";
+         if (m_recorder.IsRecording)
+            Title = baseTitle + "  ● REC";
+         else
+            Title = baseTitle;
       }
 
       private void OnGridClick(object sender, MouseButtonEventArgs e)
@@ -994,6 +1217,25 @@ namespace adjsw.F12025
 
       private UdpEventClient m_udpClient = null;
       private UdpPlaybackWindow m_playbackWindow = null;
+      private UdpSessionRecorder m_recorder = new UdpSessionRecorder();
+      private ulong m_lastSessionUID = 0;
+
+
+      // Relay
+      private bool m_twoDriverMode;
+      private RelayConfig  m_relayConfig          = null;
+      private RelayUplink  m_relayUplink           = null;
+      private RelayClient  m_relayClient           = null;
+      private RelayClient  m_relayClientSecondary  = null;
+      private ConcurrentQueue<byte[]> m_packetQueSecondary = new ConcurrentQueue<byte[]>();
+
+      // Status overlay
+      private Dictionary<string, (StackPanel Row, TextBlock ValueBlock)> m_statusRowLookup
+         = new Dictionary<string, (StackPanel, TextBlock)>();
+      private static readonly Brush s_relayStatusBrush     = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0x44));
+      private static readonly Brush s_engineerStatusBrush  = new SolidColorBrush(Color.FromRgb(0x44, 0xDD, 0xAA));
+      private static readonly Brush s_engineer2StatusBrush = new SolidColorBrush(Color.FromRgb(0x44, 0xCC, 0xEE));
+      private TrackLearner m_trackLearner = new TrackLearner();
       private ConcurrentQueue<byte[]> m_packetQue = new ConcurrentQueue<byte[]>();
       private F1UdpClrMapper m_mapper = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer(DispatcherPriority.Render);
@@ -1014,7 +1256,7 @@ namespace adjsw.F12025
       private static string s_splashText =
 @"
 KRF1 Timing App for F1-25
-Copyright 2018-2025 Andreas Jung
+Copyright 2018-2026 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

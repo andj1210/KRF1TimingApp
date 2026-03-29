@@ -16,8 +16,8 @@ namespace adjsw::F12025
    RedBull,
    Williams,
    AstonMartin,
-   Renault,
-   AlphaTauri,
+   Alpine,
+   RacingBulls,
    Haas,   
    McLaren,
    Sauber,
@@ -28,7 +28,7 @@ namespace adjsw::F12025
    // Modern - 16 = C5, 17 = C4, 18 = C3, 19 = C2, 20 = C1
    // 7 = inter, 8 = wet
    // F1 Classic - 9 = dry, 10 = wet
-   // F2 – 11 = super soft, 12 = soft, 13 = medium, 14 = hard
+   // F2 ï¿½ 11 = super soft, 12 = soft, 13 = medium, 14 = hard
    // 15 = wet
 
    public enum class F1Tyre : int
@@ -36,7 +36,7 @@ namespace adjsw::F12025
       // F1 Modern - 16 = C5, 17 = C4, 18 = C3, 19 = C2, 20 = C1
       // 7 = inter, 8 = wet
       // F1 Classic - 9 = dry, 10 = wet
-      // F2 – 11 = super soft, 12 = soft, 13 = medium, 14 = hard
+      // F2 ï¿½ 11 = super soft, 12 = soft, 13 = medium, 14 = hard
       // 15 = wet
 
       Intermediate = 7,
@@ -64,8 +64,8 @@ namespace adjsw::F12025
    {
       // F1 visual (can be different from actual compound)
       // 16 = soft, 17 = medium, 18 = hard, 7 = inter, 8 = wet
-      // F1 Classic – same as above
-      // F2 – same as above
+      // F1 Classic ï¿½ same as above
+      // F2 ï¿½ same as above
 
       Intermediate = 7,
       Wet = 8,
@@ -111,7 +111,8 @@ namespace adjsw::F12025
       Portimao,
       Jeddah,
       Miami,
-
+      LasVegas,
+      Losail,
       numEntries
    };
 
@@ -440,6 +441,14 @@ namespace adjsw::F12025
       int m_tempBrakeRearRight{ 0 };
    };
 
+   public ref class DriverPos3d
+   {
+   public:
+      float x{ 0 };
+      float y{ 0 };
+      float z{ 0 };
+   };
+
    public ref class DriverData : public System::ComponentModel::INotifyPropertyChanged
    {
    public:
@@ -470,7 +479,9 @@ namespace adjsw::F12025
          }
          FastestLap = gcnew LapData();      
          CurrentLap = Laps[0];
-         IsPlayer = false;
+         IsPlayer          = false;
+         IsMainDriver      = false;
+         IsSecondaryDriver = false;
          Present = false;
          VisualTyres = gcnew List<F1VisualTyre>();
          PitPenalties = gcnew List<SessionEvent^>();
@@ -480,6 +491,7 @@ namespace adjsw::F12025
          TimedeltaToPlayer = 0;
          Id = 0;
          AllowLapHistoryQuali = true;
+         m_trackPos3d = gcnew DriverPos3d();
       }
 
       void SetNameFromTelemetry(const char(&pName)[32])
@@ -500,7 +512,9 @@ namespace adjsw::F12025
       property String^ Name {String^ get() { return m_name; } void set(String^ val) { if (!String::Equals(val, m_name)) { m_name = val; NPC("Name"); } } }; // The name for Display
       property String^ TelemetryName {String^ get() { return m_telemetryName; } void set(String^ val) { if (!String::Equals(val, m_telemetryName)) { m_telemetryName = val; NPC("TelemetryName"); } } }; // The name from telemetry
       property String^ MappedName {String^ get() { return m_mappedName; } void set(String^ val) { if (!String::Equals(val, m_mappedName)) { m_mappedName = val; NPC("MappedName"); } } }; // The name from translation mappings
-      property bool IsPlayer {bool get() { return m_isPlayer; } void set(bool val) { if (val != m_isPlayer) { m_isPlayer = val; NPC("IsPlayer"); } } };
+      property bool IsPlayer          {bool get() { return m_isPlayer;          } void set(bool val) { if (val != m_isPlayer)          { m_isPlayer          = val; NPC("IsPlayer");          } } };
+      property bool IsMainDriver      {bool get() { return m_isMainDriver;      } void set(bool val) { if (val != m_isMainDriver)      { m_isMainDriver      = val; NPC("IsMainDriver");      } } };
+      property bool IsSecondaryDriver {bool get() { return m_isSecondaryDriver; } void set(bool val) { if (val != m_isSecondaryDriver) { m_isSecondaryDriver = val; NPC("IsSecondaryDriver"); } } };
       property bool Present {bool get() { return m_present; } void set(bool val) { if (val != m_present) { m_present = val; NPC("Present"); } } };
       property DriverStatus Status {DriverStatus get() { return m_status; } void set(DriverStatus val) { if (val != m_status) { m_status = val; NPC("Status"); } } };
       property F1Team Team {F1Team get() { return m_team; } void set(F1Team val) { if (val != m_team) { m_team = val; NPC("Team"); } } };
@@ -522,7 +536,9 @@ namespace adjsw::F12025
       property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
       property float CarDamage {float get() { return m_carDamage; } void set(float val) { if (val != m_carDamage) { m_carDamage = val; NPC("CarDamage"); } } };
       property float TrackPositionPerc{ float get() { return m_trackPosPerc; } void set(float val) { if ((val != m_trackPosPerc) && (val > 0.f)) { m_trackPosPerc = val; NPC("TrackPositionPerc"); } } }
-      
+      property DriverPos3d^ TrackPosition3d{ DriverPos3d^ get() { return m_trackPos3d; } void set(DriverPos3d^ v) { m_trackPos3d = v; } };
+
+
       property SessionInfo^ Session {SessionInfo^ get() { return m_sessionInfo; }}
 
 
@@ -537,6 +553,8 @@ namespace adjsw::F12025
       
       property bool HasPittedLatch {bool get() { return m_hasPitted; } void set(bool val) { m_hasPitted = val;} }; // temporary state only for the UDP mapper, for penalty serving heuristics
 
+      property float LastTyreUpdateByHistory; // signal to make tyre update by heuristic or take from history.
+
       void NPC(String^ name) { PropertyChanged(this, gcnew System::ComponentModel::PropertyChangedEventArgs(name)); }
       virtual event System::ComponentModel::PropertyChangedEventHandler^ PropertyChanged;
 
@@ -549,13 +567,15 @@ namespace adjsw::F12025
       String^ m_mappedName;
       DriverStatus m_status;
       bool m_isPlayer;
+      bool m_isMainDriver;
+      bool m_isSecondaryDriver;
       bool m_present;
       F1Team m_team;
       int m_driverNr{ 0 };
       F1Tyre m_tyre;
       F1VisualTyre m_visualTyre;
       List<F1VisualTyre>^ m_visualTyres;
-      List<SessionEvent^>^ m_otherPenalties; // all penalties except time penalties, which can´t be served in the pits
+      List<SessionEvent^>^ m_otherPenalties; // all penalties except time penalties, which canï¿½t be served in the pits
       int m_tyreAge;
       float m_tyreDamage; // TODO Remove, not included for Online Mutiplayer when telemetry = basic
       int m_pos;
@@ -570,6 +590,7 @@ namespace adjsw::F12025
       float m_timedeltaToLeader;
       CarDetail^ m_carDetail;
       float m_trackPosPerc{ 0.f };
+      DriverPos3d^ m_trackPos3d;
       SessionInfo^ m_sessionInfo;
 
       int m_hasPitted{ 0 };      // for tyre age, which is not directly available in non complete telemetry.
@@ -722,7 +743,7 @@ namespace adjsw::F12025
       F1Team m_team;
       int m_driverNr{ 0 };
       List<F1VisualTyre>^ m_visualTyres;
-      List<SessionEvent^>^ m_otherPenalties; // all penalties except time penalties, which can´t be served in the pits
+      List<SessionEvent^>^ m_otherPenalties; // all penalties except time penalties, which canï¿½t be served in the pits
       int m_pos;
       int m_lapNr;
       int m_penaltySeconds;

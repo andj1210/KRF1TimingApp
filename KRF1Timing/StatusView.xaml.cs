@@ -24,7 +24,6 @@ namespace adjsw.F12025
       private static readonly int s_lockTicks = 3 * 5; // = 3*333 ms + 5 = 5 seconds
       private static DispatcherTimer s_dt = new DispatcherTimer();
       private static FreezeStatus[] s_freezeState = new FreezeStatus[22];
-      private bool m_frozen = false;
 
       public static readonly DependencyProperty StatusInfoProperty =
          DependencyProperty.Register(
@@ -133,7 +132,6 @@ namespace adjsw.F12025
       private void OnFrezeStop(object sender, EventArgs e)
       {
          s_dt.Stop();
-         m_frozen = false;
          m_UpdateView();
       }
 

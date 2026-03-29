@@ -1,4 +1,4 @@
-Copyright 2018-2024 Andreas Jung
+Copyright 2018-2026 Andreas Jung
 F1 Game Session-Display is licensed under GPLv3, refer to LICENSE.Application.md.
 
 Library usage:

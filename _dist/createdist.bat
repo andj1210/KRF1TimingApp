@@ -1,3 +1,5 @@
+REM Deprecated - will be removed in favor of ps1 script...
+
 echo off
 
 REM This is a poor distribution creation by just copying the files into an zip file

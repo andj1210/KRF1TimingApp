@@ -1,4 +1,4 @@
-﻿<Window x:Class="adjsw.F12025.MainWindow"
+<Window x:Class="adjsw.F12025.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -8,18 +8,232 @@
         Background="#FF383838"
         Title="t.b.d. src" Width="1280" Height="1024" KeyDown="OnKeyDown" x:Name="wnd" x:FieldModifier="public">
     <Window.Resources>
+        <!-- Flat dark button used throughout the sidebar -->
+        <Style x:Key="SidebarButton" TargetType="Button">
+            <Setter Property="Background"              Value="Transparent"/>
+            <Setter Property="Foreground"              Value="#FFCCCCCC"/>
+            <Setter Property="FontFamily"              Value="Courier New"/>
+            <Setter Property="FontSize"                Value="16"/>
+            <Setter Property="BorderThickness"         Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding"                 Value="14,7"/>
+            <Setter Property="Cursor"                  Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FF1E3050"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#FF152038"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Expander with dark-theme arrow and no system chrome -->
+        <Style x:Key="SidebarExpander" TargetType="Expander">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Expander">
+                        <StackPanel>
+                            <!-- Header toggle -->
+                            <ToggleButton IsChecked="{Binding IsExpanded, Mode=TwoWay,
+                                                      RelativeSource={RelativeSource TemplatedParent}}"
+                                          Background="Transparent"
+                                          BorderBrush="#FF444444" BorderThickness="0,1,0,0"
+                                          Cursor="Hand">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Bd"
+                                                Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                Padding="14,7">
+                                            <DockPanel>
+                                                <!-- Right-pointing arrow (collapsed) -->
+                                                <Path x:Name="Arr" DockPanel.Dock="Left"
+                                                      Data="M 0 0 L 5 4 L 0 8 Z"
+                                                      Fill="#FF777777"
+                                                      Width="8" Height="10" Stretch="Uniform"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+                                                <ContentPresenter VerticalAlignment="Center"/>
+                                            </DockPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <!-- Down-pointing arrow (expanded) -->
+                                                <Setter TargetName="Arr" Property="Data"  Value="M 0 0 L 8 0 L 4 6 Z"/>
+                                                <Setter TargetName="Arr" Property="Fill"  Value="#FFAAAAAA"/>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#FF1E3050"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                                <ContentPresenter ContentSource="Header"/>
+                            </ToggleButton>
+                            <!-- Collapsible content -->
+                            <ContentPresenter x:Name="Cp" Visibility="Collapsed"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="Cp" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Grid Height="Auto">
         <Border Grid.Column="1" Grid.ColumnSpan="2" x:Name="m_infoBox" HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" BorderBrush="Black" BorderThickness="3" Panel.ZIndex="1" MouseDown="m_infoBox_MouseDown">
             <StackPanel>
                 <Image x:Name="m_imgInfo" Margin="10" Height="150" Source="/img/krf1.png"></Image>
                 <TextBlock Margin="5" x:Name="m_infoTxt"  Foreground="Black" FontSize="16" FontWeight="Bold">LICENSE</TextBlock>
-            </StackPanel>            
+            </StackPanel>
         </Border>
         <Canvas x:Name="m_rootCanvas">
             <local:PersonalLeaderboard x:Name="m_board" Visibility="Collapsed" HorizontalAlignment="Left" HorizontalContentAlignment="Left"></local:PersonalLeaderboard>
             <local:CarStatusView Margin="20, 0, 0, 0" x:Name="m_carStatus" Width="450"></local:CarStatusView>
-            <local:Trackmap Margin="10, -10, 0, 0" x:Name="m_trackmap"></local:Trackmap>                
+            <local:CarStatusView Margin="20, 0, 0, 0" x:Name="m_carStatus2" Width="450" Visibility="Collapsed"></local:CarStatusView>
+            <local:Trackmap x:Name="m_trackmap"></local:Trackmap>
         </Canvas>
+
+        <!-- Status overlay (bottom-right) — rows are added/removed from code-behind -->
+        <Border x:Name="m_statusOverlay"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="0,0,12,12"
+                Background="#CC1A1A1A"
+                BorderBrush="#FF555555" BorderThickness="1"
+                CornerRadius="4"
+                Padding="10,6"
+                Visibility="Collapsed"
+                Panel.ZIndex="18">
+            <StackPanel x:Name="m_statusRowsPanel"/>
+        </Border>
+
+        <!-- Invisible 30 px hotspot on the left edge - shows the sidebar on hover -->
+        <Rectangle x:Name="m_sidebarHotspot"
+                   HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                   Width="30" Fill="Transparent"
+                   Panel.ZIndex="19"
+                   MouseEnter="OnSidebarHotspot_MouseEnter"/>
+
+        <!-- Sidebar panel - hidden until hotspot is hovered -->
+        <Border x:Name="m_sidebar"
+                HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                Width="220"
+                Background="#E6141414"
+                BorderBrush="#FF444444" BorderThickness="0,0,1,0"
+                Visibility="Collapsed"
+                Panel.ZIndex="20"
+                MouseLeave="OnSidebar_MouseLeave">
+            <StackPanel VerticalAlignment="Top" Margin="0,14,0,14">
+
+                <TextBlock Text="CONTROLS"
+                           FontFamily="Courier New" FontSize="20" FontWeight="Bold"
+                           Foreground="#FF555555" Margin="14,0,0,10"/>
+
+                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleView">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="[Space]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                        <TextBlock Text="Toggle View"/>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleLeader">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="[L]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                        <TextBlock Text="Toggle Leader"/>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleStatus">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="[D]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                        <TextBlock Text="Toggle Status"/>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_SaveReport">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="[S]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                        <TextBlock Text="Save Report"/>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_CycleMapping">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="[M]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                        <TextBlock Text="Cycle Mapping"/>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleFullscreen">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="[F11]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                        <TextBlock Text="Fullscreen"/>
+                    </DockPanel>
+                </Button>
+
+                <!-- Remote section (visible only when relay config is loaded) -->
+                <Expander x:Name="m_remoteExpander" Style="{StaticResource SidebarExpander}" IsExpanded="False"
+                          Visibility="Collapsed" Margin="0,8,0,0">
+                    <Expander.Header>
+                        <TextBlock Text="Remote" FontFamily="Courier New" FontSize="12"
+                                   FontWeight="Bold" Foreground="#FF888888"/>
+                    </Expander.Header>
+                    <StackPanel>
+                        <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleRelayUplink">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="[U]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                                <TextBlock Text="Share"/>
+                            </DockPanel>
+                        </Button>
+                        <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleRelayEngineer">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="[I]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                                <TextBlock Text="Connect to&#x0a;1st Driver"/>
+                            </DockPanel>
+                        </Button>
+                        <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleSecondaryEngineer">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="[O]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                                <TextBlock Text="Connect to&#x0a;2nd Driver"/>
+                            </DockPanel>
+                        </Button>
+                    </StackPanel>
+                </Expander>
+
+                <!-- Development section (collapsed by default) -->
+                <Expander x:Name="m_devExpander" Style="{StaticResource SidebarExpander}" IsExpanded="False" Margin="0,8,0,0">
+                    <Expander.Header>
+                        <TextBlock Text="Development" FontFamily="Courier New" FontSize="12"
+                                   FontWeight="Bold" Foreground="#FF888888"/>
+                    </Expander.Header>
+                    <StackPanel>
+                        <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleRecording">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="[R]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                                <TextBlock Text="Record UDP"/>
+                            </DockPanel>
+                        </Button>
+                        <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleTrackLearning">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Right" Text="[T]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                                <TextBlock Text="Track Learning"/>
+                            </DockPanel>
+                        </Button>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

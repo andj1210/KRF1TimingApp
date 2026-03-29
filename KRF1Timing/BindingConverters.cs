@@ -3,6 +3,7 @@
 
 using adjsw.F12025;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -107,10 +108,23 @@ namespace adjsw.F12025
       }
    }
 
-
-
    public class PositionColorConverter : IMultiValueConverter
    {
+      public static readonly Dictionary<F1Team, SolidColorBrush> s_colors = new Dictionary<F1Team, SolidColorBrush>      
+      {
+         { F1Team.Mercedes, new SolidColorBrush(Color.FromRgb(0, 215, 182)) },
+         { F1Team.Ferrari, new SolidColorBrush(Color.FromRgb(237, 17, 49)) },
+         { F1Team.McLaren, new SolidColorBrush(Color.FromRgb(244, 118, 0)) },
+         { F1Team.RedBull, new SolidColorBrush(Color.FromRgb(53, 21, 140))  },
+         { F1Team.Williams, new SolidColorBrush(Color.FromRgb(24, 104, 219))  },
+         { F1Team.AstonMartin, new SolidColorBrush(Color.FromRgb(36, 107, 53)) },
+         { F1Team.Alpine, new SolidColorBrush(Color.FromRgb(0, 161, 232)) },
+         { F1Team.RacingBulls, new SolidColorBrush(Color.FromRgb(48, 20, 181)) },
+         { F1Team.Haas, new SolidColorBrush(Color.FromRgb(156, 159, 162)) },
+         { F1Team.Sauber, new SolidColorBrush(Color.FromRgb(0, 255, 60))  },
+         { F1Team.Classic, Brushes.Gray },
+      };
+
       public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
       {
          var dat = values?[1] as DriverData;
@@ -118,42 +132,9 @@ namespace adjsw.F12025
          if (null == dat)
             return "?";
 
-         switch (dat.Team)
-         {
-            case F1Team.Mercedes:
-               return Brushes.Turquoise;
+         if (s_colors.ContainsKey(dat.Team))
+            return s_colors[dat.Team];
 
-            case F1Team.Ferrari:
-               return Brushes.Red;
-
-            case F1Team.RedBull:
-               return Brushes.Blue;
-
-            case F1Team.Williams:
-               return Brushes.White;
-
-            case F1Team.AstonMartin:
-               return Brushes.Green;
-
-            case F1Team.Renault:
-               return Brushes.Yellow;
-
-            case F1Team.AlphaTauri:
-               return new SolidColorBrush(Color.FromRgb(10, 100, 150));
-
-            case F1Team.Haas:
-               return Brushes.DarkGray;
-
-            case F1Team.McLaren:
-               return Brushes.Orange;
-
-            case F1Team.Sauber:
-               return Brushes.DarkRed;
-
-            case F1Team.Classic:
-               return Brushes.Gray;
-
-         }
          return Brushes.Gray;
       }
 

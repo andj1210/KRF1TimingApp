@@ -1,4 +1,4 @@
-// Copyright 2018-2021 Andreas Jung
+// Copyright 2018-2026 Andreas Jung
 // SPDX-License-Identifier: GPL-3.0-only
 
 #pragma once
@@ -11,10 +11,6 @@ using uint8 = uint8_t;
 
 using int16 = int16_t;
 using int8 = int8_t;
-
-// taken from
-// from https://answers.ea.com/t5/General-Discussion/F1-24-UDP-Specification/m-p/13745520
-// -> " Data Output from F1 24 v27.2x.docx"
 
 inline constexpr uint32     cs_maxNumCarsInUDPData = 22;
 inline constexpr uint32     cs_maxParticipantNameLen = 32;

@@ -1,95 +1,263 @@
-# KRF1 Timing App
+# KRF1 Timing App for F1 25
 
-This repository contains a software to display the leaderboard and car status for the F1-25 game on a second monitor by utilizing the game Telemetry output.
+A second-monitor timing and telemetry display for the F1 25 game, driven by the game's UDP telemetry output.
 
-### Installation
-The binaries are provided in form of a zipped file containing DLLs and one executable. They can be extracted to any directory, but it should have write permissions (for race reports). It is recommended to extract to the personal document folder, or any other filder with write permissions.
-On a Windows 10 machine usually just the executable must be started and everything should be working.
-In case the program does not start, please install the Visual Studio C++ Redistributable (vc_redist.x86.exe) for Visual Studio 2022:
-- [vc_redist.x86.exe](https://aka.ms/vs/17/release/vc_redist.x86.exe)
+## Installation
 
-Furthermore in the game the telemetry output must be enabled in mode "2025" to UDP port 20777.
+Extract the provided zip archive to any folder with write permissions (e.g. Documents). On Windows 10 the executable should start directly.
 
-### Functions
-The program contains two different views and a combination of both.
+If the program does not start, install the Visual C++ Redistributable for Visual Studio:
+- [vc_redist.x86.exe](https://aka.ms/vc14/vc_redist.x86.exe)
 
-- The leader board
-- The car status view
+In the game, enable UDP telemetry output in mode **2025** on port **20777**.
+
+---
+
+## Views
+
+Cycle through the available views with **Space** or the in-game UDP1 button (map it to a controller button in the game settings).
+
+| View | Description |
+|------|-------------|
+| Leaderboard | Race/qualifying standings with delta times and tyre info |
+| Combined | Leaderboard side by side with the track map |
+| Car Status | Tyre and engine temperatures, wear, and damage for the player car |
+| Track Map | Full-screen track map showing all car positions |
+
+---
+
+## Leaderboard
+
+Shows all cars sorted by on-track position (race) or best lap time (qualifying / practice).
+
+**Header row:** Track name, session type, and remaining time or laps.
+
+**Columns per car:**
+
+| Column | Description |
+|--------|-------------|
+| POS | Race/quali position. Colored by team if official F1 cars are used. |
+| Leader | Gap to the leader in time or laps. In quali/practice: sector times S1/S2/S3 of the best lap. |
+| Status | Race: "Retired", "Pitting", or the delta to the **player** car (positive = opponent is ahead). Quali/practice: pit/garage state, outlap indicator, or sector color bars and running delta. |
+| Name | Driver name (see Driver Names below). |
+| Tyre | Tyre compound history, rightmost = current. |
+| Age | Age of the current tyre in laps (from last pit stop). |
+| PT | Accumulated penalty time in seconds. |
+| Pit Pen | Pending stop-go (SG) or drive-through (DT) penalties. A penalty in parentheses is estimated as served. |
+
+**Qualifying / Practice detail:**
+After each sector a colored bar indicates: green = personal best, yellow = slower, red = significantly off (usually an in-lap). The sector delta is shown in green (improving) or red (slower). A finished lap is highlighted in blue for 5 seconds. An invalid lap turns red.
+
+**Race delta notes:**
+- Delta is updated once per sector, not continuously.
+- Time penalties are factored in, so a car slightly ahead on track may still show a negative delta.
+
+---
+
+## Track Map
+
+Displays all car positions on a live track outline (when track data is available) or on a fallback circle.
+
+- Car dots are colored by team.
+- The player car blinks pink.
+- The selected/highlighted car blinks with a thicker border.
+- A white line marks the start/finish line.
+- Cars in the pit lane or garage are pushed away from the track outline for easier visibility.
+- In relay mode, car positions are smoothly interpolated between the slower relay update rate so movement appears fluid.
+
+Track data is learned automatically during racing sessions (see Track Learning below).
+
+---
+
+## Driver Names
+
+Because the F1 25 UDP protocol does not report human driver names (based on players telemetry settings) in online lobbies, the app defaults to team name + car number as the display name.
+
+**Rename a driver:** Right-click any driver row to open the rename menu. Type a new name and press Enter or click OK. Previously used names for that driver are listed in a History sub-menu for quick re-use.
+
+**Name mapping file:** Place a file named `namemappings.json` in the program directory and press **M** to cycle through the available mapping sets. This is useful for pre-defined league rosters.
+
+---
+
+## Key Bindings
+
+| Key | Action |
+|-----|--------|
+| Space | Cycle views: Leaderboard -> Combined -> Car Status -> Track Map |
+| F11 | Toggle fullscreen |
+| S | Save a race report as a text file |
+| D | Toggle delta display relative to the player car (race only) |
+| L | Toggle delta-to-leader display for all cars |
+| I | Toggle interval (gap to the car directly ahead) |
+| M | Cycle through name mapping sets from `namemappings.json` |
+| R | Start / stop UDP recording (see UDP Recording) *(dev builds only)* |
+| T | Start / stop track learning mode (see Track Learning) *(dev builds only)* |
+| Right-click | Open driver rename menu |
+| UDP1 button | Same as Space (map in game settings) |
+
+A sidebar is revealed by hovering the mouse over the left edge of the window. It shows a summary of key bindings and provides access to advanced features including the relay system.
+
+---
+
+## UDP Recording
+
+> **Development builds only.** This feature is compiled in only when the corresponding preprocessor flag is set. It is not present in public release builds.
+
+The app can record the raw UDP telemetry stream to files for later playback during development and testing.
+
+- Press **R** to start recording. A status indicator appears in the sidebar.
+- Press **R** again to stop.
+- Each session is saved as a separate `.pkl` file in the `recordings` subfolder next to the executable. The file is named after the session UID from the game.
+- Recordings can be played back to replay a session without the game running.
+
+---
+
+## Track Learning
+
+> **Development builds only.** This feature is compiled in only when the corresponding preprocessor flag is set. It is not present in public release builds.
+
+When track geometry data is not yet available for a circuit, the app can learn the track layout from live telemetry.
+
+- Press **T** to enter learning mode. The sidebar shows the current state.
+- Drive a complete lap. The track outline is recorded automatically and saved when the lap is completed.
+- Track data is stored as JSON files in the `tracks` subfolder and loaded automatically on subsequent sessions.
+- If the session changes (e.g. you return to the menu and start a new session), the learner resets and waits for a fresh lap.
+
+---
+
+## Car Status View
+
+Displays the monitored car's current condition:
+
+- **Driver name** shown prominently at the bottom of the view.
+- **Current tyre compound** shown as a colour-coded tyre graphic.
+- Tyre wear per corner (front-left, front-right, rear-left, rear-right).
+- Tyre temperatures (surface and inner) per corner, colour-coded by operating range.
+- Engine temperature.
+- Front and rear wing damage.
+
+When connected as a Race Engineer to two drivers simultaneously, two Car Status panels are displayed side by side.
+
+### Status overlay
+
+While any relay connection is active, a small overlay appears at the bottom right of the window showing the connection state for each active role. The overlay hides automatically when all connections are closed.
+
+## Sidebar
+
+Hover the mouse over the leftmost 100 pixels of the window to reveal the sidebar. It shows:
+- All key bindings at a glance.
+- **Advanced** section with controls for UDP Recording and Track Learning *(dev builds only).*
+- **Relay** section with buttons for Driver Relay, Race Engineer, and Second Driver connections.
+
+---
+
+## Custom Car Images
+
+The car silhouette shown in the Car Status view can be replaced with a team-specific bird's-eye image.
+
+1. Create a subfolder named `cars` next to the executable.
+2. Place PNG images named `car{TeamId}.png` inside it.
+
+Team ID mapping:
+
+| TeamId | Team |
+|--------|------|
+| 0 | MGP |
+| 1 | SF |
+| 2 | RBR |
+| 3 | W |
+| 4 | AMR |
+| 5 | ALP |
+| 6 | RB |
+| 7 | H |
+| 8 | MCL |
+| 9 | KS |
+
+If no image is found for the current team the built-in placeholder is used. Images are loaded on demand when the team changes and are not required for the app to function.
+
+---
+
+## Relay System
+
+The relay system lets a Race Engineer monitor one or two remote drivers over the internet. It requires a separate relay server (see `KRF1Timing_relayserver`) running on a machine reachable by all participants.
+***Function is disabled by default***, unless a "relay_config.json" file is placed into the program folder / Examplecontent:
+{
+    "server": "localhost",
+    "port": 9877
+}
+
+### Roles
+
+| Role | Description |
+|------|-------------|
+| Driver | Runs the app locally with the game, streams telemetry to the relay server. |
+| Race Engineer | Connects to the relay server using the driver's password, receives the full telemetry stream. |
+
+### Driver setup
+
+1. Open the sidebar (hover over the left edge of the window).
+2. Click **Remote -> Share** to connect to the relay server.
+3. On successful connection, the server assigns a one-time password. Share this password with your Race Engineer.
+4. The status overlay at the top of the window shows the connection state and the assigned password.
+
+### Race Engineer setup
+
+1. Obtain the driver's one-time password.
+2. Open the sidebar and click **Remote -> Connect to 1st Driver**
+3. On successful authentication, the full telemetry stream is received and all views update as if the game were running locally.
+
+### Second driver (dual relay)
+
+A Race Engineer can simultaneously monitor a second driver:
+
+1. With the primary driver already connected, click **Remote -> Connect to 2nd Driver** in the sidebar.
+2. Enter the second driver's password.
+3. Both drivers' Car Status panels are shown side by side. CarDamage and tyre data for the secondary driver are sourced exclusively from their own stream.
+
+### Relay server
+
+The server is a standalone native binary (`krf1_relayserver`). Build it with CMake (see `KRF1Timing_relayserver/CMakeLists.txt`). Run it on any Linux or Windows machine that is reachable from both driver and engineer:
+
+```
+krf1_relayserver [port]   # default port: 9877
+```
+
+The server maintains per-driver sessions, buffers a history burst for late-joining engineers, and enforces a protocol version check — older clients are rejected.
+
+### Privacy notice
+Appart from the generic messages for connection esablishment with auto generated password, a portion of the UDP telemetry of the game is transmitted to the relay server. Currently it uses unencrypted TCP protocol.
+
+Usage at your discretion.
 
 
-After the program has been started, the view can be changed with the space bar or by ingame UDP1 button (needs to be mapped for the input device).
+---
 
-Keymapping:
-- F11           - toggle fullscreen
-- s             - save a race report as text file
-- d             - enable disable the status/delta of other cars relative delta to the player (factoring in all penalties)
-- l             - enable disable the delta to leader for all cars including player
-- i             - enable / disable interval (the time diff to the car ahead)
-- m             - toggle between namemappings from file "namemappings.json" placed into the program directory
-- space         - Toggle view (Leaderboard -> Combined -> Car status)
-- UDP1 button   - same as above, assign UDP1 ingame to your controller/wheel button
-- right mouse   - select driver name
+## Limitations
 
-**The window is updated automatically as soon as telemetry data from the game is received**
+- Human driver names are mostly unavailable in the UDP telemetry for online lobbies. Use the right-click rename or a name mapping file as a workaround.
+- Delta times in the Status column are updated once per sector, not continuously. A pass on track is not reflected until the next sector boundary.
+- The delta-to-leader value wraps at 65536 ms (~65 seconds), which can be misleading in large fields.
+- If the app is started after the session begins, some data (driver count, initial deltas) may be incorrect until the next session starts.
+- Flashback and fast-forward in single player can cause inconsistent data.
+- Sector times in saved race reports may contain small rounding errors.
+- Track learning requires a full, clean lap. Partial laps or laps with heavy cuts are not suitable.
+- In relay mode, track map positions update at the rate the driver's app sends them (typically 2–5 Hz). Interpolation smooths the movement but cannot compensate for network latency or packet loss.
 
-#### The leader board
-The leader board displays the race leader board from perspective of the active player, meaning the deltas are relative to the player.
+---
 
-The leaderboard is useful for the race and practice/qualifying.
-When a practice / qualifying session is detected, the view is focused arround the fastest lap of each car.
+## Compilation
 
-On top of the screen the event information is displayed:
-- Track
-- Session (qualifying, race...)
-- Remaining time or laps
-Below the leaderboard is displayed.
+Open the `.sln` file in Visual Studio 2026. It should compile without any additional setup.
 
-Each line represents one car, and the order is according to the position on tack (race) or best laptime (Q+P).  
+The relay server is a separate CMake project in `KRF1Timing_relayserver/` and compiles on both Windows and Linux.
 
-For each car the following columns are displayed:
-- POS
-  - The position of the car. The Number is colored after the team color if F1 regular cars are used.
-- Leader
-  - The time or number of laps the car is behind the current leader. For Q/P sessions it is focussed arround the fastest lap. For Q/P also the sector times of the fastest lap for each car is shown as columns S1, S2, S3. 
-- Status 
-  - During Q/P Session
-    - Shows the drivers status: Pit/Garage, Outlap
-	- On Hotlap/inlap: 
-	  - After each sector shows a filled rectangle for Personal Best = green, Worse = yellow, Way off (>1,25s) = red which usually indicates Inlap
-	  - After each sector the delta up to that sector in seconds + milliseconds (green: improving, red: slower)
-	  - After each set time the Time is marked in blue(ish) color to indicate a lap has finished for 5 seconds
-	  - When a hotlap is/becomes invalid, the lap delta Text is colored in red background
-  - During Race
-    - showing special state: Retired, Pitting
-	- or the delta time to the **Player car** in seconds and tenth of seconds, updated only after each sector
-    - A positive number indicating the opponent is ahead (number colored red), a negative number indicating the opponent is behind (number colored red).
-	- **time penalties are factored in**, thus the delta can be green even if the oponent is ahead on Track
-	- **Be aware, the delta is only updated sector by sector. Thus After passing or being passed the delta does not reflect this instantly!**
-- Name
-The driver name. Since the names are not reported by the game for online lobbies, the drivers are named by their team and their car number instead. This is a limitation by the Telemetry data. 
-- Tyre
-Display of the tyre history, the rightmost tyre beeing the currently fitted tyre.
-- Age
-The Age in laps of the current tyre. This only takes into account the age from pit stop. The telemetry does not indicate if a tyre was already used when fitted during the pit stop.
-- PT
-Penalty time. The time (in seconds) inevitably added to the car after the race (typically for corner cutting). After the race this also contains the added time for unserved pit penalties.
-- Pit Penalty
-Penalties which can still be served during the pit stop, there are two penalties:
-"SG" = 5 sec Stop + Go 
-"DT" = Drive through penalties
-The pit penalties are seperated by ";". If a penalty is shown in parenthesis it is served (this can only be estimated since there is no specific telemetry output and thus the information *might* be inaccurate).
-Additional "DNF" and "DSQ" are added to the column if a car retired / disqualified.
+---
 
-#### The Car status
-Display the tyre and engine temperatures. Furthermore displays the tyre wear and wing damage. Behind the Rear wing the personal penalty time is shown.
+## Disclaimer
 
-### Limitations
-- Human driver names are mostly not available in the telemetry (per default), therefore teamname + car number is shown as name if the actual player name is not available. A custom mapping file has can be used. Or the driver can be "right clicked" in order to change name in Textbox.
-- When the start of the session is not captured, the raceboard will show incorrect data (i.e. number of drivers, deltas, etc.)
-- The lap infos in racereport may contain rounding errors, so that sector 1-3 not always sum exactly the lap time
-- Gaps / Delta times in Status are only updated once per sector
-- During race Delta to leader can be between 0 and 65536 ms, above that value it wraps over and can therefore be misleading  
-- The data is focused on the driver participating in the race, no particular support for spectator mode. Single player Flashback or Fast Forward can lead to inconsistent data.
-
-### Compilation
-The .sln file should compile out of the box with Visual Studio 2022.
+F1 25 game and all associated trademarks are the property of Electronic Arts Inc. and
+Codemasters.
+This project is an independent community tool and is not affiliated with, endorsed by,
+or in any way connected to EA, Codemasters, or Formula One Licensing B.V.
+The UDP telemetry interface used by this application is publicly documented by
+Codemasters for third-party use.

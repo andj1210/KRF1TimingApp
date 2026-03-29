@@ -65,5 +65,22 @@ namespace adjsw.F12025
             txt_blk_name.Foreground = prototype.txt_blk_name.Foreground;
             ellipse_tyremark.Stroke = prototype.ellipse_tyremark.Stroke;
         }
+
+        public void Update(F1VisualTyre tyre)
+        {
+            TyreView proto;
+            switch (tyre)
+            {
+                case F1VisualTyre.Soft:         proto = SoftTyre;   break;
+                case F1VisualTyre.Medium:       proto = MediumTyre; break;
+                case F1VisualTyre.Hard:         proto = HardTyre;   break;
+                case F1VisualTyre.Intermediate: proto = InterTyre;  break;
+                case F1VisualTyre.Wet:          proto = WetTyre;    break;
+                default:                        proto = OtherTyre;  break;
+            }
+            txt_blk_name.Text       = proto.txt_blk_name.Text;
+            txt_blk_name.Foreground = proto.txt_blk_name.Foreground;
+            ellipse_tyremark.Stroke = proto.ellipse_tyremark.Stroke;
+        }
     }
 }

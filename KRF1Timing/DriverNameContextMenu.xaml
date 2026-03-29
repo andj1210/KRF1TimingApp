@@ -5,139 +5,138 @@
              BorderBrush="#FF999999"
              BorderThickness="2">
 
-    <!-- Override the ContextMenu chrome: removes the default left-side icon-column strip -->
-    <ContextMenu.Template>
-        <ControlTemplate TargetType="{x:Type ContextMenu}">
-            <Border Background="{TemplateBinding Background}"
+   <!-- Override the ContextMenu chrome: removes the default left-side icon-column strip -->
+   <ContextMenu.Template>
+      <ControlTemplate TargetType="{x:Type ContextMenu}">
+         <Border Background="{TemplateBinding Background}"
                     BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="{TemplateBinding BorderThickness}"
                     SnapsToDevicePixels="True">
-                <ScrollViewer CanContentScroll="True" Focusable="False"
+            <ScrollViewer CanContentScroll="True" Focusable="False"
                               VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
-                    <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                </ScrollViewer>
-            </Border>
-        </ControlTemplate>
-    </ContextMenu.Template>
+               <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+            </ScrollViewer>
+         </Border>
+      </ControlTemplate>
+   </ContextMenu.Template>
 
-    <ContextMenu.Resources>
-
-        <!-- Full MenuItem ControlTemplate: no icon column, custom arrow, dark highlight -->
-        <ControlTemplate x:Key="MenuItemTemplate" TargetType="{x:Type MenuItem}">
-            <Border x:Name="Bd"
+   <ContextMenu.Resources>
+      <!-- Full MenuItem ControlTemplate: no icon column, custom arrow, dark highlight -->
+      <ControlTemplate x:Key="MenuItemTemplate" TargetType="{x:Type MenuItem}">
+         <Border x:Name="Bd"
                     Background="{TemplateBinding Background}"
                     BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="{TemplateBinding BorderThickness}"
                     Padding="8,4">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ContentPresenter Grid.Column="0"
+            <Grid>
+               <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+               </Grid.ColumnDefinitions>
+               <ContentPresenter Grid.Column="0"
                                       ContentSource="Header"
                                       RecognizesAccessKey="True"
                                       VerticalAlignment="Center"/>
-                    <!-- Right arrow shown only for SubmenuHeader role -->
-                    <Path x:Name="SubMenuArrow"
+               <!-- Right arrow shown only for SubmenuHeader role -->
+               <Path x:Name="SubMenuArrow"
                           Grid.Column="1"
                           Data="M 0 0 L 5 5 L 0 10 Z"
                           Fill="#FFAAAAAA"
                           VerticalAlignment="Center"
                           Margin="10,0,2,0"
                           Visibility="Collapsed"/>
-                    <!-- Submenu popup -->
-                    <Popup x:Name="PART_Popup"
+               <!-- Submenu popup -->
+               <Popup x:Name="PART_Popup"
                            AllowsTransparency="True"
                            Focusable="False"
                            IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}"
                            Placement="Right"
                            PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}">
-                        <Border Background="#FF0D0D0D"
+                  <Border Background="#FF0D0D0D"
                                 BorderBrush="#FF999999"
                                 BorderThickness="1">
-                            <ScrollViewer CanContentScroll="True" Focusable="False"
+                     <ScrollViewer CanContentScroll="True" Focusable="False"
                                           VerticalScrollBarVisibility="Auto"
                                           HorizontalScrollBarVisibility="Disabled">
-                                <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
-                            </ScrollViewer>
-                        </Border>
-                    </Popup>
-                </Grid>
-            </Border>
-            <ControlTemplate.Triggers>
-                <Trigger Property="IsHighlighted" Value="True">
-                    <Setter TargetName="Bd" Property="Background" Value="#FF1E2844"/>
-                    <Setter TargetName="SubMenuArrow" Property="Fill" Value="White"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter TargetName="Bd" Property="Opacity" Value="0.6"/>
-                </Trigger>
-                <Trigger Property="Role" Value="SubmenuHeader">
-                    <Setter TargetName="SubMenuArrow" Property="Visibility" Value="Visible"/>
-                </Trigger>
-            </ControlTemplate.Triggers>
-        </ControlTemplate>
+                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                     </ScrollViewer>
+                  </Border>
+               </Popup>
+            </Grid>
+         </Border>
+         <ControlTemplate.Triggers>
+            <Trigger Property="IsHighlighted" Value="True">
+               <Setter TargetName="Bd" Property="Background" Value="#FF1E2844"/>
+               <Setter TargetName="SubMenuArrow" Property="Fill" Value="White"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+               <Setter TargetName="Bd" Property="Opacity" Value="0.6"/>
+            </Trigger>
+            <Trigger Property="Role" Value="SubmenuHeader">
+               <Setter TargetName="SubMenuArrow" Property="Visibility" Value="Visible"/>
+            </Trigger>
+         </ControlTemplate.Triggers>
+      </ControlTemplate>
 
-        <Style TargetType="MenuItem">
-            <Setter Property="Background"  Value="#FF0D0D0D"/>
-            <Setter Property="Foreground"  Value="White"/>
-            <Setter Property="FontFamily"  Value="Courier New"/>
-            <Setter Property="FontSize"    Value="14"/>
-            <Setter Property="FontWeight"  Value="Bold"/>
-            <Setter Property="Template"    Value="{StaticResource MenuItemTemplate}"/>
-        </Style>
+      <Style TargetType="MenuItem">
+         <Setter Property="Background"  Value="#FF0D0D0D"/>
+         <Setter Property="Foreground"  Value="White"/>
+         <Setter Property="FontFamily"  Value="Courier New"/>
+         <Setter Property="FontSize"    Value="14"/>
+         <Setter Property="FontWeight"  Value="Bold"/>
+         <Setter Property="Template"    Value="{StaticResource MenuItemTemplate}"/>
+      </Style>
 
-        <!-- MenuItem.SeparatorStyleKey is the key WPF uses for separators inside menus.
+      <!-- MenuItem.SeparatorStyleKey is the key WPF uses for separators inside menus.
              A plain Style TargetType="Separator" is NOT picked up in this context. -->
-        <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type Separator}">
-                        <Border Height="1" Margin="0,2"
+      <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="{x:Type Separator}">
+         <Setter Property="Template">
+            <Setter.Value>
+               <ControlTemplate TargetType="{x:Type Separator}">
+                  <Border Height="1" Margin="0,2"
                                 Background="#FF555555"
                                 SnapsToDevicePixels="True"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+               </ControlTemplate>
+            </Setter.Value>
+         </Setter>
+      </Style>
 
-    </ContextMenu.Resources>
+   </ContextMenu.Resources>
 
-    <!-- Driver identity header (read-only info line) -->
-    <MenuItem IsEnabled="False">
-        <MenuItem.Header>
-            <TextBlock x:Name="m_headerText"
+   <!-- Driver identity header (read-only info line) -->
+   <MenuItem IsEnabled="False">
+      <MenuItem.Header>
+         <TextBlock x:Name="m_headerText"
                        FontFamily="Courier New" FontSize="15" FontWeight="Bold"
                        Foreground="White"/>
-        </MenuItem.Header>
-    </MenuItem>
+      </MenuItem.Header>
+   </MenuItem>
 
-    <Separator/>
+   <Separator/>
 
-    <!-- Free-text rename row — plain Border so TextBox and Button are fully interactive -->
-    <Border Background="#FF0D0D0D" Padding="8,6">
-        <StackPanel Orientation="Vertical">
-            <TextBlock Text="Change Name"
+   <!-- Free-text rename row — plain Border so TextBox and Button are fully interactive -->
+   <Border Background="#FF0D0D0D" Padding="8,6">
+      <StackPanel Orientation="Vertical">
+         <TextBlock Text="Change Name"
                        FontFamily="Courier New" FontSize="11" FontWeight="Normal"
                        Foreground="#FF999999" Margin="0,0,0,3"/>
-            <StackPanel Orientation="Horizontal">
-                <TextBox x:Name="m_nameEdit"
+         <StackPanel Orientation="Horizontal">
+            <TextBox x:Name="m_nameEdit"
                          Width="230" FontSize="15" FontFamily="Courier New"
                          Background="#FF1E1E1E" Foreground="White"
                          CaretBrush="White" SelectionBrush="#FF4466AA"
                          BorderBrush="#FF777777" BorderThickness="1"
                          Padding="5,3"
                          KeyDown="OnNameEdit_KeyDown"/>
-                <Button x:Name="m_okButton"
+            <Button x:Name="m_okButton"
                         Content="OK"
                         Margin="7,0,0,0" Padding="12,3"
                         FontFamily="Courier New" FontSize="14" FontWeight="Bold"
                         Background="#FF227733" Foreground="White"
                         BorderBrush="#FF44BB66" BorderThickness="1"
                         Click="OnOkButton_Click"/>
-            </StackPanel>
-        </StackPanel>
-    </Border>
+         </StackPanel>
+      </StackPanel>
+   </Border>
 </ContextMenu>

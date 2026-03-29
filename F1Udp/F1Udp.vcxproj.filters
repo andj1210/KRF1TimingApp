@@ -30,6 +30,15 @@
     <ClInclude Include="F1UdpClrMapper.h">
       <Filter>Headerdateien</Filter>
     </ClInclude>
+    <ClInclude Include="RelayPacketFilter.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="RelayProtocolClr.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+    <ClInclude Include="RelayProtocol.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -39,6 +48,9 @@
       <Filter>Quelldateien</Filter>
     </ClCompile>
     <ClCompile Include="F1UdpClrMapper.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="RelayProtocolClr.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
   </ItemGroup>

@@ -103,8 +103,6 @@ namespace adjsw.F12025
             new System.Action(() => m_nameEdit.Focus()));
       }
 
-      // ── event handlers ────────────────────────────────────────────────────
-
       private void OnNameEdit_KeyDown(object sender, KeyEventArgs e)
       {
          if (e.Key == Key.Enter)
@@ -115,8 +113,6 @@ namespace adjsw.F12025
       {
          CommitFromTextBox();
       }
-
-      // ── helpers ───────────────────────────────────────────────────────────
 
       private void CommitFromTextBox()
       {
@@ -144,7 +140,7 @@ namespace adjsw.F12025
          item.Background = s_menuBrush;
          item.Foreground = Brushes.AntiqueWhite;
          item.FontFamily = new FontFamily("Courier New");
-         item.FontSize   = 14;
+         item.FontSize = 14;
          item.FontWeight = FontWeights.Bold;
       }
 
@@ -153,7 +149,7 @@ namespace adjsw.F12025
          item.Background = s_menuBrush;
          item.Foreground = Brushes.White;
          item.FontFamily = new FontFamily("Courier New");
-         item.FontSize   = 13;
+         item.FontSize = 13;
          item.FontWeight = FontWeights.Normal;
       }
 
