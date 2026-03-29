@@ -1,6 +1,10 @@
 # createdist.ps1 - Build KRF1 Timing App Release and create distribution zip
 # PowerShell equivalent of createdist.bat, with added MSBuild step
 
+param(
+    [string]$PlatformToolset = ""
+)
+
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
@@ -33,7 +37,13 @@ $solutionFile = Join-Path $repoRoot "Krf1Timing.sln"
 Write-Host "Using MSBuild: $msbuild"
 Write-Host "Building: $solutionFile"
 
-& $msbuild $solutionFile /p:Configuration=Release /p:Platform="Any CPU" /m /verbosity:minimal
+$msbuildArgs = @($solutionFile, "/p:Configuration=Release", '/p:Platform=Any CPU', "/m", "/verbosity:minimal")
+if ($PlatformToolset) {
+    Write-Host "Overriding PlatformToolset: $PlatformToolset"
+    $msbuildArgs += "/p:PlatformToolset=$PlatformToolset"
+}
+
+& $msbuild @msbuildArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Build failed with exit code $LASTEXITCODE"
     exit 1

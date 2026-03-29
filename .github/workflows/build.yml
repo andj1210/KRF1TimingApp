@@ -18,7 +18,7 @@ jobs:
         run: nuget restore Krf1Timing.sln
 
       - name: Build and create distribution zip
-        run: .\_dist\createdist.ps1
+        run: .\_dist\createdist.ps1 -PlatformToolset v143
         shell: pwsh
 
       - name: Upload distribution zip
