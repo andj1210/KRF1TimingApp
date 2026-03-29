@@ -69,7 +69,9 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="Razorvine.Pickle, Version=1.5.0.0, Culture=neutral, PublicKeyToken=35192c03a6ef2e20, processorArchitecture=MSIL">
       <HintPath>..\packages\Razorvine.Pickle.1.5.0\lib\netstandard2.0\Razorvine.Pickle.dll</HintPath>
     </Reference>
