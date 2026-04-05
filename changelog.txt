@@ -1,3 +1,8 @@
+V0.91.1
+- Changed Theme again
+- Better Fonts
+- Cars included in ~matching color theme
+
 V0.91.0
 - Added full Trackmap for prerecorded Tracks via Track Recording function, ("Circle of Doom") as fallback
 - Added exclusive Trackmap view when toggling through different views

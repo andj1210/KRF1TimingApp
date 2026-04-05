@@ -42,7 +42,7 @@ namespace adjsw.F12025
          if (null == dat)
             return "?";
 
-         String text = "";
+         String text = "--- ";
          text += dat.EventTrack.ToString("g");
          text += " ";
          text += dat.Session.ToString("g");
@@ -99,6 +99,7 @@ namespace adjsw.F12025
                break;
          }
 
+         text += " ---";
          return text;
       }
 

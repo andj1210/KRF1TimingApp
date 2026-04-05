@@ -5,8 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:adjsw.F12025"
         mc:Ignorable="d"
-        Background="#FF383838"
-        Title="t.b.d. src" Width="1280" Height="1024" KeyDown="OnKeyDown" x:Name="wnd" x:FieldModifier="public">
+        Background="#FF131313"
+        Title="t.b.d. src" Width="1280" Height="1024" KeyDown="OnKeyDown" x:Name="wnd" x:FieldModifier="public"
+        >
     <Window.Resources>
         <!-- Flat dark button used throughout the sidebar -->
         <Style x:Key="SidebarButton" TargetType="Button">

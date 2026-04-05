@@ -27,8 +27,7 @@
    <StackPanel Background="Transparent">
       <StackPanel.Resources>
       </StackPanel.Resources>
-      <TextBlock FontSize="32" FontWeight="Bold" FontFamily="Courier New" Foreground="White" HorizontalAlignment="Center">Leaderboard</TextBlock>
-      <TextBlock x:Name="m_textpanel" FontSize="32" FontWeight="Bold" FontFamily="Courier New" Foreground="White" HorizontalAlignment="Center">
+      <TextBlock x:Name="m_textpanel" FontSize="32" FontWeight="Bold" FontFamily="Segoe UI" Foreground="White" HorizontalAlignment="Center">
          <TextBlock.Text>
             <MultiBinding Converter="{StaticResource RaceEventTextConverter}">
                <Binding Path="" />
@@ -40,11 +39,13 @@
             </MultiBinding>
          </TextBlock.Text>
       </TextBlock>
-      <DataGrid x:Name="m_grid" HeadersVisibility="Column" RowHeight="35" IsReadOnly="True"  RowBackground="#FF383838" AlternatingRowBackground="#FF585858" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="28" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="35" BorderThickness="0" HorizontalGridLinesBrush="#00000000" VerticalGridLinesBrush="#FF2B2B2B">
+      <DataGrid x:Name="m_grid" HeadersVisibility="Column" RowHeight="40" IsReadOnly="True" RowBackground="#FF1A1A1E" AlternatingRowBackground="#FF121216" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="22" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="40" BorderThickness="0" HorizontalGridLinesBrush="#00000000" VerticalGridLinesBrush="Transparent">
          <DataGrid.Resources>
             <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
-               <Setter Property="Background" Value="Gray" />
-               <Setter Property="Foreground" Value="AntiqueWhite" />
+               <Setter Property="Background" Value="#FF2A2A30" />
+               <Setter Property="Foreground" Value="#FFCCCCCC" />
+               <Setter Property="FontFamily" Value="Segoe UI" />
+               <Setter Property="FontWeight" Value="SemiBold" />
             </Style>
 
             <Style TargetType="{x:Type DataGridCell}">
@@ -53,6 +54,14 @@
          </DataGrid.Resources>
          <DataGrid.Columns>
             <DataGridTemplateColumn Header="POS" Width="56">
+               <DataGridTemplateColumn.CellStyle>
+                  <Style TargetType="DataGridCell">
+                     <Setter Property="HorizontalAlignment" Value="Right"/>
+                     <Setter Property="VerticalAlignment" Value="Center"/>
+                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                     <Setter Property="FontSize" Value="30"/>
+                  </Style>
+               </DataGridTemplateColumn.CellStyle>
                <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                      <TextBlock>
@@ -72,7 +81,7 @@
                   </DataTemplate>
                </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
-            <DataGridTextColumn FontFamily="Times New Roman" FontSize="22" Header="Name" Binding="{Binding Name}" Foreground="White" FontWeight="Bold">
+            <DataGridTextColumn FontFamily="Segoe UI" FontSize="22" Header="Name" Binding="{Binding Name}" Foreground="White" FontWeight="Bold">
             </DataGridTextColumn>
             <DataGridTemplateColumn Header="Leader" Width="150">
                <DataGridTemplateColumn.CellTemplate>

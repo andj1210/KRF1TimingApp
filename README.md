@@ -7,7 +7,7 @@ A second-monitor timing and telemetry display for the F1 25 game, driven by the 
 Extract the provided zip archive to any folder with write permissions (e.g. Documents). On Windows 10 the executable should start directly.
 
 If the program does not start, install the Visual C++ Redistributable for Visual Studio:
-- [vc_redist.x86.exe](https://aka.ms/vc14/vc_redist.x86.exe)
+- [vc_redist.x64.exe](https://aka.ms/vc14/vc_redist.x64.exe)
 
 In the game, enable UDP telemetry output in mode **2025** on port **20777**.
 
