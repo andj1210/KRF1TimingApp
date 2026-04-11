@@ -4,7 +4,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 
@@ -23,12 +26,14 @@ namespace adjsw.F12025
    /// </summary>
    public class RelayUplink : IDisposable
    {
-      public RelayUplink(string host, int port, F1UdpClrMapper mapper)
+      public RelayUplink(RelayConfig config, F1UdpClrMapper mapper)
       {
-         m_host   = host;
-         m_port   = port;
-         m_mapper = mapper;
-         m_filter = new RelayPacketFilter();
+         m_host        = config.Server;
+         m_port        = config.Port;
+         m_tlsEnabled  = config.TlsEnabled;
+         m_tlsCertFile = config.TlsCertFile;
+         m_mapper      = mapper;
+         m_filter      = new RelayPacketFilter();
          m_filter.SetUdpMapper(mapper);
       }
 
@@ -134,7 +139,8 @@ namespace adjsw.F12025
             m_client = new TcpClient();
             m_client.NoDelay = true;
             m_client.Connect(m_host, m_port);
-            m_stream = m_client.GetStream();
+            m_networkStream = m_client.GetStream();
+            m_stream = m_tlsEnabled ? WrapTls(m_networkStream) : (Stream)m_networkStream;
 
             //Thread.Sleep(100);
             RelayProtocol.SendHello(m_stream);
@@ -195,7 +201,7 @@ namespace adjsw.F12025
                }
 
                // Receive incoming messages (non-blocking check)
-               if (m_stream.DataAvailable)
+               if (m_networkStream.DataAvailable)
                {
                   if (!RelayProtocol.ReadMessage(m_stream, out byte msgType, out byte[] msgPayload))
                   {
@@ -246,17 +252,40 @@ namespace adjsw.F12025
                Error?.Invoke("Relay error: " + ex.Message);
          }
          finally
-         {            
+         {
             m_burstPending = false;
             Password = "";
             try { m_stream?.Close(); } catch { }
             try { m_client?.Close(); } catch { }
             m_stream = null;
+            m_networkStream = null;
             m_client = null;
             m_thread = null;
             m_connected = false;
             StatusChanged?.Invoke("");
          }
+      }
+
+      // -- TLS helper -------------------------------------------------------
+
+      private Stream WrapTls(NetworkStream networkStream)
+      {
+         SslStream ssl;
+         if (!string.IsNullOrEmpty(m_tlsCertFile))
+         {
+            var pinnedCert = new X509Certificate2(m_tlsCertFile);
+            string thumbprint = pinnedCert.Thumbprint;
+            ssl = new SslStream(networkStream, false, (sender, remoteCert, chain, errors) =>
+               remoteCert != null &&
+               string.Equals(new X509Certificate2(remoteCert).Thumbprint,
+                             thumbprint, StringComparison.OrdinalIgnoreCase));
+         }
+         else
+         {
+            ssl = new SslStream(networkStream);
+         }
+         ssl.AuthenticateAsClient(m_host);
+         return ssl;
       }
 
       // -- helpers (called from main thread only) ---------------------------
@@ -275,6 +304,8 @@ namespace adjsw.F12025
 
       private readonly string             m_host;
       private readonly int                m_port;
+      private readonly bool               m_tlsEnabled;
+      private readonly string             m_tlsCertFile;
       private readonly F1UdpClrMapper     m_mapper;
       private readonly RelayPacketFilter  m_filter;
 
@@ -282,9 +313,10 @@ namespace adjsw.F12025
       private volatile bool m_connected    = false;
       private volatile bool m_burstPending = false;
 
-      private TcpClient     m_client;
-      private NetworkStream  m_stream;
-      private Thread        m_thread;
+      private TcpClient      m_client;
+      private NetworkStream   m_networkStream;
+      private Stream          m_stream;
+      private Thread          m_thread;
 
       private readonly ConcurrentQueue<byte[]> m_sendQueue = new ConcurrentQueue<byte[]>();
    }

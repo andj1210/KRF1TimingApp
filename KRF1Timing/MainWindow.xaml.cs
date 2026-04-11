@@ -73,7 +73,7 @@ namespace adjsw.F12025
          {
             m_remoteExpander.Visibility = Visibility.Visible;
 
-            m_relayUplink = new RelayUplink(m_relayConfig.Server, m_relayConfig.Port, m_mapper);
+            m_relayUplink = new RelayUplink(m_relayConfig, m_mapper);
 
             m_relayUplink.StatusChanged += status =>
                Dispatcher.BeginInvoke(new Action(() =>
@@ -969,7 +969,7 @@ namespace adjsw.F12025
          if (string.IsNullOrWhiteSpace(password))
             return;
 
-         m_relayClient = new RelayClient(m_relayConfig.Server, m_relayConfig.Port, password.Trim(), m_packetQue);
+         m_relayClient = new RelayClient(m_relayConfig, password.Trim(), m_packetQue);
 
          m_relayClient.StatusChanged += status =>
             Dispatcher.BeginInvoke(new Action(() =>
@@ -1035,7 +1035,7 @@ namespace adjsw.F12025
             return;
 
          m_relayClientSecondary = new RelayClient(
-            m_relayConfig.Server, m_relayConfig.Port, password.Trim(),
+            m_relayConfig, password.Trim(),
             m_packetQueSecondary, secondary: true);
 
          m_relayClientSecondary.StatusChanged += status =>

@@ -5,6 +5,7 @@
 // F1Udp project) which pulls constants from the native RelayProtocol.h.
 // This class exists only so existing call sites need no changes.
 
+using System.IO;
 using System.Net.Sockets;
 
 namespace adjsw.F12025
@@ -30,22 +31,22 @@ namespace adjsw.F12025
 
       // ---- I/O helpers ----
 
-      public static void SendHello(NetworkStream stream)
+      public static void SendHello(Stream stream)
          => RelayProtocolClr.SendHello(stream);
 
-      public static void SendMessage(NetworkStream stream, byte type, byte[] payload, int offset, int length)
+      public static void SendMessage(Stream stream, byte type, byte[] payload, int offset, int length)
          => RelayProtocolClr.SendMessage(stream, type, payload, offset, length);
 
-      public static void SendMessage(NetworkStream stream, byte type, byte[] payload)
+      public static void SendMessage(Stream stream, byte type, byte[] payload)
          => RelayProtocolClr.SendMessage(stream, type, payload);
 
-      public static void SendEmpty(NetworkStream stream, byte type)
+      public static void SendEmpty(Stream stream, byte type)
          => RelayProtocolClr.SendEmpty(stream, type);
 
-      public static bool ReadExact(NetworkStream stream, byte[] buffer, int offset, int count)
+      public static bool ReadExact(Stream stream, byte[] buffer, int offset, int count)
          => RelayProtocolClr.ReadExact(stream, buffer, offset, count);
 
-      public static bool ReadMessage(NetworkStream stream, out byte type, out byte[] payload)
+      public static bool ReadMessage(Stream stream, out byte type, out byte[] payload)
          => RelayProtocolClr.ReadMessage(stream, out type, out payload);
    }
 }

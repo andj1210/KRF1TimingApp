@@ -41,32 +41,32 @@ namespace adjsw::F12025
       /// <summary>
       /// Send a framed message: [type:1][len:2 BE][payload].
       /// </summary>
-      static void SendMessage(NetworkStream^ stream, System::Byte type,
+      static void SendMessage(Stream^ stream, System::Byte type,
                               array<System::Byte>^ payload, int offset, int length);
 
-      static void SendMessage(NetworkStream^ stream, System::Byte type,
+      static void SendMessage(Stream^ stream, System::Byte type,
                               array<System::Byte>^ payload);
 
-      static void SendEmpty(NetworkStream^ stream, System::Byte type);
+      static void SendEmpty(Stream^ stream, System::Byte type);
 
       /// <summary>
       /// Send the MSG_HELLO version handshake. Must be the very first frame
       /// sent after connecting, before the auth message.
       /// </summary>
-      static void SendHello(NetworkStream^ stream);
+      static void SendHello(Stream^ stream);
 
       /// <summary>
       /// Read exactly <paramref name="count"/> bytes from the stream.
       /// Returns false on disconnect / IO error.
       /// </summary>
-      static bool ReadExact(NetworkStream^ stream, array<System::Byte>^ buffer,
+      static bool ReadExact(Stream^ stream, array<System::Byte>^ buffer,
                             int offset, int count);
 
       /// <summary>
       /// Read one complete framed message.
       /// Returns false on disconnect / protocol error.
       /// </summary>
-      static bool ReadMessage(NetworkStream^ stream,
+      static bool ReadMessage(Stream^ stream,
                               [Out] System::Byte% type,
                               [Out] array<System::Byte>^% payload);
    };

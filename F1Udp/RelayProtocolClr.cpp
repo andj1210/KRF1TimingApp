@@ -5,7 +5,7 @@
 
 using namespace adjsw::F12025;
 
-void RelayProtocolClr::SendMessage(NetworkStream^ stream, System::Byte type, array<System::Byte>^ payload, int offset, int length)
+void RelayProtocolClr::SendMessage(Stream^ stream, System::Byte type, array<System::Byte>^ payload, int offset, int length)
 {
    array<System::Byte>^ header = gcnew array<System::Byte>(3);
    header[0] = type;
@@ -16,18 +16,18 @@ void RelayProtocolClr::SendMessage(NetworkStream^ stream, System::Byte type, arr
       stream->Write(payload, offset, length);
 }
 
-void RelayProtocolClr::SendMessage(NetworkStream^ stream, System::Byte type, array<System::Byte>^ payload)
+void RelayProtocolClr::SendMessage(Stream^ stream, System::Byte type, array<System::Byte>^ payload)
 {
    int len = payload != nullptr ? payload->Length : 0;
    SendMessage(stream, type, payload, 0, len);
 }
 
-void RelayProtocolClr::SendEmpty(NetworkStream^ stream, System::Byte type)
+void RelayProtocolClr::SendEmpty(Stream^ stream, System::Byte type)
 {
    SendMessage(stream, type, nullptr, 0, 0);
 }
 
-void RelayProtocolClr::SendHello(NetworkStream^ stream)
+void RelayProtocolClr::SendHello(Stream^ stream)
 {
    array<System::Byte>^ payload = gcnew array<System::Byte>(2);
    payload[0] = static_cast<System::Byte>(RelayProtocol::PROTOCOL_VERSION >> 8);
@@ -35,7 +35,7 @@ void RelayProtocolClr::SendHello(NetworkStream^ stream)
    SendMessage(stream, MSG_HELLO, payload);
 }
 
-bool RelayProtocolClr::ReadExact(NetworkStream^ stream, array<System::Byte>^ buffer, int offset, int count)
+bool RelayProtocolClr::ReadExact(Stream^ stream, array<System::Byte>^ buffer, int offset, int count)
 {
    int read = 0;
    while (read < count)
@@ -56,7 +56,7 @@ bool RelayProtocolClr::ReadExact(NetworkStream^ stream, array<System::Byte>^ buf
    return true;
 }
 
-bool RelayProtocolClr::ReadMessage(NetworkStream^ stream, [Out] System::Byte% type, [Out] array<System::Byte>^% payload)
+bool RelayProtocolClr::ReadMessage(Stream^ stream, [Out] System::Byte% type, [Out] array<System::Byte>^% payload)
 {
    type = 0;
    payload = nullptr;

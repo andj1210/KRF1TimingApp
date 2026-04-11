@@ -19,6 +19,16 @@ namespace adjsw.F12025
       [JsonProperty("port")]
       public int Port { get; set; } = 9877;
 
+      [JsonProperty("tls_enabled")]
+      public bool TlsEnabled { get; set; } = false;
+
+      /// <summary>
+      /// Path to the server's self-signed certificate (.crt / .pem) for TLS pinning.
+      /// Only required when tls_enabled is true.
+      /// </summary>
+      [JsonProperty("tls_cert_file")]
+      public string TlsCertFile { get; set; } = "";
+
       /// <summary>
       /// Try to load the config. Returns null if the file does not exist or is invalid.
       /// </summary>

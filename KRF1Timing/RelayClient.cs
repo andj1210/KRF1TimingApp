@@ -3,7 +3,10 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.IO;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 
@@ -17,14 +20,16 @@ namespace adjsw.F12025
    /// </summary>
    public class RelayClient : IDisposable
    {
-      public RelayClient(string host, int port, string password, ConcurrentQueue<byte[]> packetQueue,
+      public RelayClient(RelayConfig config, string password, ConcurrentQueue<byte[]> packetQueue,
                          bool secondary = false)
       {
-         m_host = host;
-         m_port = port;
-         m_password = password;
+         m_host        = config.Server;
+         m_port        = config.Port;
+         m_tlsEnabled  = config.TlsEnabled;
+         m_tlsCertFile = config.TlsCertFile;
+         m_password    = password;
          m_packetQueue = packetQueue;
-         m_secondary = secondary;
+         m_secondary   = secondary;
       }
 
       /// <summary>True while connected to the relay server.</summary>
@@ -114,7 +119,8 @@ namespace adjsw.F12025
             m_client = new TcpClient();
             m_client.NoDelay = true;
             m_client.Connect(m_host, m_port);
-            m_stream = m_client.GetStream();
+            m_networkStream = m_client.GetStream();
+            m_stream = m_tlsEnabled ? WrapTls(m_networkStream) : (Stream)m_networkStream;
 
             RelayProtocol.SendHello(m_stream);
 
@@ -159,7 +165,7 @@ namespace adjsw.F12025
                   break;
                }
 
-               if (!m_stream.DataAvailable)
+               if (!m_networkStream.DataAvailable)
                {
                   Thread.Sleep(50);
                   continue;
@@ -207,16 +213,41 @@ namespace adjsw.F12025
             try { m_stream?.Close(); } catch { }
             try { m_client?.Close(); } catch { }
             m_stream = null;
+            m_networkStream = null;
             m_client = null;
             m_thread = null;
             StatusChanged?.Invoke("");
          }
       }
 
+      // ── TLS helper ────────────────────────────────────────────────────
+
+      private Stream WrapTls(NetworkStream networkStream)
+      {
+         SslStream ssl;
+         if (!string.IsNullOrEmpty(m_tlsCertFile))
+         {
+            var pinnedCert = new X509Certificate2(m_tlsCertFile);
+            string thumbprint = pinnedCert.Thumbprint;
+            ssl = new SslStream(networkStream, false, (sender, remoteCert, chain, errors) =>
+               remoteCert != null &&
+               string.Equals(new X509Certificate2(remoteCert).Thumbprint,
+                             thumbprint, StringComparison.OrdinalIgnoreCase));
+         }
+         else
+         {
+            ssl = new SslStream(networkStream);
+         }
+         ssl.AuthenticateAsClient(m_host);
+         return ssl;
+      }
+
       // ── fields ─────────────────────────────────────────────────────────
 
       private readonly string m_host;
       private readonly int    m_port;
+      private readonly bool   m_tlsEnabled;
+      private readonly string m_tlsCertFile;
       private readonly string m_password;
       private readonly bool   m_secondary;
       private readonly ConcurrentQueue<byte[]> m_packetQueue;
@@ -225,7 +256,8 @@ namespace adjsw.F12025
       private volatile bool m_connected = false;
 
       private TcpClient      m_client;
-      private NetworkStream   m_stream;
-      private Thread         m_thread;
+      private NetworkStream   m_networkStream;
+      private Stream          m_stream;
+      private Thread          m_thread;
    }
 }

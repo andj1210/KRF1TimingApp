@@ -180,11 +180,32 @@ If no image is found for the current team the built-in placeholder is used. Imag
 ## Relay System
 
 The relay system lets a Race Engineer monitor one or two remote drivers over the internet. It requires a separate relay server (see `KRF1Timing_relayserver`) running on a machine reachable by all participants.
-***Function is disabled by default***, unless a "relay_config.json" file is placed into the program folder / Examplecontent:
+***Function is disabled by default***, unless a `relay_config.json` file is placed into the program folder. Example (plain TCP):
+```json
 {
     "server": "localhost",
     "port": 9877
 }
+```
+
+TLS is supported. The relay server itself is TCP-only; a TLS termination layer needs to sit in front of it (e.g. [stunnel](https://www.stunnel.org/)). Enable TLS in the config:
+```json
+{
+    "server": "1.2.3.4",
+    "port": 12346,
+    "tls_enabled": true
+}
+```
+If the server uses a self-signed certificate, provide its `.crt` file for pinning:
+```json
+{
+    "server": "1.2.3.4",
+    "port": 12346,
+    "tls_enabled": true,
+    "tls_cert_file": "relay.crt"
+}
+```
+If the server certificate is issued by a trusted CA, `tls_cert_file` can be omitted and standard validation applies.
 
 ### Roles
 
@@ -225,7 +246,7 @@ krf1_relayserver [port]   # default port: 9877
 The server maintains per-driver sessions, buffers a history burst for late-joining engineers, and enforces a protocol version check — older clients are rejected.
 
 ### Privacy notice
-Appart from the generic messages for connection esablishment with auto generated password, a portion of the UDP telemetry of the game is transmitted to the relay server. Currently it uses unencrypted TCP protocol.
+Apart from the generic messages for connection establishment with auto-generated password, a portion of the UDP telemetry of the game is transmitted to the relay server. The connection is unencrypted by default; TLS encryption is available (see above).
 
 Usage at your discretion.
 
