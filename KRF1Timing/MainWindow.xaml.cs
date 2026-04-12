@@ -54,7 +54,7 @@ namespace adjsw.F12025
          m_devExpander.Visibility = Visibility.Collapsed;
 #endif
 
-         Title = "KRF1 Timing App for F1-25 V0.91.1";
+         Title = "KRF1 Timing App for F1-25 V0.91.2";
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(40);
@@ -96,16 +96,22 @@ namespace adjsw.F12025
 
          if (!String.IsNullOrEmpty(App.PlaybackFile))
          {
-            UdpPlaybackWindow wnd = new UdpPlaybackWindow(
-               App.PlaybackFile,
-               this);
+            UdpPlaybackWindow wnd = new UdpPlaybackWindow(App.PlaybackFile, this);
             m_playbackWindow = wnd;
             wnd.Show();
          }
          else
          {
-            m_udpClient = new UdpEventClient(20777);
-            m_udpClient.ReceiveEvent += OnUdpReceive;
+            try
+            {
+               m_udpClient = new UdpEventClient(20777);
+               m_udpClient.ReceiveEvent += OnUdpReceive;
+            }
+            catch (Exception ex)
+            {
+               m_udpClient = null;
+               MessageBox.Show("UDP Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error );
+            }
          }
 
          m_trackmap.PitExaggeration = true; // compile-time opt-in: exaggerate pit offset on real track map
@@ -127,13 +133,7 @@ namespace adjsw.F12025
 
          m_trackLearner.StatusChanged += msg => ShowInfoBox(msg, TimeSpan.FromSeconds(4));
 
-         m_LoadNameMappings(false);
-         DriverNameMappings dummy = new DriverNameMappings();
-         dummy.LeagueName = "none";
-         dummy.Mappings = new DriverNameMapping[0];
-         m_emptyMapping = dummy;
-         m_nameMappingNextIdx = 0;
-         m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping);
+         m_LoadNameMappings();
 
          m_board.DeltaVisible = false;
       }
@@ -631,39 +631,18 @@ namespace adjsw.F12025
          m_infoBox.Visibility = Visibility.Collapsed;
       }
 
-      private void m_LoadNameMappings(bool showErrorOnFail)
+      private void m_LoadNameMappings()
       {
-         try
-         {
-            var json = File.ReadAllText("namemappings.json");
-            m_nameMappings = Newtonsoft.Json.JsonConvert.DeserializeObject<DriverNameMappings[]>(json) as DriverNameMappings[];
-         }
-         catch (Exception ex)
-         {
-            if (showErrorOnFail)
-               ShowInfoBox("Error loading name mappings file \"namemappings.json\":\r\n" + ex.Message, TimeSpan.FromSeconds(3));
-            else 
-            {
-               DriverNameMappings dummy = new DriverNameMappings();
-               dummy.LeagueName = "none";
-               dummy.Mappings = new DriverNameMapping[0];
-
-               m_nameMappings = new DriverNameMappings[1];
-               m_nameMappings[0] = dummy;
-            }
-         }
-
          try
          {
             var json = File.ReadAllText("namemappingsdyn.json");
             m_nameMappingsDynamic = Newtonsoft.Json.JsonConvert.DeserializeObject<DriverNameDynamicMappings>(json) as DriverNameDynamicMappings;
          }
-         catch (Exception ex)
+         catch
          {
-            // non existence of the dynamic mapping file is not an error, so don´t bother the user with a dialog
+            // non-existence of the dynamic mapping file is not an error
             m_nameMappingsDynamic = new DriverNameDynamicMappings();
          }
-
       }
 
       private void PollUpdates_Tick(object sender, EventArgs e)
@@ -780,7 +759,6 @@ namespace adjsw.F12025
          if (e.Key == Key.L)      ActionToggleLeader();
          if (e.Key == Key.D)      ActionToggleStatus();
          if (e.Key == Key.Space)  ToggleView();
-         if (e.Key == Key.M)      ActionCycleMapping();
 
 #if DEBUG || RELEASEDEV
          if (e.Key == Key.R) ActionToggleRecording();
@@ -1055,7 +1033,7 @@ namespace adjsw.F12025
          m_relayClientSecondary.Error += msg =>
             Dispatcher.BeginInvoke(new Action(() =>
             {
-               m_SetStatusRow("engineer2", null, null, null);
+               m_DisconnectSecondaryEngineer();
                ShowInfoBox("Second driver error:\r\n" + msg, TimeSpan.FromSeconds(5));
             }));
 
@@ -1072,47 +1050,20 @@ namespace adjsw.F12025
             m_relayClientSecondary = null;
          }
          m_mapper.SecondaryDriverIndex = -1;
+         foreach (var driver in m_mapper.Drivers)
+            driver.IsSecondaryDriver = false;
          m_mapper.Mode = MapperMode.Engineer1;   // primary link still active; caller sets Direct if not
          m_SetStatusRow("engineer2", null, null, null);
       }
 
       private void ActionToggleLeader()
       {
-         m_board.LeaderVisible = !m_board.LeaderVisible;
+         m_board.LeaderDeltaMode = !m_board.LeaderDeltaMode;
       }
 
       private void ActionToggleStatus()
       {
          m_board.StatusVisible = !m_board.StatusVisible;
-      }
-
-      private void ActionCycleMapping()
-      {
-         m_LoadNameMappings(true); // always reload in case text changed
-
-         if (m_nameMappings != null)
-         {
-            if (m_nameMappingNextIdx >= m_nameMappings.Length)
-            {
-               m_nameMappingNextIdx = 0;
-               m_runtimeMapping = ReflectionCloner.DeepCopy(m_emptyMapping);
-               ShowInfoBox("No Drivername Mapping selected.", TimeSpan.FromSeconds(2));
-            }
-            else if (m_nameMappings.Length >= m_nameMappingNextIdx)
-            {
-               m_runtimeMapping = ReflectionCloner.DeepCopy<DriverNameMappings>(m_nameMappings[m_nameMappingNextIdx]);
-               ShowInfoBox("Drivername Mapping selected: " + m_runtimeMapping.LeagueName, TimeSpan.FromSeconds(2));
-               m_nameMappingNextIdx++;
-            }
-            else
-            {
-               m_runtimeMapping = null;
-            }
-         }
-         else
-            m_runtimeMapping = null;
-
-         m_mapper.SetDriverNameMappings(m_runtimeMapping);
       }
 
       private void OnSidebarHotspot_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
@@ -1129,7 +1080,6 @@ namespace adjsw.F12025
       private void OnSidebar_ToggleLeader(object sender, RoutedEventArgs e)         => ActionToggleLeader();
       private void OnSidebar_ToggleStatus(object sender, RoutedEventArgs e)         => ActionToggleStatus();
       private void OnSidebar_SaveReport(object sender, RoutedEventArgs e)           => ActionSaveReport();
-      private void OnSidebar_CycleMapping(object sender, RoutedEventArgs e)         => ActionCycleMapping();
       private void OnSidebar_ToggleFullscreen(object sender, RoutedEventArgs e)     => ActionToggleFullscreen();
       private void OnSidebar_ToggleRecording(object sender, RoutedEventArgs e)      => ActionToggleRecording();
       private void OnSidebar_ToggleTrackLearning(object sender, RoutedEventArgs e)  => ActionToggleTrackLearning();
@@ -1156,7 +1106,7 @@ namespace adjsw.F12025
          DriverData driver = m_board.DriverUnderMouse as DriverData;
          if (driver != null)
          {
-            m_driverCtxMenu.Show(driver, m_nameMappingsDynamic, m_nameMappings);
+            m_driverCtxMenu.Show(driver, m_nameMappingsDynamic);
          }
       }
 
@@ -1184,35 +1134,7 @@ namespace adjsw.F12025
 
       private void SetNewNameToReferencedDriver(DriverData driver, string newName)
       {
-         // find existing mapping and overwrite:
-         bool exchangedMapping = false;
-         for (int i = 0; i < m_runtimeMapping.Mappings.Length; ++i)
-         {
-            var mapping = m_runtimeMapping.Mappings[i];
-            if (
-                (mapping.DriverNumber == driver.DriverNr) &&
-                (mapping.Team == driver.Team)
-                )
-            {
-               m_runtimeMapping.Mappings[i].Name = newName;
-               exchangedMapping = true;
-            }
-         }
-
-         if (!exchangedMapping)
-         {
-            DriverNameMapping[] newMappingsArray = new DriverNameMapping[m_runtimeMapping.Mappings.Length + 1];
-            Array.Copy(m_runtimeMapping.Mappings, newMappingsArray, m_runtimeMapping.Mappings.Length);
-            var addMapping = new DriverNameMapping();
-            addMapping.Name = newName;
-            addMapping.DriverNumber = driver.DriverNr;
-            addMapping.Team = driver.Team;
-            newMappingsArray[newMappingsArray.Length - 1] = addMapping;
-            m_runtimeMapping.Mappings = newMappingsArray;
-         }
-
-         m_mapper.SetDriverNameMappings(null);
-         m_mapper.SetDriverNameMappings(m_runtimeMapping);
+         driver.NameOverride = newName;
       }
 
       private UdpEventClient m_udpClient = null;
@@ -1243,11 +1165,7 @@ namespace adjsw.F12025
       private ObservableCollection<adjsw.F12025.DriverData> m_driversList = new ObservableCollection<adjsw.F12025.DriverData>();
       private CollectionViewSource m_driverListViewSource = new CollectionViewSource();
       private bool m_sessionClassificationHandled = false;
-      private int m_nameMappingNextIdx = 0;
-      private DriverNameMappings m_emptyMapping;
-      private DriverNameMappings[] m_nameMappings;
       private DriverNameDynamicMappings m_nameMappingsDynamic;
-      private DriverNameMappings m_runtimeMapping = null; // A volatile mapping which is altered during runtime by user intervention
       private bool m_autosave = true;
       private DriverNameContextMenu m_driverCtxMenu = new DriverNameContextMenu();
       private ViewType m_viewType = ViewType.BoardAndCarMap; // on startup will toggle to next view, which will be board only

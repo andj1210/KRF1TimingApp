@@ -174,6 +174,14 @@ inline bool DriverSession::ShouldForwardPrimary(PacketType type)
 
 inline bool DriverSession::ShouldForwardSecondary(PacketType type)
 {
-   return type == PacketType::PacketCarTelemetryData ||
-      type == PacketType::PacketCarStatusData;
+   switch (type)
+   {
+   case PacketType::PacketCarStatusData:
+   case PacketType::PacketCarDamageData:
+   case PacketType::PacketCarTelemetryData:
+   case PacketType::PacketParticipantsData:
+      return true;
+   default:
+      return false;
+   }
 }

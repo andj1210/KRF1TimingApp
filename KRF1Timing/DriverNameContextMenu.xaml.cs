@@ -10,7 +10,7 @@ namespace adjsw.F12025
 {
    /// <summary>
    /// Context menu for renaming a driver.
-   /// Call Show(driver, dynamicMappings, staticMappings) to open.
+   /// Call Show(driver, dynamicMappings) to open.
    /// Subscribe to NameChosen to receive the new name together with the referenced driver.
    /// </summary>
    public partial class DriverNameContextMenu : ContextMenu
@@ -28,8 +28,7 @@ namespace adjsw.F12025
       /// </summary>
       public void Show(
          DriverData driver,
-         DriverNameDynamicMappings dynamicMappings,
-         DriverNameMappings[] staticMappings)
+         DriverNameDynamicMappings dynamicMappings)
       {
          m_referencedDriver = driver;
 
@@ -69,32 +68,6 @@ namespace adjsw.F12025
             break;
          }
 
-         // Static league mapping sections
-         if (staticMappings != null)
-         {
-            foreach (var mappingList in staticMappings)
-            {
-               if (mappingList.Mappings == null || mappingList.Mappings.Length == 0)
-                  continue;
-
-               Items.Add(MakeSeparator());
-
-               var leagueItem = new MenuItem { Header = mappingList.LeagueName };
-               StyleSubMenu(leagueItem);
-
-               foreach (var mapping in mappingList.Mappings)
-               {
-                  var entry = new MenuItem { Header = mapping.Name };
-                  StyleLeafItem(entry);
-                  DriverNameMapping captured = mapping;
-                  entry.Click += (s, e) => CommitMappingName(captured.Name);
-                  leagueItem.Items.Add(entry);
-               }
-
-               Items.Add(leagueItem);
-            }
-         }
-
          IsOpen = true;
 
          // Move keyboard focus into the text box so the user can type immediately
@@ -124,12 +97,6 @@ namespace adjsw.F12025
       }
 
       private void CommitName(string name)
-      {
-         IsOpen = false;
-         NameChosen?.Invoke(m_referencedDriver, name);
-      }
-
-      private void CommitMappingName(string name)
       {
          IsOpen = false;
          NameChosen?.Invoke(m_referencedDriver, name);

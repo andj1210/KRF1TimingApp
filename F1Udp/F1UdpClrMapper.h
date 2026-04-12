@@ -42,14 +42,11 @@ namespace adjsw::F12025
       // insert some data to display, only for debugging!
       void InsertTestData();
 
-      void SetDriverNameMappings(DriverNameMappings^ newMappings);
-
       property SessionInfo^ SessionInfo;
       property SessionEventList^ EventList;
       property int CountDrivers;
       property array<DriverData^>^ Drivers;
       property array<ClassificationData^>^ Classification; // nullptr if no classification available
-      property DriverNameMappings^ NameMappings {DriverNameMappings^ get() { return m_nameMapings; } };
 
       property array<bool>^ UdpAction; // set by parser for each button push, needs to be reset by App, 12 buttons total
       property System::UInt64 SessionUID { System::UInt64 get() { return m_sessionId; } }
@@ -85,10 +82,9 @@ namespace adjsw::F12025
       void m_UpdateLapQuali();
       void m_UpdateEventData();
       void m_UpdateParticipants();
-      void m_UpdateTyreDamage(int i);
       void m_UpdateDamage(int i);
       void m_UpdateTelemetry(int i);
-      void m_UpdateDriverName(int i); // pick the most suited driver name from telemetry + name mappings
+      void m_UpdateDriverName(int i);
       void m_UpdateClassification();
       void m_UpdateHistoryDataRace();
       void m_UpdateHistoryDataQuali();
@@ -99,7 +95,6 @@ namespace adjsw::F12025
       bool m_IsQualifyingOrPractice();
 
       uint32_t m_udpButtonPreviousMask{ 0 };
-      DriverNameMappings^ m_nameMapings;
       F12025_PacketExtractor* m_parser;
       F12025_PacketExtractor* m_parserSecondary;
       array<Byte>^ arr;

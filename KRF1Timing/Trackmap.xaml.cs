@@ -135,7 +135,8 @@ namespace adjsw.F12025
          m_circleRadius = radius - ringWidth / 2.0;   // midpoint of ring
 
 #if DEBUG
-         m_border.Visibility = Visibility.Visible;
+         //m_border.Visibility = Visibility.Visible;
+         m_border.Visibility = Visibility.Collapsed;
 #else
          m_border.Visibility = Visibility.Collapsed;
 #endif

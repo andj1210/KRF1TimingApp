@@ -243,7 +243,6 @@ namespace adjsw.F12025
             ClassificationData classification     = mapper.Classification[i];
             DriverData driverSession              = mapper.Classification[i].Driver;
 
-            driverResult.DriverTag      = driverSession.DriverTag;
             driverResult.DriverNr       = driverSession.DriverNr;
             driverResult.Team           = driverSession.Team;
             driverResult.Name           = driverSession.Name;

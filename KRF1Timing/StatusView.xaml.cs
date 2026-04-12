@@ -81,6 +81,10 @@ namespace adjsw.F12025
          // if qualy: delta [ms] to fastest lap
          // if race: delta [ms] to player
          public Int32 Delta { get; set; }
+
+         // 0..1 fill fraction for the currently active (incomplete) sector block.
+         // -1 means no progress bar should be drawn.
+         public float SectorProgress { get; set; } = -1f;
       }
 
       public class FreezeStatus
@@ -108,6 +112,18 @@ namespace adjsw.F12025
       public StatusView()
       {
          InitializeComponent();
+
+         m_progressBrush = new LinearGradientBrush(
+            new GradientStopCollection
+            {
+               new GradientStop(Colors.DarkGray,        0.0),
+               m_progressStopEnd,
+               m_progressStopStart,
+               new GradientStop(Colors.Transparent, 1.0)
+            },
+            startPoint: new Point(0, 0.5),
+            endPoint:   new Point(1, 0.5));
+
          m_UpdateView();
       }
 
@@ -212,6 +228,7 @@ namespace adjsw.F12025
 
          if (null == setter)
          {
+            m_sectorBlocks.Visibility = Visibility.Collapsed;
             m_rectS1.Visibility = Visibility.Collapsed;
             m_rectS2.Visibility = Visibility.Collapsed;
             m_rectS3.Visibility = Visibility.Collapsed;
@@ -224,6 +241,7 @@ namespace adjsw.F12025
 
          if (!String.IsNullOrEmpty(setter.SpecialText))
          {
+            m_sectorBlocks.Visibility = Visibility.Collapsed;
             m_rectS1.Visibility = Visibility.Collapsed;
             m_rectS2.Visibility = Visibility.Collapsed;
             m_rectS3.Visibility = Visibility.Collapsed;
@@ -246,12 +264,23 @@ namespace adjsw.F12025
 
          if (setter.Quali)
          {
+            m_sectorBlocks.Visibility = Visibility.Visible;
             m_rectS1.Visibility = Visibility.Visible;
             m_rectS2.Visibility = Visibility.Visible;
             m_rectS3.Visibility = Visibility.Visible;
             m_SetSectorColor(m_rectS1, setter.S1);
             m_SetSectorColor(m_rectS2, setter.S2);
             m_SetSectorColor(m_rectS3, setter.S3);
+
+            if (setter.SectorProgress >= 0f)
+            {
+               if (setter.S1 == SetterSectorType.None && setter.S2 == SetterSectorType.None && setter.S3 == SetterSectorType.None)
+                  m_SetSectorProgress(m_rectS1, setter.SectorProgress);
+               else if (setter.S2 == SetterSectorType.None && setter.S3 == SetterSectorType.None)
+                  m_SetSectorProgress(m_rectS2, setter.SectorProgress);
+               else if (setter.S3 == SetterSectorType.None)
+                  m_SetSectorProgress(m_rectS3, setter.SectorProgress);
+            }
 
             if (setter.S3 != SetterSectorType.None)
             {
@@ -317,52 +346,13 @@ namespace adjsw.F12025
          {
             // RACE
             m_text.Background = Brushes.Transparent;
-               m_rectS1.Visibility = Visibility.Collapsed;
-               m_rectS2.Visibility = Visibility.Collapsed;
-               m_rectS3.Visibility = Visibility.Collapsed;
-
-            bool pos = setter.Delta >= 0;
-            int deltaMs = setter.Delta;
-
-            if (!pos)
-            {
-               deltaMs *= -1;
-            }
-
-            int seconds = deltaMs / 1000;
-            int tenth = deltaMs % 1000;
-            tenth += 50;
-            tenth /= 100;
-            if (tenth == 10)
-            {
-               seconds++;
-               tenth = 0;
-            }
-
-            if (seconds > 99)
-            {
-               seconds = 99;
-               tenth = 9;
-            }
-
-            m_text.Content = (pos ? "+" : "-") + seconds.ToString("D2") + "." + tenth.ToString("D1");
-
-            if (pos)
-            {
-               m_text.Foreground = Brushes.Red;
-            }
-
-            else
-            {
-               m_text.Foreground = Brushes.Green;
-            }
-
-            if (setter.Player)
-            {
-               m_text.Content = "----------";
-               m_text.Foreground = Brushes.White;
-               m_text.Background = Brushes.Violet;
-            }
+            m_sectorBlocks.Visibility = Visibility.Collapsed;
+            m_rectS1.Visibility = Visibility.Collapsed;
+            m_rectS2.Visibility = Visibility.Collapsed;
+            m_rectS3.Visibility = Visibility.Collapsed;
+            m_text.Content = "";
+            m_text.Foreground = Brushes.White;
+            m_text.Background = Brushes.Transparent;
          }
       }
 
@@ -389,6 +379,19 @@ namespace adjsw.F12025
          }
       }
 
+      private void m_SetSectorProgress(Rectangle rect, float progress)
+      {
+         float p = Math.Max(0f, Math.Min(progress, 1f));
+         m_progressStopEnd.Offset   = p;
+         m_progressStopStart.Offset = p;
+         rect.Fill = m_progressBrush;
+      }
+
       private Setter m_setter = new Setter();
+
+      // reused across updates — only the two middle stop offsets change
+      private readonly GradientStop      m_progressStopEnd   = new GradientStop(Colors.Gray,        0.0);
+      private readonly GradientStop      m_progressStopStart = new GradientStop(Colors.Transparent, 0.0);
+      private readonly LinearGradientBrush m_progressBrush;
    }
 }

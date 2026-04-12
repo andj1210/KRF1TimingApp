@@ -17,7 +17,7 @@
       <local:TyreConverter x:Key="TyreConverter"/>
       <local:TyreColorConverter x:Key="TyreColorConverter"/>
       <local:DeltaTimeConverter x:Key="DeltaTimeConverter"/>
-      <local:DeltaTimeLeaderConverter x:Key="DeltaTimeLeaderConverter"/>
+      <local:LeaderAndDeltaConverter x:Key="LeaderAndDeltaConverter"/>
       <local:FastestLapConverter x:Key="FastestLapConverter"/>
       <local:PenaltyConverter x:Key="PenaltyConverter"/>
       <local:PitPenaltyConverter x:Key="PitPenaltyConverter"/>
@@ -39,7 +39,7 @@
             </MultiBinding>
          </TextBlock.Text>
       </TextBlock>
-      <DataGrid x:Name="m_grid" HeadersVisibility="Column" RowHeight="40" IsReadOnly="True" RowBackground="#FF1A1A1E" AlternatingRowBackground="#FF121216" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="22" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="40" BorderThickness="0" HorizontalGridLinesBrush="#00000000" VerticalGridLinesBrush="Transparent">
+      <DataGrid x:Name="m_grid" ScrollViewer.HorizontalScrollBarVisibility="Disabled" HeadersVisibility="Column" RowHeight="40" IsReadOnly="True" RowBackground="#FF1A1A1E" AlternatingRowBackground="#FF121216" BorderBrush="Transparent" AutoGenerateColumns="False" FontSize="22" FontWeight="Bold" FontFamily="Courier New" CanUserAddRows="False" ColumnHeaderHeight="40" BorderThickness="0" HorizontalGridLinesBrush="#00000000" VerticalGridLinesBrush="Transparent">
          <DataGrid.Resources>
             <Style BasedOn="{StaticResource {x:Type DataGridColumnHeader}}" TargetType="{x:Type DataGridColumnHeader}">
                <Setter Property="Background" Value="#FF2A2A30" />
@@ -88,7 +88,8 @@
                   <DataTemplate>
                      <TextBlock Foreground="White">
                         <TextBlock.Text>
-                           <MultiBinding Converter="{StaticResource DeltaTimeLeaderConverter}">
+                           <MultiBinding Converter="{StaticResource LeaderAndDeltaConverter}">
+                              <Binding Path="TimedeltaToLeader" />
                               <Binding Path="TimedeltaToLeader" />
                               <Binding Path="Status" />
                               <Binding Path="FastestLap" />
@@ -147,13 +148,14 @@
                      <app:StatusView>
                         <app:StatusView.StatusInfo>
                            <MultiBinding Converter="{StaticResource StatusConverter}">
+                              <Binding Path=""/>
                               <Binding Path="TimedeltaToPlayer" />
                               <Binding Path="CurrentLap" />
                               <Binding Path="Status"/>
                               <Binding Path="Session.FastestSector1"/>
                               <Binding Path="Session.FastestSector2"/>
                               <Binding Path="Session.FastestSector3"/>
-                              <Binding Path=""/>
+                              <Binding Path="TrackPositionPerc"/>
                            </MultiBinding>
                         </app:StatusView.StatusInfo>
                      </app:StatusView>

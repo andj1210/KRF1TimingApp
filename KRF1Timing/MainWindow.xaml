@@ -156,7 +156,7 @@
                 <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleLeader">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="[L]" Foreground="#FF666666" Margin="4,0,0,0"/>
-                        <TextBlock Text="Toggle Leader"/>
+                        <TextBlock Text="Leader / Delta"/>
                     </DockPanel>
                 </Button>
                 <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleStatus">
@@ -169,12 +169,6 @@
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="[S]" Foreground="#FF666666" Margin="4,0,0,0"/>
                         <TextBlock Text="Save Report"/>
-                    </DockPanel>
-                </Button>
-                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_CycleMapping">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Right" Text="[M]" Foreground="#FF666666" Margin="4,0,0,0"/>
-                        <TextBlock Text="Cycle Mapping"/>
                     </DockPanel>
                 </Button>
                 <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleFullscreen">

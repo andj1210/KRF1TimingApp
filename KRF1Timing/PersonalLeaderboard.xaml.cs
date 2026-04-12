@@ -139,7 +139,7 @@ namespace adjsw.F12025
             {
                m_isQuali = value;
 
-               var converter = this.Resources["DeltaTimeLeaderConverter"] as adjsw.F12025.QualifyingAwareConverter;
+               var converter = this.Resources["LeaderAndDeltaConverter"] as adjsw.F12025.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
                converter = this.Resources["DeltaTimeConverter"] as adjsw.F12025.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
@@ -147,8 +147,11 @@ namespace adjsw.F12025
                converter.IsQualy = m_isQuali;
 
                if (m_isQuali)
+                  LeaderDeltaMode = false;
+
+               if (m_isQuali)
                {
-                  if (ActualWidth > 1100)
+                  if (ActualWidth > 950)
                   {
                      m_fastestLapS1Column.Visibility = System.Windows.Visibility.Visible;
                      m_fastestLapS2Column.Visibility = System.Windows.Visibility.Visible;
@@ -160,7 +163,7 @@ namespace adjsw.F12025
                      m_fastestLapS2Column.Visibility = System.Windows.Visibility.Collapsed;
                      m_fastestLapS3Column.Visibility = System.Windows.Visibility.Collapsed;
                   }
-                  m_statusColumn.Width = 205;
+                  m_statusColumn.Width = 100;
                }
                else
                {
@@ -204,6 +207,18 @@ namespace adjsw.F12025
          remove { m_grid.MouseRightButtonDown -= value; }
       }
 
+      public bool LeaderDeltaMode
+      {
+         get { return m_leaderDeltaMode; }
+         set
+         {
+            m_leaderDeltaMode = value;
+            var converter = this.Resources["LeaderAndDeltaConverter"] as QualifyingAwareConverter;
+            converter.ShowDelta = m_leaderDeltaMode;
+            m_leaderDeltaColumn.Header = m_leaderDeltaMode ? "Delta" : "Leader";
+         }
+      }
+
       private DataGridColumn m_playerDeltaColumn;
       private DataGridColumn m_leaderDeltaColumn;
       private DataGridColumn m_statusColumn;
@@ -211,6 +226,7 @@ namespace adjsw.F12025
       private DataGridColumn m_fastestLapS2Column;
       private DataGridColumn m_fastestLapS3Column;
       private bool m_isQuali = false;
+      private bool m_leaderDeltaMode = false;
    }
 
    static class Extension

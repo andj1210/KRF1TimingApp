@@ -14,7 +14,6 @@ namespace adjsw::F12025
       SetExtractor(mapper->GetExtractor());
    }
 
-
    F1UdpClrMapper::F1UdpClrMapper()
    {
       m_parser = new F12025_PacketExtractor();
@@ -103,7 +102,6 @@ namespace adjsw::F12025
             for (int i = 0; i < Drivers->Length; ++i)
             {
                m_UpdateTelemetry(i);
-               m_UpdateTyreDamage(i);
             }
             break;
 
@@ -122,7 +120,6 @@ namespace adjsw::F12025
                if (i == m_secondaryDriverIndex)
                   continue; // damage for this slot is authoritative from ProceedSecondary
                m_UpdateDamage(i);
-               m_UpdateTyreDamage(i);
             }
             break;
 
@@ -169,40 +166,141 @@ namespace adjsw::F12025
       Marshal::Copy(input, 0, m_pUnmanagedSecondary, secLen);
       auto p = reinterpret_cast<const uint8_t*>(m_pUnmanagedSecondary.ToPointer());
 
-      PacketType tp = PacketType::UnknownOrIllformed;
-      m_parserSecondary->ProceedPacket(p, secLen, &tp);
-
-      // The player car index in the secondary stream identifies the second driver's slot.
-      uint8_t secIdx = m_parserSecondary->lastHeader.m_playerCarIndex;
-      if (secIdx >= static_cast<uint8_t>(Drivers->Length))
-         return true;
-
-      m_secondaryDriverIndex = static_cast<int>(secIdx);
-      Drivers[m_secondaryDriverIndex]->IsSecondaryDriver = true;
-
-      // Temporarily route the update helpers through the secondary parser so they
-      // read the authoritative data from that stream instead of the primary one.
-      auto* savedParser = m_parser;
-      m_parser = m_parserSecondary;
-
-      switch (tp)
+      while (secLen)
       {
-      case PacketType::PacketCarDamageData:
-         m_UpdateDamage(m_secondaryDriverIndex);
-         m_UpdateTyreDamage(m_secondaryDriverIndex);
-         break;
+         PacketType tp = PacketType::UnknownOrIllformed;
+         unsigned processed = m_parserSecondary->ProceedPacket(p, secLen, &tp);
+         secLen -= processed;
+         p += processed;
 
-      case PacketType::PacketCarStatusData:
-      {
-         // we might want to update if we ever show ers etc. Tyres are maintained by first driver.
-         break;
-      }
+         // m_playerCarIndex in the secondary stream is only valid within that stream's own car ordering.
+         // Use it to read identity fields from the secondary participants list.
+         uint8_t sec_idx = m_parserSecondary->lastHeader.m_playerCarIndex;
+         if (sec_idx >= static_cast<uint8_t>(cs_maxNumCarsInUDPData))
+            continue;
 
-      default:
-         break;
-      }
+         // On a participants packet re-resolve the secondary driver index.
+         if (tp == PacketType::PacketParticipantsData)
+         {
+            uint8_t sec_team    = m_parserSecondary->participants.m_participants[sec_idx].m_teamId;
+            uint8_t sec_race_nr = m_parserSecondary->participants.m_participants[sec_idx].m_raceNumber;
 
-      m_parser = savedParser;
+            // 1st pass -- exact match on team + race number.
+            int match_idx = -1;
+            for (int i = 0; i < Drivers->Length; ++i)
+            {
+               if (Drivers[i]->DriverNr == sec_race_nr && static_cast<int>(Drivers[i]->Team) == sec_team)
+               {
+                  match_idx = i;
+                  break;
+               }
+            }
+
+            // 2nd pass -- team-only fallback: prefer a non-MainDriver slot; if none exists take
+            // the second car of the team (i.e. skip the first team member found).
+            if (match_idx < 0)
+            {
+               int first_team_match = -1;
+               for (int i = 0; i < Drivers->Length; ++i)
+               {
+                  if (static_cast<int>(Drivers[i]->Team) != sec_team)
+                     continue;
+
+                  if (!Drivers[i]->IsMainDriver)
+                  {
+                     match_idx = i;
+                     break;
+                  }
+
+                  if (first_team_match < 0)
+                     first_team_match = i; // remember first (MainDriver) slot
+               }
+
+               // All team slots are MainDriver -- pick the second one found.
+               if (match_idx < 0 && first_team_match >= 0)
+               {
+                  for (int i = first_team_match + 1; i < Drivers->Length; ++i)
+                  {
+                     if (static_cast<int>(Drivers[i]->Team) == sec_team)
+                     {
+                        match_idx = i;
+                        break;
+                     }
+                  }
+               }
+            }
+
+            if (match_idx < 0)
+               continue;
+
+            m_secondaryDriverIndex = match_idx;
+
+            // Clear IsSecondaryDriver on any slot that no longer holds the secondary driver.
+            for (int i = 0; i < Drivers->Length; ++i)
+               Drivers[i]->IsSecondaryDriver = (i == match_idx);
+         }
+
+         // Apply damage using the already-resolved index.
+         if (m_secondaryDriverIndex < 0 || m_secondaryDriverIndex >= Drivers->Length)
+            continue;
+
+         switch (tp)
+         {
+         case PacketType::PacketCarDamageData:
+         {
+            DriverData^ driver = Drivers[m_secondaryDriverIndex];
+            if (driver->Present)
+            {
+               const auto& dmg = m_parserSecondary->cardamage.m_carDamageData[sec_idx];
+
+               // Tyre wear
+               driver->WearDetail->WearFrontLeft  = dmg.m_tyresWear[2];
+               driver->WearDetail->WearFrontRight = dmg.m_tyresWear[3];
+               driver->WearDetail->WearRearLeft   = dmg.m_tyresWear[0];
+               driver->WearDetail->WearRearRight  = dmg.m_tyresWear[1];
+
+               // Wing damage
+               driver->WearDetail->DamageFrontLeft  = dmg.m_frontLeftWingDamage;
+               driver->WearDetail->DamageFrontRight = dmg.m_frontRightWingDamage;
+            }
+            break;
+         }
+
+         case PacketType::PacketCarTelemetryData:
+         {
+            DriverData^ driver = Drivers[m_secondaryDriverIndex];
+            if (driver->Present)
+            {
+               const auto& tel = m_parserSecondary->telemetry.m_carTelemetryData[sec_idx];
+
+               driver->WearDetail->TempFrontLeftInner = tel.m_tyresInnerTemperature[2];
+               driver->WearDetail->TempFrontRightInner = tel.m_tyresInnerTemperature[3];
+               driver->WearDetail->TempRearLeftInner = tel.m_tyresInnerTemperature[0];
+               driver->WearDetail->TempRearRightInner = tel.m_tyresInnerTemperature[1];
+
+               driver->WearDetail->TempFrontLeftOuter = tel.m_tyresSurfaceTemperature[2];
+               driver->WearDetail->TempFrontRightOuter = tel.m_tyresSurfaceTemperature[3];
+               driver->WearDetail->TempRearLeftOuter = tel.m_tyresSurfaceTemperature[0];
+               driver->WearDetail->TempRearRightOuter = tel.m_tyresSurfaceTemperature[1];
+
+               driver->WearDetail->TempBrakeFrontLeft = tel.m_brakesTemperature[2];
+               driver->WearDetail->TempBrakeFrontRight = tel.m_brakesTemperature[3];
+               driver->WearDetail->TempBrakeRearLeft = tel.m_brakesTemperature[0];
+               driver->WearDetail->TempBrakeRearRight = tel.m_brakesTemperature[1];
+
+               driver->WearDetail->TempEngine = tel.m_engineTemperature;
+            }
+            break;
+         }
+
+         case PacketType::PacketCarStatusData:
+            // reserved -- tyres are maintained by the primary stream
+            break;
+
+         default:
+            break;
+         }
+      } // while (secLen)
       return true;
    }
 
@@ -229,7 +327,7 @@ namespace adjsw::F12025
       for (unsigned i = 0; i < CNT_SIMDATA; ++i)
       {
          DriverData^ driver = Drivers[i];
-         driver->Name = "Dummy Data " + (i + 1);
+         driver->TelemetryName = "Dummy Data " + (i + 1);
          driver->Present = true;
          driver->VisualTyre = F1VisualTyre::Soft;
 
@@ -251,7 +349,7 @@ namespace adjsw::F12025
          driver->VisualTyres->Add(driver->VisualTyre);
          driver->VisualTyres = driver->VisualTyres;
       }
-      Drivers[PLAYER_IDX]->Name = "Player";
+      Drivers[PLAYER_IDX]->TelemetryName = "Player";
       Drivers[PLAYER_IDX]->IsPlayer = true;
 
       // insert laptimes
@@ -274,7 +372,7 @@ namespace adjsw::F12025
       for (unsigned j = 0; j < CNT_SIMDATA; ++j)
       {
          DriverData^ driver = Drivers[j];
-         float driverTimeAfterLap = 0.f;
+         double driverTimeAfterLap = 0.f;
          for (unsigned i = 0; i < LAPS; ++i)
          {
             driverTimeAfterLap += Drivers[j]->Laps[i]->Lap;
@@ -284,8 +382,8 @@ namespace adjsw::F12025
 
       // update delta to player
       {
-         float playerTimeAfterLap = Drivers[PLAYER_IDX]->Laps[LAPS - 1]->LapsAccumulated;
-         float playerTimeBeforeLastSector =
+         double playerTimeAfterLap = Drivers[PLAYER_IDX]->Laps[LAPS - 1]->LapsAccumulated;
+         double playerTimeBeforeLastSector =
             playerTimeAfterLap
             - Drivers[PLAYER_IDX]->Laps[LAPS - 1]->Lap
             + Drivers[PLAYER_IDX]->Laps[LAPS - 1]->Sector1
@@ -329,7 +427,7 @@ namespace adjsw::F12025
 
       for (unsigned j = 0; j < CNT_SIMDATA; ++j)
       {
-         float bestTime = 999999.f;
+         double bestTime = 999999.f;
          unsigned bestIdx = 0;
          for (unsigned i = 0; i < CNT_SIMDATA; ++i)
          {
@@ -570,7 +668,7 @@ namespace adjsw::F12025
             switch (m_parser->lap.m_lapData[i].m_pitStatus)
             {
             case 1: car->Status = DriverStatus::Pitlane; break;
-            case 2: car->Status = DriverStatus::Pitting; car->HasPittedLatch = true; break;
+            case 2: car->Status = DriverStatus::Pitting; break;
 
             default:
                switch (m_parser->lap.m_lapData[i].m_driverStatus)
@@ -625,60 +723,6 @@ namespace adjsw::F12025
                car->VisualTyres->Add(car->VisualTyre);
                car->VisualTyres = car->VisualTyres; // trigger NotifyPorpertyChanged
             }
-         }
-
-         if (oldDriverStatus == DriverStatus::Pitlane &&
-            ((car->Status == DriverStatus::OnTrack) || (car->Status == DriverStatus::OutLap)) // for f1 24 seems to go pitlane -> outlap -> ontrack
-            )
-         {
-            if (!car->HasPittedLatch)
-            {
-#if 0  // use event
-               // in pits without pitstop -> probably served a drive through penalty
-               for each (SessionEvent ^ penalty in car->PitPenalties)
-               {
-                  if ((penalty->PenaltyType == PenaltyTypes::DriveThrough) && (!penalty->PenaltyServed))
-                  {
-                     penalty->PenaltyServed = true;
-                     car->NPC("PitPenalties");
-                     break;
-                  }
-               }
-#endif
-            }
-            else
-            {
-               // car was in box -> see if a penalty was served:
-#if 0  // use event
-               for each (SessionEvent ^ penalty in car->PitPenalties)
-               {
-                  if ((penalty->PenaltyType != PenaltyTypes::DriveThrough) && (!penalty->PenaltyServed))
-                  {
-                     if (penalty->InfringementType == InfringementTypes::PitLaneSpeeding)
-                     {
-                        // pit lane speeding can´t be serverd on the same stop the infringement occured, 
-                        // if the penalty is older than one minute, we can assume it is a distinct pit stop and thus the penalty can be served.
-                        if ((m_parser->sessionTime - penalty->TimeCode) > 60)
-                        {
-                           penalty->PenaltyServed = true;
-                           car->NPC("PitPenalties");
-                           break;
-                        }
-                     }
-                     else
-                     {
-                        if (!penalty->PenaltyServed)
-                        {
-                           penalty->PenaltyServed = true;
-                           car->NPC("PitPenalties");
-                           break;
-                        }
-                     }
-                  }
-               }
-#endif
-            }
-            car->HasPittedLatch = false;
          }
       }
    }
@@ -746,8 +790,8 @@ namespace adjsw::F12025
             continue;
          }
 
-         float timePlayer = 0;
-         float timeOpponent = 0;
+         double timePlayer = 0;
+         double timeOpponent = 0;
 
          if (found)
          {
@@ -808,6 +852,17 @@ namespace adjsw::F12025
 
                opponent->TimedeltaToLeader = telemetryDelta / 1000.0;
             }
+
+            System::UInt32 telemetryDelta = m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart;
+            telemetryDelta += 60000 * m_parser->lap.m_lapData[i].m_deltaToCarInFrontMinutesPart;
+
+            // it is not undocumented, but apparently there can be values > 60000 in the m_deltaToCarInFrontMSPart.
+            // this happens when cars are close to each other. Most likely the game wants to communicate to us, that positions
+            // changed and there is no new delta yet -> thus if m_deltaToCarInFrontMSPart >= 1minute show as 0:
+            opponent->TimedeltaToNext = 
+               m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart > 59999 ? 
+               0 :                        // delta to next car not available
+               telemetryDelta / 1000.0;   // actual delta available
          }
       }
    }
@@ -851,6 +906,16 @@ namespace adjsw::F12025
       SessionInfo->RemainingTime = m_parser->session.m_sessionTimeLeft;
       SessionInfo->TotalLaps = m_parser->session.m_totalLaps;
       SessionInfo->TrackLength = static_cast<float>(m_parser->session.m_trackLength);
+      if (SessionInfo->TrackLength)
+      {
+         SessionInfo->Sector2Start = m_parser->session.m_sector2LapDistanceStart / SessionInfo->TrackLength;
+         SessionInfo->Sector3Start = m_parser->session.m_sector3LapDistanceStart / SessionInfo->TrackLength;
+      }
+      else
+      {
+         SessionInfo->Sector2Start = 0.3f;
+         SessionInfo->Sector3Start = 0.6f;
+      }
    }
 
    void F1UdpClrMapper::m_UpdateLapRace()
@@ -1310,53 +1375,23 @@ namespace adjsw::F12025
       }
    }
 
-   void F1UdpClrMapper::m_UpdateTyreDamage(int i)
-   {
-      DriverData^ driver = Drivers[i];
-      if (!driver->Present)
-         return;
-
-      auto tyres = m_parser->cardamage.m_carDamageData[i].m_tyresWear;
-      float tyreStatus = static_cast<float>(tyres[0] + tyres[1] + tyres[2] + tyres[3]);
-      tyreStatus /= 400;
-
-      // map 75% -> 100% ... 0% -> 0%
-      if (tyreStatus >= 0.75f)
-         tyreStatus = 1;
-      else
-      {
-         tyreStatus *= (1.f / 0.75f);
-      }
-      driver->TyreDamage = tyreStatus;
-
-      driver->WearDetail->WearFrontLeft = m_parser->cardamage.m_carDamageData[i].m_tyresWear[2];
-      driver->WearDetail->WearFrontRight = m_parser->cardamage.m_carDamageData[i].m_tyresWear[3];
-      driver->WearDetail->WearRearLeft = m_parser->cardamage.m_carDamageData[i].m_tyresWear[0];
-      driver->WearDetail->WearRearRight = m_parser->cardamage.m_carDamageData[i].m_tyresWear[1];
-   }
-
    void F1UdpClrMapper::m_UpdateDamage(int i)
    {
       DriverData^ driver = Drivers[i];
       if (!driver->Present)
          return;
 
-      float damage = m_parser->cardamage.m_carDamageData[i].m_frontLeftWingDamage;
-      damage += m_parser->cardamage.m_carDamageData[i].m_frontRightWingDamage;
-      damage += m_parser->cardamage.m_carDamageData[i].m_rearWingDamage;
-      damage /= 300;
+      if (driver->IsSecondaryDriver)
+         return; // data comes from second telemetry channel
 
       driver->WearDetail->DamageFrontLeft = m_parser->cardamage.m_carDamageData[i].m_frontLeftWingDamage;
       driver->WearDetail->DamageFrontRight = m_parser->cardamage.m_carDamageData[i].m_frontRightWingDamage;
 
-      // map 50% -> 100% ... 0% -> 0%
-      if (damage >= 0.5f)
-         damage = 1;
-      else
-      {
-         damage *= (1.f / 0.5f);
-      }
-      driver->CarDamage = damage;
+      auto tyres = m_parser->cardamage.m_carDamageData[i].m_tyresWear;
+      driver->WearDetail->WearFrontLeft = m_parser->cardamage.m_carDamageData[i].m_tyresWear[2];
+      driver->WearDetail->WearFrontRight = m_parser->cardamage.m_carDamageData[i].m_tyresWear[3];
+      driver->WearDetail->WearRearLeft = m_parser->cardamage.m_carDamageData[i].m_tyresWear[0];
+      driver->WearDetail->WearRearRight = m_parser->cardamage.m_carDamageData[i].m_tyresWear[1];
    }
 
    void F1UdpClrMapper::m_UpdateTelemetry(int i)
@@ -1364,6 +1399,9 @@ namespace adjsw::F12025
       DriverData^ driver = Drivers[i];
       if (!driver->Present)
          return;
+
+      if (driver->IsSecondaryDriver)
+         return; // data comes from second telemetry channel
 
       driver->WearDetail->TempFrontLeftInner = m_parser->telemetry.m_carTelemetryData[i].m_tyresInnerTemperature[2];
       driver->WearDetail->TempFrontRightInner = m_parser->telemetry.m_carTelemetryData[i].m_tyresInnerTemperature[3];
@@ -1393,83 +1431,26 @@ namespace adjsw::F12025
 
       Drivers[i]->SetNameFromTelemetry(m_parser->participants.m_participants[i].m_name);
 
-      // 3 possibilities:
-      // 1. Use Mapped name (preferred)
-      // 2. Take telemetry name (if it is not generic Multiplayer name)
-      // 3. Generate name from Team + number
-
-      // 1. check if name mapping is present:
-      if (m_nameMapings != nullptr)
+      // For online-only players with no useful telemetry name, generate one from team + number
+      // and push it into TelemetryName so Name picks it up automatically.
+      if (m_parser->participants.m_participants[i].m_driverId == 255 &&
+          !m_parser->participants.m_participants[i].m_showOnlineNames)
       {
-         // two pass: first check for team + number match, otherwise check for number only match
-         for (unsigned j = 0; j < m_nameMapings->Mappings->Length; ++j)
+         String^ pName = "Car";
+         switch (m_parser->participants.m_participants[i].m_teamId)
          {
-            if (
-               (m_nameMapings->Mappings[j]->Team.HasValue) &&
-               (m_nameMapings->Mappings[j]->Team.Value == Drivers[i]->Team) &&
-               (m_nameMapings->Mappings[j]->DriverNumber == Drivers[i]->DriverNr))
-            {
-               Drivers[i]->MappedName = m_nameMapings->Mappings[j]->Name;
-               Drivers[i]->Name = Drivers[i]->MappedName;
-               Drivers[i]->DriverTag = m_nameMapings->Mappings[j]->tag;
-               return;
-            }
+         case 0: pName = "Mercedes"; break;
+         case 1: pName = "Ferrari"; break;
+         case 2: pName = "Red Bull"; break;
+         case 3: pName = "Williams"; break;
+         case 4: pName = "Aston Martin"; break;
+         case 5: pName = "Alpine"; break;
+         case 6: pName = "Alpha Tauri"; break;
+         case 7: pName = "Haas"; break;
+         case 8: pName = "McLaren"; break;
+         case 9: pName = "Sauber"; break;
          }
-
-         for (unsigned j = 0; j < m_nameMapings->Mappings->Length; ++j)
-         {
-            if (
-               (!m_nameMapings->Mappings[j]->Team.HasValue) &&
-               (m_nameMapings->Mappings[j]->DriverNumber == Drivers[i]->DriverNr))
-            {
-               Drivers[i]->MappedName = m_nameMapings->Mappings[j]->Name;
-               Drivers[i]->Name = Drivers[i]->MappedName;
-               Drivers[i]->DriverTag = m_nameMapings->Mappings[j]->tag;
-               return;
-            }
-         }
-
-         Drivers[i]->MappedName = "";
-         Drivers[i]->DriverTag = "";
-      }
-
-      // 2. & 3.
-      if (m_parser->participants.m_participants[i].m_driverId != 255)
-      {
-         Drivers[i]->Name = Drivers[i]->TelemetryName;
-         Drivers[i]->DriverTag = "";
-      }
-      else
-      {
-
-         if (m_parser->participants.m_participants[i].m_showOnlineNames)
-         {
-            Drivers[i]->Name = Drivers[i]->TelemetryName;
-         }
-         else
-         {
-            // online player ->  no useful name from telemetry available -> name after team + car number       
-            String^ pName = "Car";
-            switch (m_parser->participants.m_participants[i].m_teamId)
-            {
-            case 0: pName = "Mercedes"; break;
-            case 1: pName = "Ferrari"; break;
-            case 2: pName = "Red Bull"; break;
-            case 3: pName = "Williams"; break;
-            case 4: pName = "Aston Martin"; break;
-            case 5: pName = "Alpine"; break;
-            case 6: pName = "Alpha Tauri"; break;
-            case 7: pName = "Haas"; break;
-            case 8: pName = "McLaren"; break;
-            case 9: pName = "Sauber"; break;
-            }
-
-            pName += " (" + Drivers[i]->DriverNr + ")";
-
-            Drivers[i]->Name = pName;
-         }
-
-         Drivers[i]->DriverTag = "";
+         Drivers[i]->TelemetryName = pName + " (" + Drivers[i]->DriverNr + ")";
       }
    }
 
@@ -1502,15 +1483,6 @@ namespace adjsw::F12025
       }
 
       m_parser->classification.m_numCars = 0; // set a marker that classifcation results were captured.
-   }
-
-   void F1UdpClrMapper::SetDriverNameMappings(DriverNameMappings^ newMappings)
-   {
-      m_nameMapings = newMappings;
-
-      // refresh all Names
-      for (unsigned i = 0; i < Drivers->Length; ++i)
-         m_UpdateDriverName(i);
    }
 
    void F1UdpClrMapper::m_UpdateHistoryDataRace()

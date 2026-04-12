@@ -148,52 +148,41 @@ namespace adjsw.F12025
    public abstract class QualifyingAwareConverter : IMultiValueConverter
    {
       public bool IsQualy { get; set; }
+      public bool ShowDelta { get; set; }
       public abstract object Convert(object[] values, Type targetType, object parameter, CultureInfo culture);
       public abstract object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture);
    }
 
-   public class DeltaTimeLeaderConverter : QualifyingAwareConverter
+   public class LeaderAndDeltaConverter : QualifyingAwareConverter
    {
       public override object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
       {
-         var dat = values?[3] as DriverData;
+         var dat = values?[4] as DriverData;
 
          if (null == dat)
             return "?";
 
          if (!dat.Present)
-            return "    DNF ";
+            return "--------";
 
          switch (dat.Status)
          {
             case DriverStatus.DNF:
-               return "    DNF ";
+               return "--------";
             case DriverStatus.DSQ:
-               return "    DSQ ";
-
-               /*
-           case DriverStatus.Garage:
-               return "GARAGE";
-
-           case DriverStatus.OnTrack:
-               // show actual delta
-               break;
-           case DriverStatus.Pitlane:
-               return "-PIT-";
-
-           case DriverStatus.Pitting:
-               return "-PIT-";
-               */
+               return "--------";
          }
 
          if (dat.Pos != 1)
          {
-            if (dat.TimedeltaToLeader > 0)
-               return string.Format(" {0,7:##0.000}", (dat.TimedeltaToLeader + 0.0005));
+            float time = ShowDelta ? dat.TimedeltaToNext : dat.TimedeltaToLeader;
 
-            else if (dat.TimedeltaToLeader < 0)
+            if (time > 0)
+               return string.Format(CultureInfo.InvariantCulture, " {0,7:##0.000}", (time + 0.0005));
+
+            else if (time < 0)
             {
-               int lapped = (int)(dat.TimedeltaToLeader - 0.5);
+               int lapped = (int)(time - 0.5);
                lapped *= -1;
                if (lapped > 9)
                   return "    +" + lapped + "L";
@@ -270,7 +259,7 @@ namespace adjsw.F12025
       {
          StatusView.Setter setter = new StatusView.Setter();
 
-         var dat = values?[6] as DriverData;
+         var dat = values?[0] as DriverData;
          if (null == dat)
          {
             setter.SpecialText = "|?";
@@ -279,12 +268,12 @@ namespace adjsw.F12025
 
          driver = dat;
          setter.DriverId = driver.Id;
-         setter.Player = dat.IsPlayer;
+         setter.Player = dat.IsPlayer || dat.IsMainDriver || dat.IsSecondaryDriver;
          this.setter = setter;
 
          if (dat.IsPlayer && !IsQualy)
             setter.SpecialText = 
-               "-----";
+               "<---";
 
          if (!dat.Present)
             setter.SpecialText = 
@@ -444,14 +433,51 @@ namespace adjsw.F12025
                setter.LapInvalid = true;
             }
          }
+
+         m_ComputeSectorProgress(setter, driver);
          return setter;
       }
 
+      private void m_ComputeSectorProgress(StatusView.Setter setter, DriverData driver)
+      {
+         float pos      = driver.TrackPositionPerc;
+         float s2Start  = driver.Session.Sector2Start;
+         float s3Start  = driver.Session.Sector3Start;
+
+         if (pos <= 0f || s2Start <= 0f || s3Start <= 0f)
+         {
+            setter.SectorProgress = -1f;
+            return;
+         }
+
+         if (setter.S1 == StatusView.SetterSectorType.None && setter.S2 == StatusView.SetterSectorType.None && setter.S3 == StatusView.SetterSectorType.None)
+         {
+            // S1 in progress
+            setter.SectorProgress = Math.Min(pos / s2Start, 1f);
+         }
+         else if (setter.S2 == StatusView.SetterSectorType.None && setter.S3 == StatusView.SetterSectorType.None)
+         {
+            // S2 in progress
+            float sectorLen = s3Start - s2Start;
+            setter.SectorProgress = sectorLen > 0f ? Math.Min((pos - s2Start) / sectorLen, 1f) : -1f;
+         }
+         else if (setter.S3 == StatusView.SetterSectorType.None)
+         {
+            // S3 in progress
+            float sectorLen = 1f - s3Start;
+            setter.SectorProgress = sectorLen > 0f ? Math.Min((pos - s3Start) / sectorLen, 1f) : -1f;
+         }
+         else
+         {
+            // all sectors complete
+            setter.SectorProgress = -1f;
+         }
+      }
 
       public object ConvertRace(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
       {
          setter.Quali = false;
-         setter.Delta = (System.Int32) (driver.TimedeltaToPlayer * 1000);
+         setter.Delta = 0;
          return setter;
       }
 
@@ -810,34 +836,4 @@ namespace adjsw.F12025
       }
    }
 
-   public class TyreDamageColorConverter : IMultiValueConverter
-   {
-      public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-      {
-         var dat = values?[1] as DriverData;
-
-         if (null == dat)
-            return Brushes.Gray;
-
-         int r = (int)((dat.TyreDamage * 255) + 0.5f);
-         if (r > 255)
-            r = 255;
-
-         int g = (int)(((1.0f - dat.TyreDamage) * 255) + 0.5f);
-         if (g > 255)
-            g = 255;
-
-         if (dat.TyreDamage < 0.5f)
-            g = 255;
-
-         else
-            r = 255;
-
-         return new SolidColorBrush(Color.FromRgb((byte)r, (byte)g, 0));
-      }
-      public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-      {
-         throw new Exception("The method or operation is not implemented.");
-      }
-   }
 }
