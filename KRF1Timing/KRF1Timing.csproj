@@ -61,6 +61,9 @@
     <StartupObject>
     </StartupObject>
   </PropertyGroup>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>..\_build\obj\KRF1Timing\</BaseIntermediateOutputPath>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseDev|AnyCPU'">
     <OutputPath>..\_build\ReleaseDev\</OutputPath>
     <DefineConstants>TRACE;RELEASEDEV</DefineConstants>
@@ -113,41 +116,71 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="RelayClient.cs" />
-    <Compile Include="RelayConfig.cs" />
-    <Compile Include="RelayProtocol.cs" />
-    <Compile Include="RelayUplink.cs" />
-    <Compile Include="ReportWriter.cs" />
-    <Compile Include="StatusView.xaml.cs">
-      <DependentUpon>StatusView.xaml</DependentUpon>
+    <!-- model -->
+    <Compile Include="model\ReflectionClone.cs" />
+    <Compile Include="model\RelayClient.cs" />
+    <Compile Include="model\RelayConfig.cs" />
+    <Compile Include="model\RelayProtocol.cs" />
+    <Compile Include="model\RelayUplink.cs" />
+    <Compile Include="model\ReportWriter.cs" />
+    <Compile Include="model\TrackLearner.cs" />
+    <Compile Include="model\TrackMapData.cs" />
+    <Compile Include="model\TrackMapStore.cs" />
+    <Compile Include="model\UdpEventClient.cs" />
+    <Compile Include="model\UdpPlaybackData.cs" />
+    <Compile Include="model\UdpSessionRecorder.cs" />
+    <!-- ui -->
+    <Compile Include="ui\BindingConverters.cs" />
+    <Page Include="ui\CarStatusView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\CarStatusView.xaml.cs">
+      <DependentUpon>CarStatusView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TrackLearner.cs" />
-    <Compile Include="Trackmap.xaml.cs">
-      <DependentUpon>Trackmap.xaml</DependentUpon>
+    <Page Include="ui\DriverNameContextMenu.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\DriverNameContextMenu.xaml.cs">
+      <DependentUpon>DriverNameContextMenu.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TrackMapData.cs" />
-    <Compile Include="TrackMapStore.cs" />
-    <Compile Include="UdpPlaybackData.cs" />
-    <Compile Include="PersonalLeaderboard.xaml.cs">
+    <Page Include="ui\PersonalLeaderboard.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\PersonalLeaderboard.xaml.cs">
       <DependentUpon>PersonalLeaderboard.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ReflectionClone.cs" />
-    <Compile Include="TyreView.xaml.cs">
+    <Page Include="ui\StatusView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\StatusView.xaml.cs">
+      <DependentUpon>StatusView.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ui\Trackmap.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\Trackmap.xaml.cs">
+      <DependentUpon>Trackmap.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ui\TyreView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\TyreView.xaml.cs">
       <DependentUpon>TyreView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UdpEventClient.cs" />
-    <Compile Include="UdpPlaybackWindow.xaml.cs">
+    <Page Include="ui\UdpPlaybackWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\UdpPlaybackWindow.xaml.cs">
       <DependentUpon>UdpPlaybackWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UdpSessionRecorder.cs" />
-    <Page Include="CarStatusView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="DriverNameContextMenu.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    <!-- root -->
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -156,37 +189,10 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="BindingConverters.cs" />
-    <Compile Include="CarStatusView.xaml.cs">
-      <DependentUpon>CarStatusView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="DriverNameContextMenu.xaml.cs">
-      <DependentUpon>DriverNameContextMenu.xaml</DependentUpon>
-    </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="PersonalLeaderboard.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="StatusView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Trackmap.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="TyreView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UdpPlaybackWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
