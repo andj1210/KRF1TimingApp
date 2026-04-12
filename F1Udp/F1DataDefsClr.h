@@ -468,7 +468,6 @@ namespace adjsw::F12025
 
       void Reset()
       {
-         NameOverride = "";
          TelemetryName = "";
          m_driverNameNative[0] = 0;
          Pos = 0;
@@ -491,7 +490,7 @@ namespace adjsw::F12025
          m_hasPitted = false;
 
          TimedeltaToLeader = 0;
-         TimedeltaToPlayer = 0;
+         TimedeltaToNext = 0;
          Id = 0;
          AllowLapHistoryQuali = true;
          m_trackPos3d = gcnew DriverPos3d();
@@ -535,8 +534,6 @@ namespace adjsw::F12025
       property LapData^ FastestLap {LapData^ get() { return m_fastestLap; } void set(LapData^ val) { m_fastestLap = val; NPC("FastestLap"); }};
       property LapData^ CurrentLap {LapData^ get() { return m_currentLap; } void set(LapData^ val) { m_currentLap = val; NPC("CurrentLap"); }};
       property int PenaltySeconds {int get() { return m_penaltySeconds; } void set(int val) { if (val != m_penaltySeconds) { m_penaltySeconds = val; NPC("PenaltySeconds"); } } };
-      property float TimedeltaToPlayer {float get() { return m_timedeltaToPlayer; } void set(float val) { if (val != m_timedeltaToPlayer) { m_timedeltaToPlayer = val; NPC("TimedeltaToPlayer"); } } };
-      property float LastTimedeltaToPlayer {float get() { return m_lastTimedeltaToPlayer; } void set(float val) { if (val != m_lastTimedeltaToPlayer) { m_lastTimedeltaToPlayer = val; NPC("LastTimedeltaToPlayer"); } } };
       property float TimedeltaToLeader {float get() { return m_timedeltaToLeader; } void set(float val) { if (val != m_timedeltaToLeader) { m_timedeltaToLeader = val; NPC("TimedeltaToLeader"); } } };
       property float TimedeltaToNext{ float get() { return m_timedeltaToNext; } void set(float val) { if (val != m_timedeltaToNext) { m_timedeltaToNext = val; NPC("TimedeltaToNext"); } } };
       property float TrackPositionPerc{ float get() { return m_trackPosPerc; } void set(float val) { if ((val != m_trackPosPerc) && (val > 0.f)) { m_trackPosPerc = val; NPC("TrackPositionPerc"); } } }

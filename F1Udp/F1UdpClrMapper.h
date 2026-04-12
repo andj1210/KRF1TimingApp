@@ -74,8 +74,8 @@ namespace adjsw::F12025
       void m_Clear();
       
       void m_UpdateDrivers();
-      void m_UpdateTimeDeltaRace(DriverData^ reference, int i, bool toPlayer /* if false -> to leader */);
-      void m_UpdateTimeDeltaQualy(DriverData^ reference, int i, bool toPlayer /* if false -> to leader */);
+      void m_UpdateTimeDeltaRace(DriverData^ reference, int i);
+      void m_UpdateTimeDeltaQualy(DriverData^ reference, int i);
 
       void m_UpdateSession();
       void m_UpdateLapRace();

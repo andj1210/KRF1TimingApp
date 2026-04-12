@@ -271,7 +271,7 @@ namespace adjsw.F12025
          setter.Player = dat.IsPlayer || dat.IsMainDriver || dat.IsSecondaryDriver;
          this.setter = setter;
 
-         if (dat.IsPlayer && !IsQualy)
+         if (setter.Player && !IsQualy)
             setter.SpecialText = 
                "<---";
 
@@ -485,59 +485,6 @@ namespace adjsw.F12025
       private StatusView.Setter setter;
    }
 
-   public class DeltaTimeConverter : QualifyingAwareConverter
-   {
-      public override object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-      {
-         var dat = values?[2] as DriverData;
-
-         if (null == dat)
-            return "|?";
-
-         if (dat.IsPlayer)
-            return "| --- ";
-
-         if (!dat.Present)
-            return "| DNF ";
-
-         switch (dat.Status)
-         {
-            case DriverStatus.DNF:
-            case DriverStatus.DSQ:
-               return "| DNF ";
-            case DriverStatus.Garage:
-               return "GARAGE";
-
-            case DriverStatus.OnTrack:
-               // show actual delta
-               break;
-            case DriverStatus.Pitlane:
-               return "|-PIT-";
-
-            case DriverStatus.Pitting:
-               return "|-PIT-";
-         }
-
-         if (dat.TimedeltaToPlayer > 99.9)
-         {
-            return "|+99.9";
-         }
-         else if (dat.TimedeltaToPlayer < -99.9)
-         {
-            return "|-99.9";
-         }
-         else
-         {
-            return "|" + dat.TimedeltaToPlayer.ToString("+00.0;-00.0");
-         }
-      }
-
-      public override object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-      {
-         throw new NotImplementedException();
-      }
-   }
-
    public class TyreAgeConverter : IMultiValueConverter
    {
       public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -558,9 +505,6 @@ namespace adjsw.F12025
          throw new NotImplementedException();
       }
    }
-
-
-
    public class PenaltyConverter : IMultiValueConverter
    {
       public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
@@ -635,63 +579,6 @@ namespace adjsw.F12025
       public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
       {
          throw new NotImplementedException();
-      }
-   }
-
-   public class DeltaTimeColorConverter : IMultiValueConverter
-   {
-      public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-      {
-         var dat = values?[1] as DriverData;
-
-         if (null == dat)
-            return Brushes.Red;
-
-         if (!dat.Present)
-            return Brushes.DarkGray;
-
-         if (dat.TimedeltaToPlayer > 0)
-         {
-            return Brushes.Red;
-         }
-         else if (dat.TimedeltaToPlayer < 0)
-            return Brushes.LightGreen;
-
-         return Brushes.White;
-      }
-
-      public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-      {
-         throw new Exception("The method or operation is not implemented.");
-      }
-   }
-
-   public class LastTimeDeltaBgColorConverter : IMultiValueConverter
-   {
-      public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-      {
-         var dat = values?[1] as DriverData;
-
-         if (null == dat)
-            return Brushes.Transparent;
-
-         float delta = dat.TimedeltaToPlayer - dat.LastTimedeltaToPlayer;
-
-         if (Math.Abs(delta) < 0.05f) // consider 0.050 sec or smaller as equal time
-            return Brushes.White;
-
-         else if (delta > 0)
-            return Brushes.Red;
-
-         else if (delta < 0)
-            return Brushes.LightGreen;
-
-         return Brushes.DarkGray;
-      }
-
-      public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-      {
-         throw new Exception("The method or operation is not implemented.");
       }
    }
 

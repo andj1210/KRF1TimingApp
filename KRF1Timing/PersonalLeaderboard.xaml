@@ -12,17 +12,13 @@
       <local:RaceEventTextConverter x:Key="RaceEventTextConverter"/>
       <local:PositionColorConverter x:Key="PositionColorConverter"/>
       <local:StatusConverter x:Key="StatusConverter"/>
-      <local:DeltaTimeColorConverter x:Key="DeltaTimeColorConverter"/>
-      <local:DeltaTimeBgColorConverter x:Key="DeltaTimeBgColorConverter"/>
       <local:TyreConverter x:Key="TyreConverter"/>
       <local:TyreColorConverter x:Key="TyreColorConverter"/>
-      <local:DeltaTimeConverter x:Key="DeltaTimeConverter"/>
       <local:LeaderAndDeltaConverter x:Key="LeaderAndDeltaConverter"/>
       <local:FastestLapConverter x:Key="FastestLapConverter"/>
       <local:PenaltyConverter x:Key="PenaltyConverter"/>
       <local:PitPenaltyConverter x:Key="PitPenaltyConverter"/>
       <local:TyreAgeConverter x:Key="TyreAgeConverter"/>
-      <local:LastTimeDeltaBgColorConverter x:Key="LastTimeDeltaBgColorConverter"/>
    </UserControl.Resources>
    <StackPanel Background="Transparent">
       <StackPanel.Resources>

@@ -141,8 +141,6 @@ namespace adjsw.F12025
 
                var converter = this.Resources["LeaderAndDeltaConverter"] as adjsw.F12025.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
-               converter = this.Resources["DeltaTimeConverter"] as adjsw.F12025.QualifyingAwareConverter;
-               converter.IsQualy = m_isQuali;
                converter = this.Resources["StatusConverter"] as adjsw.F12025.QualifyingAwareConverter;
                converter.IsQualy = m_isQuali;
 

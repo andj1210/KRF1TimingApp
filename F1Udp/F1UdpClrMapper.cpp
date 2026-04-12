@@ -388,34 +388,6 @@ namespace adjsw::F12025
             - Drivers[PLAYER_IDX]->Laps[LAPS - 1]->Lap
             + Drivers[PLAYER_IDX]->Laps[LAPS - 1]->Sector1
             + Drivers[PLAYER_IDX]->Laps[LAPS - 1]->Sector2;
-
-         for (unsigned i = 0; i < CNT_SIMDATA; ++i)
-         {
-            DriverData^ driver = Drivers[i];
-            driver->TimedeltaToPlayer = driver->Laps[LAPS - 1]->LapsAccumulated - playerTimeAfterLap;
-
-            float driverTimeBeforeLastSector =
-               driver->Laps[LAPS - 1]->LapsAccumulated
-               - driver->Laps[LAPS - 1]->Lap
-               + driver->Laps[LAPS - 1]->Sector1
-               + driver->Laps[LAPS - 1]->Sector2;
-
-            driver->LastTimedeltaToPlayer = driverTimeBeforeLastSector - playerTimeBeforeLastSector;
-         }
-
-         for (unsigned i = 0; i < CNT_SIMDATA; ++i)
-         {
-            DriverData^ driver = Drivers[i];
-            driver->TimedeltaToPlayer = driver->Laps[LAPS - 1]->LapsAccumulated - playerTimeAfterLap;
-
-            float driverTimeBeforeLastSector =
-               driver->Laps[LAPS - 1]->LapsAccumulated
-               - driver->Laps[LAPS - 1]->Lap
-               + driver->Laps[LAPS - 1]->Sector1
-               + driver->Laps[LAPS - 1]->Sector2;
-
-            driver->LastTimedeltaToPlayer = driverTimeBeforeLastSector - playerTimeBeforeLastSector;
-         }
       }
 
       // update positions
@@ -568,7 +540,6 @@ namespace adjsw::F12025
             }
 #endif
          }
-         player->TimedeltaToPlayer = 0;
 
          if (!player->LapNr)
             return;
@@ -583,26 +554,14 @@ namespace adjsw::F12025
 
          Drivers[i]->LocationOnTrack = m_parser->lap.m_lapData[i].m_lapDistance;
 
-         // delta to player
-         if (player)
-         {
-            if (!car->IsPlayer)
-               qualyfiyingDelta ? m_UpdateTimeDeltaQualy(player, i, true) : m_UpdateTimeDeltaRace(player, i, true);
-         }
-         else
-         {
-            car->LastTimedeltaToPlayer = 0;
-            car->TimedeltaToPlayer = 0;
-         }
-
          // delta to leader
          if (leader && (car != leader))
          {
             if (qualyfiyingDelta)
-               m_UpdateTimeDeltaQualy(leader, i, false);
+               m_UpdateTimeDeltaQualy(leader, i);
             else
             {
-               m_UpdateTimeDeltaRace(leader, i, false);
+               m_UpdateTimeDeltaRace(leader, i);
             }
          }
 
@@ -637,20 +596,14 @@ namespace adjsw::F12025
             // 6 = not classified, 7 = retired
          case 4:
             car->Status = DriverStatus::DNF;
-            //Drivers[i]->Present = false;
-            Drivers[i]->TimedeltaToPlayer = 0; // triggers UI Update
             break;
          case 5:
             car->Status = DriverStatus::DSQ;
-            //Drivers[i]->Present = false;
-            Drivers[i]->TimedeltaToPlayer = 0; // triggers UI Update
             break;
 
          case 6:
             // "not classified", what does it actually mean?!
             car->Status = DriverStatus::Garage;
-            //Drivers[i]->Present = false;
-            Drivers[i]->TimedeltaToPlayer = 0; // triggers UI Update
             break;
 
          case 7:
@@ -660,8 +613,7 @@ namespace adjsw::F12025
 
             if (car->Status != DriverStatus::DNF) // dnf is not reported correctly and detected by penalty (terminally damaged), so do not change to "retrired" here if already DNF detected
                car->Status = DriverStatus::Retired;
-            //Drivers[i]->Present = false;
-            Drivers[i]->TimedeltaToPlayer = 0; // triggers UI Update
+
             break;
 
          default:
@@ -727,7 +679,7 @@ namespace adjsw::F12025
       }
    }
 
-   void F1UdpClrMapper::m_UpdateTimeDeltaRace(DriverData^ reference, int i, bool toPlayer)
+   void F1UdpClrMapper::m_UpdateTimeDeltaRace(DriverData^ reference, int i)
    {
       DriverData^ opponent = Drivers[i];
       if (!opponent->Present)
@@ -820,76 +772,47 @@ namespace adjsw::F12025
             }
          }
 
-         auto newDelta = timePlayer - timeOpponent;
-         if (toPlayer)
-         {
-            // take penalties into consideration
-            newDelta -= m_parser->lap.m_lapData[i].m_penalties - reference->PenaltySeconds;
+         int lappedCount = reference->LapNr - opponent->LapNr;
+         if (opponent->LocationOnTrack > reference->LocationOnTrack)
+            --lappedCount;
 
-            if (newDelta != opponent->TimedeltaToPlayer)
-            {
-               opponent->LastTimedeltaToPlayer = opponent->TimedeltaToPlayer;
-               opponent->TimedeltaToPlayer = newDelta;
-            }
+
+         if (lappedCount > 0)
+         {
+            opponent->TimedeltaToLeader = (-lappedCount); // special meaning for negative numbers: lapped count
          }
          else
          {
-            newDelta *= -1;
+            System::UInt32 telemetryDelta = m_parser->lap.m_lapData[i].m_deltaToRaceLeaderMSPart;
+            telemetryDelta += 60000 * m_parser->lap.m_lapData[i].m_deltaToRaceLeaderMinutesPart;
 
-            int lappedCount = reference->LapNr - opponent->LapNr;
-            if (opponent->LocationOnTrack > reference->LocationOnTrack)
-               --lappedCount;
-
-
-            if (lappedCount > 0)
-            {
-               opponent->TimedeltaToLeader = (-lappedCount); // special meaning for negative numbers: lapped count
-            }
-            else
-            {
-               System::UInt32 telemetryDelta = m_parser->lap.m_lapData[i].m_deltaToRaceLeaderMSPart;
-               telemetryDelta += 60000 * m_parser->lap.m_lapData[i].m_deltaToRaceLeaderMinutesPart;
-
-               opponent->TimedeltaToLeader = telemetryDelta / 1000.0;
-            }
-
-            System::UInt32 telemetryDelta = m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart;
-            telemetryDelta += 60000 * m_parser->lap.m_lapData[i].m_deltaToCarInFrontMinutesPart;
-
-            // it is not undocumented, but apparently there can be values > 60000 in the m_deltaToCarInFrontMSPart.
-            // this happens when cars are close to each other. Most likely the game wants to communicate to us, that positions
-            // changed and there is no new delta yet -> thus if m_deltaToCarInFrontMSPart >= 1minute show as 0:
-            opponent->TimedeltaToNext = 
-               m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart > 59999 ? 
-               0 :                        // delta to next car not available
-               telemetryDelta / 1000.0;   // actual delta available
+            opponent->TimedeltaToLeader = telemetryDelta / 1000.0;
          }
+
+         System::UInt32 telemetryDelta = m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart;
+         telemetryDelta += 60000 * m_parser->lap.m_lapData[i].m_deltaToCarInFrontMinutesPart;
+
+         // it is not undocumented, but apparently there can be values > 60000 in the m_deltaToCarInFrontMSPart.
+         // this happens when cars are close to each other. Most likely the game wants to communicate to us, that positions
+         // changed and there is no new delta yet -> thus if m_deltaToCarInFrontMSPart >= 1minute show as 0:
+         opponent->TimedeltaToNext = 
+            m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart > 59999 ? 
+            0 :                        // delta to next car not available
+            telemetryDelta / 1000.0;   // actual delta available
       }
    }
 
-   void F1UdpClrMapper::m_UpdateTimeDeltaQualy(DriverData^ reference, int i, bool toPlayer /* if false -> to leader */)
+   void F1UdpClrMapper::m_UpdateTimeDeltaQualy(DriverData^ reference, int i)
    {
       DriverData^ opponent = Drivers[i];
       if (!opponent->Present)
          return;
 
       float newDelta = Drivers[i]->FastestLap->Lap - reference->FastestLap->Lap;
-
-      if (toPlayer)
+      if ((newDelta != opponent->TimedeltaToLeader) && (reference->FastestLap->Lap != 0))
       {
-         if (newDelta != opponent->TimedeltaToPlayer)
-         {
-            opponent->LastTimedeltaToPlayer = opponent->TimedeltaToPlayer;
-            opponent->TimedeltaToPlayer = newDelta;
-         }
-      }
-      else
-      {
-         if ((newDelta != opponent->TimedeltaToLeader) && (reference->FastestLap->Lap != 0))
-         {
-            if (newDelta > 0)
-               opponent->TimedeltaToLeader = newDelta;
-         }
+         if (newDelta > 0)
+            opponent->TimedeltaToLeader = newDelta;
       }
    }
 
