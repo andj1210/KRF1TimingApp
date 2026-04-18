@@ -54,7 +54,7 @@ namespace adjsw.F12025
          m_devExpander.Visibility = Visibility.Collapsed;
 #endif
 
-         Title = "KRF1 Timing App for F1-25 V0.91.2";
+         Title = "KRF1 Timing App for F1-25 V" + BuildVersion.Value;
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(40);

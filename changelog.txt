@@ -1,3 +1,10 @@
+V0.91.7
+- Better Qualifying indicators
+- removed Personal deltas, toggle between familiar "Leader" and "Delta"
+- Race Engineer function for up to two cars
+- Update Car liveries (color theme only)
+- General UI overhaul
+
 V0.91.1
 - Changed Theme again
 - Better Fonts

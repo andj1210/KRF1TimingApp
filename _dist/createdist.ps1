@@ -55,15 +55,24 @@ Write-Host "Creating distribution zip..."
 
 Push-Location $scriptDir
 try {
-    # Generate filename based on current date
+    # Read version from VERSION file at repo root (single source of truth, also used by the app)
+    $versionFile = Join-Path $repoRoot "VERSION"
+    if (-not (Test-Path $versionFile)) {
+        Write-Error "VERSION file not found at: $versionFile"
+        exit 1
+    }
+    $version = (Get-Content $versionFile -Raw).Trim()
+    Write-Host "Version: $version"
+
+    # Generate filename: <date>_krf1_timing_v<version>.zip
     $dateStr = Get-Date -Format "yyyy-MM-dd"
-    $baseName = "${dateStr}_krf1_timing"
+    $baseName = "${dateStr}_krf1_timing_v${version}"
     $fnam = "$baseName.zip"
     $nr = 0
 
     while (Test-Path $fnam) {
         $nr++
-        $fnam = "${dateStr}-${nr}_krf1_timing.zip"
+        $fnam = "${baseName}-${nr}.zip"
     }
 
     Write-Host "Output: $fnam"

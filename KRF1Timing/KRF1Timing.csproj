@@ -250,4 +250,17 @@
     <Resource Include="krf1.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="GenerateBuildVersion" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_VersionFile>$(MSBuildProjectDirectory)\..\VERSION</_VersionFile>
+      <_VersionValue>$([System.IO.File]::ReadAllText($(_VersionFile)).Trim())</_VersionValue>
+      <_VersionGenPath>$(IntermediateOutputPath)BuildVersion.g.cs</_VersionGenPath>
+    </PropertyGroup>
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <WriteLinesToFile File="$(_VersionGenPath)" Overwrite="true" Lines="namespace adjsw.F12025 { internal static class BuildVersion { public const string Value = &quot;$(_VersionValue)&quot;%3B } }" />
+    <ItemGroup>
+      <Compile Include="$(_VersionGenPath)" />
+      <FileWrites Include="$(_VersionGenPath)" />
+    </ItemGroup>
+  </Target>
 </Project>
