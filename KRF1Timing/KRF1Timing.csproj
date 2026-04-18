@@ -35,12 +35,13 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <OutputPath>..\_build\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -50,6 +51,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>krf1.ico</ApplicationIcon>
@@ -58,8 +61,24 @@
     <StartupObject>
     </StartupObject>
   </PropertyGroup>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>..\_build\obj\KRF1Timing\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'ReleaseDev|AnyCPU'">
+    <OutputPath>..\_build\ReleaseDev\</OutputPath>
+    <DefineConstants>TRACE;RELEASEDEV</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL" />
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="Razorvine.Pickle, Version=1.5.0.0, Culture=neutral, PublicKeyToken=35192c03a6ef2e20, processorArchitecture=MSIL">
       <HintPath>..\packages\Razorvine.Pickle.1.5.0\lib\netstandard2.0\Razorvine.Pickle.dll</HintPath>
     </Reference>
@@ -80,6 +99,7 @@
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Microsoft.VisualBasic" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
@@ -96,32 +116,71 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="StatusView.xaml.cs">
-      <DependentUpon>StatusView.xaml</DependentUpon>
+    <!-- model -->
+    <Compile Include="model\ReflectionClone.cs" />
+    <Compile Include="model\RelayClient.cs" />
+    <Compile Include="model\RelayConfig.cs" />
+    <Compile Include="model\RelayProtocol.cs" />
+    <Compile Include="model\RelayUplink.cs" />
+    <Compile Include="model\ReportWriter.cs" />
+    <Compile Include="model\TrackLearner.cs" />
+    <Compile Include="model\TrackMapData.cs" />
+    <Compile Include="model\TrackMapStore.cs" />
+    <Compile Include="model\UdpEventClient.cs" />
+    <Compile Include="model\UdpPlaybackData.cs" />
+    <Compile Include="model\UdpSessionRecorder.cs" />
+    <!-- ui -->
+    <Compile Include="ui\BindingConverters.cs" />
+    <Page Include="ui\CarStatusView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\CarStatusView.xaml.cs">
+      <DependentUpon>CarStatusView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Trackmap.xaml.cs">
-      <DependentUpon>Trackmap.xaml</DependentUpon>
+    <Page Include="ui\DriverNameContextMenu.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\DriverNameContextMenu.xaml.cs">
+      <DependentUpon>DriverNameContextMenu.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UdpPlaybackData.cs" />
-    <Compile Include="PersonalLeaderboard.xaml.cs">
+    <Page Include="ui\PersonalLeaderboard.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\PersonalLeaderboard.xaml.cs">
       <DependentUpon>PersonalLeaderboard.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ReflectionClone.cs" />
-    <Compile Include="TyreView.xaml.cs">
+    <Page Include="ui\StatusView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\StatusView.xaml.cs">
+      <DependentUpon>StatusView.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ui\Trackmap.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\Trackmap.xaml.cs">
+      <DependentUpon>Trackmap.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ui\TyreView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\TyreView.xaml.cs">
       <DependentUpon>TyreView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UdpEventClient.cs" />
-    <Compile Include="UdpPlaybackWindow.xaml.cs">
+    <Page Include="ui\UdpPlaybackWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="ui\UdpPlaybackWindow.xaml.cs">
       <DependentUpon>UdpPlaybackWindow.xaml</DependentUpon>
     </Compile>
-    <Page Include="CarStatusView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="DriverNameContextMenu.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
+    <!-- root -->
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -130,37 +189,10 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="BindingConverters.cs" />
-    <Compile Include="CarStatusView.xaml.cs">
-      <DependentUpon>CarStatusView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="DriverNameContextMenu.xaml.cs">
-      <DependentUpon>DriverNameContextMenu.xaml</DependentUpon>
-    </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="PersonalLeaderboard.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="StatusView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Trackmap.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="TyreView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="UdpPlaybackWindow.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -218,4 +250,17 @@
     <Resource Include="krf1.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="GenerateBuildVersion" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_VersionFile>$(MSBuildProjectDirectory)\..\VERSION</_VersionFile>
+      <_VersionValue>$([System.IO.File]::ReadAllText($(_VersionFile)).Trim())</_VersionValue>
+      <_VersionGenPath>$(IntermediateOutputPath)BuildVersion.g.cs</_VersionGenPath>
+    </PropertyGroup>
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+    <WriteLinesToFile File="$(_VersionGenPath)" Overwrite="true" Lines="namespace adjsw.F12025 { internal static class BuildVersion { public const string Value = &quot;$(_VersionValue)&quot;%3B } }" />
+    <ItemGroup>
+      <Compile Include="$(_VersionGenPath)" />
+      <FileWrites Include="$(_VersionGenPath)" />
+    </ItemGroup>
+  </Target>
 </Project>

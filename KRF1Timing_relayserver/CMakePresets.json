@@ -1,0 +1,40 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "Debug",
+      "binaryDir": "${sourceDir}/../_build/relayserver/Debug",
+      "cacheVariables": {
+        "RK_CONFIGURATION_TYPE": {
+          "type": "STRING",
+          "value": "Debug"
+        }
+      },
+      "vendor": {
+        "example.com/ExampleIDE/1.0": {
+          "autoFormat": true
+        }
+      }
+    },
+    {
+      "name": "Release",
+      "binaryDir": "${sourceDir}/../_build/relayserver/Release",
+      "cacheVariables": {
+        "RK_CONFIGURATION_TYPE": {
+          "type": "STRING",
+          "value": "Release"
+        }
+      },
+      "vendor": {
+        "example.com/ExampleIDE/1.0": {
+          "autoFormat": true
+        }
+      }
+    }
+  ]
+}

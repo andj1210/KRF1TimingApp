@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 #include "F1PacketExtractor.h"
-
-#include <fstream>
 #include <type_traits>
 
 unsigned F12025_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType)
@@ -195,103 +193,4 @@ unsigned F12025_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned le
       *pType = type;
 
    return len;
-}
-
-const char* IdToTrackName(unsigned i)
-{
-   switch (i)
-   {
-   default:
-      return "unknown";
-
-   case 0:
-      return "Melbourne";
-
-   case 1:
-      return "Paul Ricard";
-
-   case 2:
-      return "Shanghai";
-   case 3:
-      return "Sakhir";
-   case 4:
-      return "Catalunya";
-
-   case 5:
-      return "Monaco";
-
-   case 6:
-      return "Montreal";
-
-   case 7:
-      return "Silverstone";
-
-   case 8:
-      return "Hockenheim";
-
-   case 9:
-      return "Hungaroring";
-
-   case 10:
-      return "Spa";
-
-   case 11:
-      return "Monza";
-
-   case 12:
-      return "Signapore";
-
-   case 13:
-      return "Suzuka";
-
-   case 14:
-      return "Abu Dhabi";
-
-   case 15:
-      return "Texas";
-   case 16:
-      return "Brazil";
-
-   case 17:
-      return "Austria";
-
-   case 18:
-      return"Sochi";
-
-   case 19:
-      return "Mexico";
-
-   case 20:
-      return "Baku";
-
-   case 21:
-      return "SakhirShort";
-
-   case 22:
-      return "SilverstoneShort";
-
-   case 23:
-      return "TexasShort";
-
-   case 24:
-      return "SuzukaShort";
-
-   case 25:
-      return "Hanoi";
-
-   case 26:
-      return "Zandboort";
-
-   case 27:
-      return "Imola";
-
-   case 28:
-      return "Portimao";
-
-   case 29:
-      return "Jeddah";
-
-   case 30:
-      return "Miami";
-   }
 }

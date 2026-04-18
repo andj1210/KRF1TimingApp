@@ -1,0 +1,23 @@
+<UserControl x:Class="adjsw.F12025.Trackmap"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:adjsw.F12025"
+             mc:Ignorable="d">
+   <Canvas x:Name="m_canv" ClipToBounds="True">
+      <Border x:Name="m_border" BorderBrush="White" BorderThickness="2" Visibility="Collapsed"></Border>
+      <Path x:Name="m_circleRing" Stroke="White" StrokeThickness="2" Fill="#FF4E4D4D">
+         <Path.Data>
+            <CombinedGeometry GeometryCombineMode="Exclude">
+               <CombinedGeometry.Geometry1>
+                  <EllipseGeometry x:Name="m_circleOuter" />
+               </CombinedGeometry.Geometry1>
+               <CombinedGeometry.Geometry2>
+                  <EllipseGeometry x:Name="m_circleInner" />
+               </CombinedGeometry.Geometry2>
+            </CombinedGeometry>
+         </Path.Data>
+      </Path>
+   </Canvas>
+</UserControl>
