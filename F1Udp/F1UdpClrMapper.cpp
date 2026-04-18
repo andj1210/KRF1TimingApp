@@ -979,16 +979,21 @@ namespace adjsw::F12025
          driver->LapNr = lapNative.m_currentLapNum; // assign it, but do not try to make any sense of it!
 
 
-         if (driver->Status == DriverStatus::Garage)
+         switch (driver->Status)
          {
+         case DriverStatus::Garage:
+         case DriverStatus::Inlap:
+         case DriverStatus::Pitlane:
+         case DriverStatus::Pitting:
+         case DriverStatus::Retired:
+         case DriverStatus::DNF:
+         case DriverStatus::DSQ:
             driver->AllowLapHistoryQuali = true;
-            continue;
-         }
-         else
-         {
+            break;
+         default:
             driver->AllowLapHistoryQuali = false;
+            break;
          }
-
 
          if (driver->LocationOnTrack < 0)
          {
@@ -1516,7 +1521,7 @@ namespace adjsw::F12025
       // m_numLaps is not always correct, so read all laps, with reasonable data, i.e. all sectors present, and flags set properly
       for (auto& lap : m_parser->history.m_lapHistoryData)
       {
-         if ((lap.m_lapValidBitFlags == 0x15) && (lap.m_sector1TimeMSPart && lap.m_sector2TimeMSPart && lap.m_sector3TimeMSPart && lap.m_lapTimeInMS))
+         if ((lap.m_lapValidBitFlags == 0xf) && (lap.m_sector1TimeMSPart && lap.m_sector2TimeMSPart && lap.m_sector3TimeMSPart && lap.m_lapTimeInMS))
          {
             if (!driver->FastestLap->LapMs || (driver->FastestLap->LapMs > lap.m_lapTimeInMS))
             {

@@ -255,8 +255,10 @@ namespace adjsw.F12025
                         Math.Min(tmW / (2.05 * 365.0), ActualHeight / 2.0 / 500.0), 
                         1.0);
 
-                     double car1Left = x1 + 5;
-                     double car1Top  = ActualHeight / 2;
+                     double leftBleed  = 100.0 * (1.0 - scale) * (1.0 - scale);
+                     double visualSpan = (362.0 + 345.0) * scale;   // car2 offset + rightmost content pixel
+                     double car1Left   = x1 - 20.0 + (tmW - visualSpan) / 2.0 + leftBleed - 12.0;
+                     double car1Top   = ActualHeight / 2;
                      Canvas.SetTop(m_carStatus,   car1Top);
                      Canvas.SetLeft(m_carStatus,  car1Left);
                      Canvas.SetTop(m_carStatus2,  car1Top);
@@ -318,9 +320,11 @@ namespace adjsw.F12025
 
                   if (dualMode)
                   {
-                     double scale    = Math.Min(Math.Min(tmW / (2 * 365.0), ActualHeight / 500.0), 1.5);
-                     double car1Left = ActualWidth / 2;
-                     double car1Top  = (ActualHeight - 500 * scale) / 2;
+                     double scale     = Math.Min(Math.Min(tmW / (2.05 * 365.0), ActualHeight / 500.0), 1.5);
+                     double leftBleed  = 100.0 * (1.0 - scale) * (1.0 - scale);
+                     double visualSpan = (365.0 + 345.0) * scale;   // car2 offset + rightmost content pixel
+                     double car1Left   = ActualWidth / 2.0 - 20.0 + (tmW - visualSpan) / 2.0 + leftBleed - 12.0;
+                     double car1Top   = (ActualHeight - 500 * scale) / 2;
                      Canvas.SetTop(m_carStatus,   car1Top);
                      Canvas.SetLeft(m_carStatus,  car1Left);
                      Canvas.SetTop(m_carStatus2,  car1Top);

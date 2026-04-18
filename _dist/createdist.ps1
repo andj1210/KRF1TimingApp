@@ -1,5 +1,4 @@
 # createdist.ps1 - Build KRF1 Timing App Release and create distribution zip
-# PowerShell equivalent of createdist.bat, with added MSBuild step
 
 param(
     [string]$PlatformToolset = ""
