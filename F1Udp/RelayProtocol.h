@@ -15,7 +15,7 @@ class RelayProtocol
 {
 public:
    /// Increment whenever the wire format changes incompatibly.
-   static constexpr uint16_t PROTOCOL_VERSION            = 1;
+   static constexpr uint16_t PROTOCOL_VERSION            = 2;
 
    static constexpr int      MAX_PAYLOAD                 = 2048;
 

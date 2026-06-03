@@ -7,6 +7,27 @@
 //#define FAKE_SECOND_CAR_ENG
 //#define FAKE_SECOND_CAR_DRIVER
 
+#define REMAP_26_TO_25_CARS // during the f1 26 period, thread Teams of F1-26 (SP) as the regular teams of F1-25
+
+#ifdef REMAP_26_TO_25_CARS
+uint16_t s_TELEMETRY_TEAM_ID_REMAP(uint16_t id)
+{
+   if (
+      (id >= 476)       // MGP 26
+      && (id <= 484)    // Haas
+      )
+      return id - 476; // map MGP26 to MGP and so on
+
+   if (id == 485) // audi
+      return 10;  // F1Team::Audi
+
+   if (id == 486) // cadillac
+      return 11;  // F1Team::Cadillac
+
+   return id;
+}
+#endif
+
 namespace adjsw::F12026
 {
    void RelayPacketFilter::SetUdpMapper(adjsw::F12026::F1UdpClrMapper^ mapper)
@@ -27,7 +48,7 @@ namespace adjsw::F12026
       EventList = gcnew SessionEventList();
       UdpAction = gcnew array<bool>(12);
 
-      Drivers = gcnew array<DriverData^>(22);
+      Drivers = gcnew array<DriverData^>(cs_maxNumCarsInUDPData);
 
       for (int i = 0; i < Drivers->Length; ++i)
          Drivers[i] = gcnew DriverData(SessionInfo);
@@ -182,7 +203,7 @@ namespace adjsw::F12026
          // On a participants packet re-resolve the secondary driver index.
          if (tp == PacketType::PacketParticipantsData)
          {
-            uint8_t sec_team    = m_parserSecondary->participants.m_participants[sec_idx].m_teamId;
+            uint8_t sec_team    = s_TELEMETRY_TEAM_ID_REMAP(m_parserSecondary->participants.m_participants[sec_idx].m_teamId);
             uint8_t sec_race_nr = m_parserSecondary->participants.m_participants[sec_idx].m_raceNumber;
 
             // 1st pass -- exact match on team + race number.
@@ -1288,11 +1309,12 @@ namespace adjsw::F12026
       // Lapdata + Name + Team
       for (int i = 0; i < Drivers->Length; ++i)
       {
-         if (m_parser->participants.m_participants[i].m_teamId < 10)
-            Drivers[i]->Team = F1Team(m_parser->participants.m_participants[i].m_teamId);
+         uint16_t teamId = s_TELEMETRY_TEAM_ID_REMAP(m_parser->participants.m_participants[i].m_teamId);
+         if (teamId < 12)
+            Drivers[i]->Team = F1Team(teamId);
 
          else
-            Drivers[i]->Team = F1Team::Classic;
+            Drivers[i]->Team = F1Team::AnyOther;
 
          Drivers[i]->DriverNr = m_parser->participants.m_participants[i].m_raceNumber;
 
@@ -1365,7 +1387,7 @@ namespace adjsw::F12026
           !m_parser->participants.m_participants[i].m_showOnlineNames)
       {
          String^ pName = "Car";
-         switch (m_parser->participants.m_participants[i].m_teamId)
+         switch (s_TELEMETRY_TEAM_ID_REMAP(m_parser->participants.m_participants[i].m_teamId))
          {
          case 0: pName = "Mercedes"; break;
          case 1: pName = "Ferrari"; break;
@@ -1373,10 +1395,12 @@ namespace adjsw::F12026
          case 3: pName = "Williams"; break;
          case 4: pName = "Aston Martin"; break;
          case 5: pName = "Alpine"; break;
-         case 6: pName = "Alpha Tauri"; break;
+         case 6: pName = "Racing Bulls"; break;
          case 7: pName = "Haas"; break;
          case 8: pName = "McLaren"; break;
          case 9: pName = "Sauber"; break;
+         case 10: pName = "Audio"; break;
+         case 11: pName = "Cadillac"; break;
          }
          Drivers[i]->TelemetryName = pName + " (" + Drivers[i]->DriverNr + ")";
       }

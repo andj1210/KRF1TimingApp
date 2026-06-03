@@ -22,8 +22,10 @@ namespace adjsw::F12026
    Haas,          // 7
    McLaren,       // 8
    Sauber,        // 9
+   Audi,          // 10 - this does not exist in UDP telemetry, we use it as a placeholder, so all teams are mapped to 0...11
+   Cadillac,       // 11 - this does not exist in UDP telemetry, we use it as a placeholder, so all teams are mapped to 0...11
 
-   Classic = 10,  // synthetic catch-all kept for legacy mapping
+   AnyOther = 12,  // - this does not exist in UDP telemetry, synthetic catch-all kept for legacy mapping
 
    // ---- Appendix teams (2026 Season Pack) ----
    // Appended naive for now -- year '24/'25/'26 variants alias the same real cars.
@@ -167,6 +169,15 @@ namespace adjsw::F12026
       Miami,
       LasVegas,
       Losail,             // 32
+
+      // make ids 33...38 valid dummy ids
+      Dummy33,
+      Dummy34,
+      Dummy35,
+      Dummy36,
+      Dummy37,
+      Dummy38,
+
       // ---- 2026 Season Pack additions ----
       SilverstoneReverse = 39,
       AustriaReverse = 40,

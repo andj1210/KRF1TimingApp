@@ -88,7 +88,7 @@ try {
     $buildBin = Join-Path $repoRoot "_build\bin"
     $resDir = Join-Path $repoRoot "res"
     Copy-Item "$buildBin\Krf1Timing.exe"          "$tempFolder\krf1timing\"
-    Copy-Item "$buildBin\adjsw.F1Udp.25.dll"      "$tempFolder\krf1timing\"
+    Copy-Item "$buildBin\adjsw.F1Udp.26.dll"      "$tempFolder\krf1timing\"
     Copy-Item "$buildBin\Newtonsoft.Json.dll"     "$tempFolder\krf1timing\"
     Copy-Item "$buildBin\Razorvine.Pickle.dll"    "$tempFolder\krf1timing\"
     Copy-Item "$buildBin\System.Buffers.dll"      "$tempFolder\krf1timing\"

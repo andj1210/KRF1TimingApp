@@ -1,3 +1,9 @@
+V0.99.0
+- Switch to F1-25 Season pack (26) telemetry
+- Add new track Madrid to trackmap
+- Add new teams
+- bump remote telemetry version
+
 V0.91.7
 - Better Qualifying indicators
 - removed Personal deltas, toggle between familiar "Leader" and "Delta"

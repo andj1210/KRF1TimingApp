@@ -121,9 +121,11 @@ namespace adjsw.F12026
          { F1Team.AstonMartin, new SolidColorBrush(Color.FromRgb(36, 107, 53)) },
          { F1Team.Alpine, new SolidColorBrush(Color.FromRgb(0, 161, 232)) },
          { F1Team.RacingBulls, new SolidColorBrush(Color.FromRgb(48, 20, 181)) },
-         { F1Team.Haas, new SolidColorBrush(Color.FromRgb(156, 159, 162)) },
+         { F1Team.Haas, new SolidColorBrush(Color.FromRgb(216, 219, 222)) },
          { F1Team.Sauber, new SolidColorBrush(Color.FromRgb(0, 255, 60))  },
-         { F1Team.Classic, Brushes.Gray },
+         { F1Team.Audi, new SolidColorBrush(Color.FromRgb(235, 69, 38))  },
+         { F1Team.Cadillac, new SolidColorBrush(Color.FromRgb(130, 130, 133))  },
+         { F1Team.AnyOther, Brushes.Gray },
       };
 
       public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)

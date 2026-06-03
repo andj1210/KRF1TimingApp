@@ -146,7 +146,7 @@ private:
 
    // ---- Packet extractor (session thread only) ----
    // Provides validated struct access and session change detection.
-   F12025_PacketExtractor m_extractor{};
+   F12026_PacketExtractor m_extractor{};
    PacketType             m_lastPktType = PacketType::UnknownOrIllformed;
    uint64_t               m_lastTrackedUid = 0;
 

@@ -7,7 +7,7 @@
 #include <fstream>
 #include "F1DataDefs.h"
 
-struct F12025_PacketExtractor
+struct F12026_PacketExtractor
 {
    unsigned ProceedPacket(const uint8_t* pData, unsigned len, PacketType* pType = nullptr);
 
@@ -37,7 +37,7 @@ struct F12025_PacketExtractor
 
 
 template<typename PKT_TYPE>
-bool F12025_PacketExtractor::CopyBytesToStruct(const uint8_t* pData, unsigned& len, PKT_TYPE* pPkt)
+bool F12026_PacketExtractor::CopyBytesToStruct(const uint8_t* pData, unsigned& len, PKT_TYPE* pPkt)
 {
    if (sizeof(PKT_TYPE) <= len)
    {
