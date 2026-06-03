@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace adjsw.F12025.Properties {
+namespace adjsw.F12026.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]

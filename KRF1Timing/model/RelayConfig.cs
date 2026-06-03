@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace adjsw.F12025
+namespace adjsw.F12026
 {
    /// <summary>
    /// Loads relay server configuration from relay_config.json in the app directory.

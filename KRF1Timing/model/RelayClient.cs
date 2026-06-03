@@ -10,7 +10,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 
-namespace adjsw.F12025
+namespace adjsw.F12026
 {
    /// <summary>
    /// Engineer-side relay client. Connects to the relay server via TCP,

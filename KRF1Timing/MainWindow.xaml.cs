@@ -15,7 +15,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
 
-namespace adjsw.F12025
+namespace adjsw.F12026
 {
    /// <summary>
    /// Interaktionslogik für MainWindow.xaml
@@ -54,7 +54,7 @@ namespace adjsw.F12025
          m_devExpander.Visibility = Visibility.Collapsed;
 #endif
 
-         Title = "KRF1 Timing App for F1-25 V" + BuildVersion.Value;
+         Title = "KRF1 Timing App for F1-26 V" + BuildVersion.Value;
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(40);
@@ -64,7 +64,7 @@ namespace adjsw.F12025
 
          m_board.ItemsSource = m_driversList;
 
-         m_mapper = new adjsw.F12025.F1UdpClrMapper();
+         m_mapper = new adjsw.F12026.F1UdpClrMapper();
          m_mapper.InsertTestData();
 
          // Create relay uplink eagerly if config file is present.
@@ -1166,7 +1166,7 @@ namespace adjsw.F12025
       private F1UdpClrMapper m_mapper = null;
       private DispatcherTimer m_pollTimer = new DispatcherTimer(DispatcherPriority.Render);
       private DispatcherTimer m_infoBoxTimer = new DispatcherTimer();
-      private ObservableCollection<adjsw.F12025.DriverData> m_driversList = new ObservableCollection<adjsw.F12025.DriverData>();
+      private ObservableCollection<adjsw.F12026.DriverData> m_driversList = new ObservableCollection<adjsw.F12026.DriverData>();
       private CollectionViewSource m_driverListViewSource = new CollectionViewSource();
       private bool m_sessionClassificationHandled = false;
       private DriverNameDynamicMappings m_nameMappingsDynamic;

@@ -14,7 +14,7 @@ using namespace System::IO;
 using namespace System::Net::Sockets;
 using namespace System::Runtime::InteropServices;
 
-namespace adjsw::F12025
+namespace adjsw::F12026
 {
    public ref class RelayProtocolClr sealed
    {

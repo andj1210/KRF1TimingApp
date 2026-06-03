@@ -14,7 +14,7 @@ using namespace System::Net::Sockets;
 #include <algorithm>
 #include <memory>
 
-namespace adjsw::F12025
+namespace adjsw::F12026
 {
    /// <summary>
    /// Controls how the mapper interprets the playerCarIndex in incoming packets.
@@ -52,7 +52,7 @@ namespace adjsw::F12025
       property System::UInt64 SessionUID { System::UInt64 get() { return m_sessionId; } }
 
       // Expose the native packet extractor for RelayPacketFilter
-      F12025_PacketExtractor* GetExtractor() { return m_parser; }
+      F12026_PacketExtractor* GetExtractor() { return m_parser; }
 
       // Last packet type returned by Proceed()
       property PacketType LastPacketType { PacketType get() { return m_lastPacketType; } }
@@ -95,8 +95,8 @@ namespace adjsw::F12025
       bool m_IsQualifyingOrPractice();
 
       uint32_t m_udpButtonPreviousMask{ 0 };
-      F12025_PacketExtractor* m_parser;
-      F12025_PacketExtractor* m_parserSecondary;
+      F12026_PacketExtractor* m_parser;
+      F12026_PacketExtractor* m_parserSecondary;
       array<Byte>^ arr;
       IntPtr pUnmanaged;
       IntPtr m_pUnmanagedSecondary;

@@ -24,7 +24,7 @@
 using namespace System;
 using namespace System::Collections::Generic;
 
-namespace adjsw::F12025
+namespace adjsw::F12026
 {
    public ref class RelayPacketFilter
    {
@@ -40,11 +40,11 @@ namespace adjsw::F12025
          m_lastPassTime = gcnew array<Int64>(cs_maxPacketTypes);
       }
 
-      void SetUdpMapper(adjsw::F12025::F1UdpClrMapper^ mapper);
+      void SetUdpMapper(adjsw::F12026::F1UdpClrMapper^ mapper);
 
       // Store a backwards reference to the extractor so we can read
       // the current packet struct directly instead of parsing raw bytes.
-      void SetExtractor(F12025_PacketExtractor* extractor)
+      void SetExtractor(F12026_PacketExtractor* extractor)
       {
          m_extractor = extractor;
       }
@@ -318,7 +318,7 @@ namespace adjsw::F12025
 
       static constexpr int cs_maxPacketTypes = 16;
 
-      F12025_PacketExtractor* m_extractor = nullptr;
+      F12026_PacketExtractor* m_extractor = nullptr;
 
       array<array<Byte>^>^   m_lastPacket;
       List<array<Byte>^>^    m_eventHistory;

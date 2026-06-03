@@ -1,7 +1,7 @@
 ﻿// Copyright 2018-2020 Andreas Jung
 // SPDX-License-Identifier: GPL-3.0-only
 
-using adjsw.F12025;
+using adjsw.F12026;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,7 +10,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Navigation;
 
-namespace adjsw.F12025
+namespace adjsw.F12026
 {
    public class PositionConverter : IMultiValueConverter
    {

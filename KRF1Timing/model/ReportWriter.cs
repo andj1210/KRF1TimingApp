@@ -5,7 +5,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace adjsw.F12025
+namespace adjsw.F12026
 {
    /// <summary>
    /// Static utility for saving race reports (text + JSON) from mapper state.

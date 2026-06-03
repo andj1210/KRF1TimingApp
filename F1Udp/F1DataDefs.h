@@ -12,7 +12,7 @@ using uint8 = uint8_t;
 using int16 = int16_t;
 using int8 = int8_t;
 
-inline constexpr uint32     cs_maxNumCarsInUDPData = 22;
+inline constexpr uint32     cs_maxNumCarsInUDPData = 24;
 inline constexpr uint32     cs_maxParticipantNameLen = 32;
 inline constexpr uint32     cs_maxTyreStints = 8;
 inline constexpr uint32     cs_maxNumTyreSets = 13 + 7; // 13 slick and 7 wet weather
@@ -20,8 +20,8 @@ inline constexpr uint32     cs_maxNumTyreSets = 13 + 7; // 13 slick and 7 wet we
 #pragma pack(push, 1)
 struct PacketHeader
 {
-   uint16      m_packetFormat;             // 2025
-   uint8       m_gameYear;                 // Game year - last two digits e.g. 25
+   uint16      m_packetFormat;             // 2026
+   uint8       m_gameYear;                 // Game year - last two digits e.g. 26
    uint8       m_gameMajorVersion;         // Game major version - "X.00"
    uint8       m_gameMinorVersion;         // Game minor version - "1.XX"
    uint8       m_packetVersion;            // Version of this packet type
@@ -48,9 +48,9 @@ struct CarMotionData
    int16       m_worldRightDirX;           // World space right X direction (normalised)
    int16       m_worldRightDirY;           // World space right Y direction (normalised)
    int16       m_worldRightDirZ;           // World space right Z direction (normalised)
-   float       m_gForceLateral;            // Lateral G-Force component
-   float       m_gForceLongitudinal;       // Longitudinal G-Force component
-   float       m_gForceVertical;           // Vertical G-Force component
+   int16       m_gForceLateral;            // Lateral G-Force component (quantised - divide by 1000.0f)
+   int16       m_gForceLongitudinal;       // Longitudinal G-Force component (quantised - divide by 1000.0f)
+   int16       m_gForceVertical;           // Vertical G-Force component (quantised - divide by 1000.0f)
    float       m_yaw;                      // Yaw angle in radians
    float       m_pitch;                    // Pitch angle in radians
    float       m_roll;                     // Roll angle in radians
@@ -64,9 +64,11 @@ struct PacketMotionData
    CarMotionData   m_carMotionData[cs_maxNumCarsInUDPData];  // Data for all cars on track
 };
 
-static_assert(sizeof(PacketMotionData) == 1349); // assert the struct matches the binary format of the udp packet.
+static_assert(sizeof(PacketMotionData) == 1325); // assert the struct matches the binary format of the udp packet.
 
-inline constexpr uint32     cs_maxMarshalsZonePerLap = 21;
+inline constexpr uint32     cs_maxMarshalZonesPerLap = 21;
+inline constexpr uint32     cs_maxActiveAeroZonesPerLap = 8;
+inline constexpr uint32     cs_maxDRSZonesPerLap = 4;
 inline constexpr uint32     cs_maxWeatherForecastSamples = 64;
 inline constexpr uint32     cs_maxSessionsInWeekend = 12;
 
@@ -74,6 +76,18 @@ struct MarshalZone
 {
    float       m_zoneStart;       // Fraction (0..1) of way through the lap the marshal zone starts
    int8        m_zoneFlag;        // -1 = invalid/unknown, 0 = none, 1 = green, 2 = blue, 3 = yellow
+};
+
+struct ActiveAeroZone
+{
+   float       m_zoneStart;       // Fraction (0..1) of way through the lap the Active Aero zone starts
+   float       m_zoneEnd;         // Fraction (0..1) of way through the lap the Active Aero zone ends
+};
+
+struct DRSZone
+{
+   float       m_zoneStart;       // Fraction (0..1) of way through the lap the DRS zone starts
+   float       m_zoneEnd;         // Fraction (0..1) of way through the lap the DRS zone ends
 };
 
 struct WeatherForecastSample
@@ -100,7 +114,7 @@ struct PacketSessionData
    uint16      m_trackLength;                      // Track length in metres
    uint8       m_sessionType;                      // 0 = unknown, see appendix
    int8        m_trackId;                          // -1 for unknown, see appendix
-   uint8       m_formula;                          // Formula, 0 = F1 Modern, 1 = F1 Classic, 2 = F2, 3 = F1 Generic, 4 = Beta, 6 = Esports, 8 = F1 World, 9 = F1 Elimination
+   uint8       m_formula;                          // Formula, 0 = F1 Modern, 1 = F1 Classic, 2 = F2, 3 = F1 Generic, 4 = Beta, 6 = Esports, 8 = F1 World, 9 = F1 Elimination, 13 = F1 26
    uint16      m_sessionTimeLeft;		            // Time left in session in seconds
    uint16      m_sessionDuration;		            // Session duration in seconds
    uint8       m_pitSpeedLimit;                    // Pit speed limit in kilometres per hour
@@ -109,7 +123,7 @@ struct PacketSessionData
    uint8       m_spectatorCarIndex;                // Index of the car being spectated
    uint8       m_sliProNativeSupport;              // SLI Pro support, 0 = inactive, 1 = active
    uint8       m_numMarshalZones;                  // Number of marshal zones to follow
-   MarshalZone m_marshalZones[cs_maxMarshalsZonePerLap];  // List of marshal zones - max 21
+   MarshalZone m_marshalZones[cs_maxMarshalZonesPerLap];  // List of marshal zones - max 21
    uint8       m_safetyCarStatus;                  // 0 = no safety car, 1 = full, 2 = virtual, 3 = formation lap
    uint8       m_networkGame;                      // 0 = offline, 1 = online
    uint8       m_numWeatherForecastSamples;        // Number of weather samples to follow
@@ -170,10 +184,25 @@ struct PacketSessionData
    uint8       m_weekendStructure[cs_maxSessionsInWeekend];    // List of session types to show weekend structure - see appendix for types
    float       m_sector2LapDistanceStart;          // Distance in m around track where sector 2 starts
    float       m_sector3LapDistanceStart;          // Distance in m around track where sector 3 starts
+
+   // Aero and DRS zones
+   uint8       m_activeAeroTrackStatus;            // 0 = Full, 1 = Partial
+   uint8       m_numActiveAeroZonesFull;           // Number of Active Aero zones to follow
+   ActiveAeroZone  m_activeAeroZonesFull[cs_maxActiveAeroZonesPerLap];     // List of Active Aero zones - max 8
+   uint8       m_numActiveAeroZonesPartial;        // Number of Active Aero zones to follow
+   ActiveAeroZone  m_activeAeroZonesPartial[cs_maxActiveAeroZonesPerLap];  // List of Active Aero zones - max 8
+   uint8       m_numDRSZones;                      // Number of DRS zones to follow
+   DRSZone     m_drsZones[cs_maxDRSZonesPerLap];   // List of DRS zones - max 4
+   float       m_startReactionTime;                // Driver start reaction time in seconds, 0.0f if assisted starts
+   uint8       m_antiLockBrakesAssist;             // 0 = Off, 1 = On
+   uint8       m_tractionControlAssist;            // 0 = Off, 1 = Medium, 2 = Full
+   uint8       m_dynamicRacingLineHiVis;           // 0 = Off, 1 = On
+   uint8       m_dynamicRacingLineColourBlind;     // 0 = Off, 1 = Protanopia, 2 = Deuteranopia, 3 = Tritanopia
+   uint8       m_recurringRewindPrompt;            // 0 = Off, 1 = On
 };
 
 
-static_assert(sizeof(PacketSessionData) == 753); // assert the struct matches the binary format of the udp packet.
+static_assert(sizeof(PacketSessionData) == 926); // assert the struct matches the binary format of the udp packet.
 
 struct LapData
 {
@@ -187,8 +216,8 @@ struct LapData
    uint8       m_deltaToCarInFrontMinutesPart; // Time delta to car in front whole minute part
    uint16      m_deltaToRaceLeaderMSPart;      // Time delta to race leader milliseconds part
    uint8       m_deltaToRaceLeaderMinutesPart; // Time delta to race leader whole minute part
-   float       m_lapDistance;                  // Distance vehicle is around current lap in metres – could be negative if line hasn’t been crossed yet
-   float       m_totalDistance;                // Total distance travelled in session in metres – could be negative if line hasn’t been crossed yet
+   float       m_lapDistance;                  // Distance vehicle is around current lap in metres ï¿½ could be negative if line hasnï¿½t been crossed yet
+   float       m_totalDistance;                // Total distance travelled in session in metres ï¿½ could be negative if line hasnï¿½t been crossed yet
    float       m_safetyCarDelta;               // Delta in seconds for safety car
    uint8       m_carPosition;                  // Car race position
    uint8       m_currentLapNum;                // Current lap number
@@ -223,7 +252,7 @@ struct PacketLapData
    uint8       m_timeTrialRivalCarIdx;                 // Index of Rival car in time trial (255 if invalid)
 };
 
-static_assert(sizeof(PacketLapData) == 1285); // assert the struct matches the binary format of the udp packet.
+static_assert(sizeof(PacketLapData) == 1399); // assert the struct matches the binary format of the udp packet.
 
 inline constexpr uint8 cs_eventStringCodeLen = 4;
 
@@ -261,8 +290,8 @@ union EventDataDetails
 
    struct
    {
-      uint8 penaltyType;        // Penalty type – see Appendices
-      uint8 infringementType;   // Infringement type – see Appendices
+      uint8 penaltyType;        // Penalty type ï¿½ see Appendices
+      uint8 infringementType;   // Infringement type ï¿½ see Appendices
       uint8 vehicleIdx;         // Vehicle index of the car the penalty is applied to
       uint8 otherVehicleIdx;    // Vehicle index of the other car involved
       uint8 time;               // Time gained, or time spent doing action in seconds
@@ -323,6 +352,7 @@ union EventDataDetails
    {
       uint8 vehicle1Idx;                // Vehicle index of the first vehicle involved in the collision
       uint8 vehicle2Idx;                // Vehicle index of the second vehicle involved in the collision
+      uint8 severity;                   // Severity of the collision - 0 = low, 1 = medium, 2 = high
    } Collision;
 };
 
@@ -375,13 +405,13 @@ struct LiveryColour
 struct ParticipantData
 {
    uint8           m_aiControlled;                     // Whether the vehicle is AI (1) or Human (0) controlled
-   uint8           m_driverId;                         // Driver id - see appendix, 255 if network human
-   uint8           m_networkId;                        // Network id - unique identifier for network players
-   uint8           m_teamId;                           // Team id - see appendix
+   uint16          m_driverId;                         // Driver id - see appendix, 65535 if network human
+   uint16          m_networkId;                        // Network id - unique identifier for network players
+   uint16          m_teamId;                           // Team id - see appendix
    uint8           m_myTeam;                           // My team flag - 1 = My Team, 0 = otherwise
    uint8           m_raceNumber;                       // Race number of the car
    uint8           m_nationality;                      // Nationality of the driver
-   char            m_name[cs_maxParticipantNameLen];   // Name of participant in UTF-8 format – null terminated
+   char            m_name[cs_maxParticipantNameLen];   // Name of participant in UTF-8 format ï¿½ null terminated
    // Will be truncated with ... (U+2026) if too long
    uint8           m_yourTelemetry;                    // The player's UDP setting, 0 = restricted, 1 = public
    uint8           m_showOnlineNames;                  // The player's show online names setting, 0 = off, 1 = on
@@ -401,7 +431,7 @@ struct PacketParticipantsData
 };
 
 
-static_assert(sizeof(PacketParticipantsData) == 1284);
+static_assert(sizeof(PacketParticipantsData) == 1470);
 
 struct CarSetupData
 {
@@ -440,7 +470,7 @@ struct PacketCarSetupData
    float           m_nextFrontWingValue;   // Value of front wing after next pit stop - player only
 };
 
-static_assert(sizeof(PacketCarSetupData) == 1133);
+static_assert(sizeof(PacketCarSetupData) == 1233);
 
 struct CarTelemetryData
 {
@@ -457,7 +487,7 @@ struct CarTelemetryData
    uint16      m_brakesTemperature[4];         // Brakes temperature (celsius)
    uint8       m_tyresSurfaceTemperature[4];   // Tyres surface temperature (celsius)
    uint8       m_tyresInnerTemperature[4];     // Tyres inner temperature (celsius)
-   uint16      m_engineTemperature;            // Engine temperature (celsius)
+   uint8       m_engineTemperature;            // Engine temperature (celsius)
    float       m_tyresPressure[4];             // Tyre pressure (PSI)
    uint8       m_surfaceType[4];               // Driving surface, see appendices
 };
@@ -470,14 +500,14 @@ struct PacketCarTelemetryData
    CarTelemetryData    m_carTelemetryData[cs_maxNumCarsInUDPData];   // data for all cars on track
 
    uint8               m_mfdPanelIndex;                // Index of MFD panel open - 255 = MFD closed
-   // Single player, race – 0 = Car setup, 1 = Pits
+   // Single player, race ï¿½ 0 = Car setup, 1 = Pits
    // 2 = Damage, 3 =  Engine, 4 = Temperatures
    // May vary depending on game mode
    uint8               m_mfdPanelIndexSecondaryPlayer; // See above
    int8                m_suggestedGear;                // Suggested gear for the player (1-8), 0 if no gear suggested
 };
 
-static_assert(sizeof(PacketCarTelemetryData) == 1352);
+static_assert(sizeof(PacketCarTelemetryData) == 1448);
 
 
 struct CarStatusData
@@ -497,11 +527,11 @@ struct CarStatusData
    uint16      m_drsActivationDistance;            // 0 = DRS not available, non-zero - DRS will be available in [X] metres
    uint8       m_actualTyreCompound;               // F1 Modern - 16 = C5, 17 = C4, 18 = C3, 19 = C2, 20 = C1, 21 = C0, 22 = C6, 7 = inter, 8 = wet
    // F1 Classic - 9 = dry, 10 = wet
-   // F2 – 11 = super soft, 12 = soft, 13 = medium, 14 = hard, 15 = wet
+   // F2 ï¿½ 11 = super soft, 12 = soft, 13 = medium, 14 = hard, 15 = wet
    uint8       m_visualTyreCompound;               // F1 visual (can be different from actual compound)
    // 16 = soft, 17 = medium, 18 = hard, 7 = inter, 8 = wet
-   // F1 Classic – same as above
-   // F2 ‘20, 15 = wet, 19 – super soft, 20 = soft, 21 = medium, 22 = hard
+   // F1 Classic ï¿½ same as above
+   // F2 ï¿½20, 15 = wet, 19 ï¿½ super soft, 20 = soft, 21 = medium, 22 = hard
    uint8       m_tyresAgeLaps;                     // Age in laps of the current set of tyres
    int8        m_vehicleFIAFlags;                  // -1 = invalid/unknown, 0 = none, 1 = green, 2 = blue, 3 = yellow
    float       m_enginePowerICE;                   // Engine power output of ICE (W)
@@ -510,6 +540,7 @@ struct CarStatusData
    uint8       m_ersDeployMode;                    // ERS deployment mode, 0 = none, 1 = medium, 2 = hotlap, 3 = overtake
    float       m_ersHarvestedThisLapMGUK;          // ERS energy harvested this lap by MGU-K
    float       m_ersHarvestedThisLapMGUH;          // ERS energy harvested this lap by MGU-H
+   float       m_ersHarvestLimitPerLap;            // ERS energy harvest limit for this lap
    float       m_ersDeployedThisLap;               // ERS energy deployed this lap
    uint8       m_networkPaused;                    // Whether the car is paused in a network game
 };
@@ -522,7 +553,7 @@ struct PacketCarStatusData
    CarStatusData       m_carStatusData[cs_maxNumCarsInUDPData];      // data for all cars on track
 };
 
-static_assert(sizeof(PacketCarStatusData) == 1239);
+static_assert(sizeof(PacketCarStatusData) == 1445);
 
 struct FinalClassificationData
 {
@@ -554,15 +585,15 @@ struct PacketFinalClassificationData
 };
 
 
-static_assert(sizeof(PacketFinalClassificationData) == 1042);
+static_assert(sizeof(PacketFinalClassificationData) == 1134);
 
 struct LobbyInfoData
 {
    uint8       m_aiControlled;                     // Whether the vehicle is AI (1) or Human (0) controlled
-   uint8       m_teamId;                           // Team id - see appendix (255 if no team currently selected)
+   uint16      m_teamId;                           // Team id - see appendix (65535 if no team currently selected)
    uint8       m_nationality;                      // Nationality of the driver
    uint8       m_platform;                         // 1 = Steam, 3 = PlayStation, 4 = Xbox, 6 = Origin, 255 = unknown
-   char        m_name[cs_maxParticipantNameLen];   // Name of participant in UTF-8 format – null terminated
+   char        m_name[cs_maxParticipantNameLen];   // Name of participant in UTF-8 format ï¿½ null terminated
    // Will be truncated with ... (U+2026) if too long
    uint8       m_carNumber;                        // Car number of the player
    uint8       m_yourTelemetry;                    // The player's UDP setting, 0 = restricted, 1 = public
@@ -581,7 +612,7 @@ struct PacketLobbyInfoData
 };
 
 
-static_assert(sizeof(PacketLobbyInfoData) == 954);
+static_assert(sizeof(PacketLobbyInfoData) == 1062);
 
 struct CarDamageData
 {
@@ -617,7 +648,7 @@ struct PacketCarDamageData
    CarDamageData   m_carDamageData[cs_maxNumCarsInUDPData];      // data for all cars on track
 };
 
-static_assert(sizeof(PacketCarDamageData) == 1041);
+static_assert(sizeof(PacketCarDamageData) == 1133);
 
 
 inline constexpr unsigned cs_maxNumLapsInHistory = 100;
@@ -731,7 +762,7 @@ static_assert(sizeof(PacketMotionExData) == 273);
 struct TimeTrialDataSet
 {
    uint8       m_carIdx;                   // Index of the car this data relates to
-   uint8       m_teamId;                   // Team id - see appendix
+   uint16      m_teamId;                   // Team id - see appendix
    uint32      m_lapTimeInMS;              // Lap time in milliseconds
    uint32      m_sector1TimeInMS;          // Sector 1 time in milliseconds
    uint32      m_sector2TimeInMS;          // Sector 2 time in milliseconds
@@ -754,7 +785,7 @@ struct PacketTimeTrialData
 };
 
 
-static_assert(sizeof(PacketTimeTrialData) == 101);
+static_assert(sizeof(PacketTimeTrialData) == 104);
 
 
 static const uint16  cs_maxNumLapsInLapPositionsHistoryPacket = 50;
@@ -770,6 +801,30 @@ struct PacketLapPositionsData
    // Array holding the position of the car in a given lap, 0 if no record
    uint8           m_positionForVehicleIdx[cs_maxNumLapsInLapPositionsHistoryPacket][cs_maxNumCarsInUDPData];
 };
+
+static_assert(sizeof(PacketLapPositionsData) == 1231);
+
+struct CarTelemetry2Data
+{
+   uint8       m_activeAeroMode;               // 0 = Corner mode, 1 = Straight mode
+   uint8       m_activeAeroAvailable;          // 0 = not available, 1 = available
+   uint16      m_activeAeroActivationDistance; // 0 = Active aero not available, non-zero - Active aero will be available in [X] metres
+   uint8       m_overtakeAvailable;            // 0 = not available, 1 = available
+   uint8       m_overtakeActive;               // 0 = not active, 1 = active
+   uint16      m_overtakeActivationDistance;   // 0 = Overtake Mode not available, non-zero - Overtake Mode will be available in [X] metres
+   uint8       m_2026Regulations;              // 0 = vehicle conforms to pre-2026, 1 = 2026 regulations applicable
+   uint8       m_drivingWrongWay;              // Whether the car is driving the wrong way
+};
+
+struct PacketCarTelemetry2Data
+{
+   PacketHeader        m_header;               // Header
+
+   // Packet specific data
+   CarTelemetry2Data   m_carTelemetry2Data[cs_maxNumCarsInUDPData];   // data for all cars on track
+};
+
+static_assert(sizeof(PacketCarTelemetry2Data) == 269);
 
 
 enum class PacketType : uint8_t
@@ -790,6 +845,7 @@ enum class PacketType : uint8_t
    PacketMotionExData,
    PacketTimeTrialData,
    PacketLapPositions,
+   PacketCarTelemetry2Data,
 
    UnknownOrIllformed = 0xff
 };

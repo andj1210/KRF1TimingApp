@@ -257,7 +257,7 @@
       <_VersionGenPath>$(IntermediateOutputPath)BuildVersion.g.cs</_VersionGenPath>
     </PropertyGroup>
     <MakeDir Directories="$(IntermediateOutputPath)" />
-    <WriteLinesToFile File="$(_VersionGenPath)" Overwrite="true" Lines="namespace adjsw.F12025 { internal static class BuildVersion { public const string Value = &quot;$(_VersionValue)&quot;%3B } }" />
+    <WriteLinesToFile File="$(_VersionGenPath)" Overwrite="true" Lines="namespace adjsw.F12026 { internal static class BuildVersion { public const string Value = &quot;$(_VersionValue)&quot;%3B } }" />
     <ItemGroup>
       <Compile Include="$(_VersionGenPath)" />
       <FileWrites Include="$(_VersionGenPath)" />

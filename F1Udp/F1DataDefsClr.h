@@ -7,21 +7,75 @@ using namespace System::Collections::Generic;
 #include <string.h>
 #include <list>
 
-namespace adjsw::F12025
+namespace adjsw::F12026
 {
    public enum class F1Team : int
    {
-   Mercedes,
-   Ferrari,
-   RedBull,
-   Williams,
-   AstonMartin,
-   Alpine,
-   RacingBulls,
-   Haas,   
-   McLaren,
-   Sauber,
-   Classic
+   // ---- Current teams (ids 0-9) -- direct cast from m_teamId ----
+   Mercedes,      // 0
+   Ferrari,       // 1
+   RedBull,       // 2
+   Williams,      // 3
+   AstonMartin,   // 4
+   Alpine,        // 5
+   RacingBulls,   // 6  (RB)
+   Haas,          // 7
+   McLaren,       // 8
+   Sauber,        // 9
+
+   Classic = 10,  // synthetic catch-all kept for legacy mapping
+
+   // ---- Appendix teams (2026 Season Pack) ----
+   // Appended naive for now -- year '24/'25/'26 variants alias the same real cars.
+   F1Generic = 41,
+   F1CustomTeam = 104,
+   Konnersport = 129,
+   APXGP24 = 142,
+   APXGP25 = 154,
+   Konnersport24 = 155,
+   ArtGP24 = 158,
+   Campos24 = 159,
+   RodinMotorsport24 = 160,
+   AIXRacing24 = 161,
+   DAMS24 = 162,
+   Hitech24 = 163,
+   MPMotorsport24 = 164,
+   Prema24 = 165,
+   Trident24 = 166,
+   VanAmersfoortRacing24 = 167,
+   Invicta24 = 168,
+   Mercedes24 = 185,
+   Ferrari24 = 186,
+   RedBullRacing24 = 187,
+   Williams24 = 188,
+   AstonMartin24 = 189,
+   Alpine24 = 190,
+   RB24 = 191,
+   Haas24 = 192,
+   McLaren24 = 193,
+   Sauber24 = 194,
+   ArtGP25 = 465,
+   Campos25 = 466,
+   RodinMotorsport25 = 467,
+   AIXRacing25 = 468,
+   DAMS25 = 469,
+   Hitech25 = 470,
+   MPMotorsport25 = 471,
+   Prema25 = 472,
+   Trident25 = 473,
+   VanAmersfoortRacing25 = 474,
+   Invicta25 = 475,
+   Mercedes26 = 476,
+   Ferrari26 = 477,
+   RedBullRacing26 = 478,
+   Williams26 = 479,
+   AstonMartin26 = 480,
+   Alpine26 = 481,
+   RB26 = 482,
+   Haas26 = 483,
+   McLaren26 = 484,
+   Audi26 = 485,
+   Cadillac26 = 486
    };
 
    // F1 2020:
@@ -112,8 +166,13 @@ namespace adjsw::F12025
       Jeddah,
       Miami,
       LasVegas,
-      Losail,
-      numEntries
+      Losail,             // 32
+      // ---- 2026 Season Pack additions ----
+      SilverstoneReverse = 39,
+      AustriaReverse = 40,
+      ZandvoortReverse = 41,
+      Madrid = 42,
+      numEntries          // 43
    };
 
    public enum class SessionType

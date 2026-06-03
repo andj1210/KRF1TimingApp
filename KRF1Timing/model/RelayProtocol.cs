@@ -8,7 +8,7 @@
 using System.IO;
 using System.Net.Sockets;
 
-namespace adjsw.F12025
+namespace adjsw.F12026
 {
    public static class RelayProtocol
    {

@@ -3,7 +3,7 @@
 
 #include "RelayProtocolClr.h"
 
-using namespace adjsw::F12025;
+using namespace adjsw::F12026;
 
 void RelayProtocolClr::SendMessage(Stream^ stream, System::Byte type, array<System::Byte>^ payload, int offset, int length)
 {
