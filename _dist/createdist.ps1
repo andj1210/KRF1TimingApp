@@ -95,6 +95,7 @@ try {
     Copy-Item "$buildBin\System.Memory.dll"       "$tempFolder\krf1timing\"
     Copy-Item "$buildBin\System.Numerics.Vectors.dll" "$tempFolder\krf1timing\"
     Copy-Item "$buildBin\System.Runtime.CompilerServices.Unsafe.dll" "$tempFolder\krf1timing\"
+    Copy-Item "$buildBin\kr1timing-update.ba_"    "$tempFolder\krf1timing\"
 
     # Copy documentation / config files from repo root
     Copy-Item "$repoRoot\changelog.txt"           "$tempFolder\krf1timing\"

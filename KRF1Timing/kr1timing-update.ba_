@@ -1,0 +1,63 @@
+@echo off
+setlocal EnableExtensions
+
+rem kr1timing-update -- shipped as "kr1timing-update.ba_" so the inert copy in the
+rem install folder is not a clickable, broken .bat. At update time the app renames
+rem this file to ".bat" inside "_update" and launches it from there.
+rem
+rem Layout assumption: this script runs from  <install>\_update\<release>\
+rem so the install folder is two levels up ("..\..").
+rem
+rem   %1 = PID of the running Krf1Timing process to wait for
+
+set "PID=%~1"
+set "APPEXE=Krf1Timing.exe"
+
+rem SRC = folder this script lives in (the extracted app root), no trailing slash
+set "SRC=%~dp0"
+if "%SRC:~-1%"=="\" set "SRC=%SRC:~0,-1%"
+
+rem DST = install folder = two levels up from this script
+for %%I in ("%~dp0..\..") do set "DST=%%~fI"
+
+echo Updating KRF1Timing...
+echo   from: %SRC%
+echo   to  : %DST%
+echo.
+
+rem -- safety heuristic: only proceed if the target really is an install folder
+if not exist "%DST%\%APPEXE%" (
+   echo ERROR: "%DST%\%APPEXE%" not found.
+   echo Refusing to copy into an unexpected folder. Update aborted.
+   echo.
+   pause
+   exit /b 1
+)
+
+rem -- wait for the running app to exit
+:waitloop
+tasklist /FI "PID eq %PID%" 2>nul | find "%PID%" >nul
+if not errorlevel 1 (
+   ping -n 2 127.0.0.1 >nul
+   goto waitloop
+)
+
+rem -- plain overwrite copy; exclude the runnable .bat so the install folder never
+rem    receives a clickable updater (only the inert .ba_ is ever shipped there)
+robocopy "%SRC%" "%DST%" /E /R:3 /W:1 /XF kr1timing-update.bat >nul
+set "RC=%ERRORLEVEL%"
+
+rem robocopy success = exit codes 0..7; 8 and above means a real failure
+if %RC% GEQ 8 (
+   echo.
+   echo ERROR: file copy failed ^(robocopy code %RC%^). Update aborted.
+   echo.
+   pause
+   exit /b 1
+)
+
+rem -- relaunch the updated app
+start "" /D "%DST%" "%DST%\%APPEXE%"
+
+endlocal
+exit /b 0

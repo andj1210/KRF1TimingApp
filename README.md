@@ -1,15 +1,15 @@
-# KRF1 Timing App for F1 25
+# KRF1 Timing App for F1 25 - 2026 Season Pack
 
-A second-monitor timing and telemetry display for the F1 25 game, driven by the game's UDP telemetry output.
+A second-monitor timing and telemetry display for the "F1 25 with 2026 Season Pack" game, driven by the game's UDP telemetry output.
 
 ## Installation
 
-Extract the provided zip archive to any folder with write permissions (e.g. Documents). On Windows 10 the executable should start directly.
+Extract the provided zip archive to any folder with write permissions (e.g. Documents). On Windows 10/11 the executable should start directly.
 
 If the program does not start, install the Visual C++ Redistributable for Visual Studio:
 - [vc_redist.x64.exe](https://aka.ms/vc14/vc_redist.x64.exe)
 
-In the game, enable UDP telemetry output in mode **2025** on port **20777**.
+In the game, enable UDP telemetry output in mode **2026** on port **20777**.
 
 ---
 

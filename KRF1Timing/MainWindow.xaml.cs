@@ -54,7 +54,7 @@ namespace adjsw.F12026
          m_devExpander.Visibility = Visibility.Collapsed;
 #endif
 
-         Title = "KRF1 Timing App for F1-26 V" + BuildVersion.Value;
+         Title = "KRF1 Timing App for F1-25 w. 2026 Season Pack V" + BuildVersion.Value;
 
          m_pollTimer.Tick += PollUpdates_Tick;
          m_pollTimer.Interval = TimeSpan.FromMilliseconds(40);
@@ -1088,6 +1088,39 @@ namespace adjsw.F12026
       private void OnSidebar_ToggleRelayUplink(object sender, RoutedEventArgs e)       => ActionToggleRelayUplink();
       private void OnSidebar_ToggleRelayEngineer(object sender, RoutedEventArgs e)     => ActionToggleRelayEngineer();
       private void OnSidebar_ToggleSecondaryEngineer(object sender, RoutedEventArgs e) => ActionToggleSecondaryEngineer();
+      private void OnSidebar_CheckUpdate(object sender, RoutedEventArgs e)             => ActionCheckUpdate();
+
+      private async void ActionCheckUpdate()
+      {
+         m_sidebar.Visibility = Visibility.Collapsed;
+
+         var updater = new UpdateService();
+         try
+         {
+            UpdateService.ReleaseInfo rel = await updater.CheckAsync();
+
+            if (!updater.IsNewer(rel))
+            {
+               ShowInfoBox("You are up to date (v" + updater.LocalVersion + ").", TimeSpan.FromSeconds(4));
+               return;
+            }
+
+            MessageBoxResult answer = MessageBox.Show(
+               "A new version is available.\n\n" +
+               "Installed: " + updater.LocalVersion + "\n" +
+               "Latest:    " + rel.Tag + "\n\n" +
+               "Download and restart now?",
+               "Update available", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+            if (answer == MessageBoxResult.Yes)
+               await updater.DownloadAndApplyAsync(rel); // extracts, hands off to the batch, shuts down
+         }
+         catch (Exception ex)
+         {
+            MessageBox.Show("Update check failed:\n\n" + ex.Message,
+               "Update", MessageBoxButton.OK, MessageBoxImage.Warning);
+         }
+      }
 
       private void OnUdpReceive(object sender, UdpEventClientEventArgs e)
       {
@@ -1175,7 +1208,7 @@ namespace adjsw.F12026
 
       private static string s_splashText =
 @"
-KRF1 Timing App for F1-25
+KRF1 Timing App for F1-25 - 2026 Season Pack
 Copyright 2018-2026 Andreas Jung
 
 This program is free software: you can redistribute it and/or modify
