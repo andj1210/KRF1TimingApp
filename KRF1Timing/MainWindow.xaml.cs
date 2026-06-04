@@ -134,8 +134,6 @@ namespace adjsw.F12026
          m_trackLearner.StatusChanged += msg => ShowInfoBox(msg, TimeSpan.FromSeconds(4));
 
          m_LoadNameMappings();
-
-         m_board.DeltaVisible = false;
       }
 
       private void MainWindow_Loaded(object sender, RoutedEventArgs e)

@@ -584,27 +584,6 @@ namespace adjsw.F12026
       }
    }
 
-   public class DeltaTimeBgColorConverter : IMultiValueConverter
-   {
-      public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-      {
-         var dat = values?[1] as DriverData;
-
-         if (null == dat)
-            return Brushes.Transparent;
-
-         if (dat.IsPlayer)
-            return Brushes.DarkViolet;
-
-         return Brushes.Transparent;
-      }
-
-      public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
-      {
-         throw new Exception("The method or operation is not implemented.");
-      }
-   }
-
    public class TyreConverter : IMultiValueConverter
    {
       public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)

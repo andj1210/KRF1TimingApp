@@ -22,11 +22,6 @@ namespace adjsw.F12026
          var cols = m_grid.Columns;
          foreach (var col in cols)
          {
-            if (col.Header.ToString() == "Delta")
-            {
-               m_playerDeltaColumn = col;
-            }
-
             if (col.Header.ToString() == "Status")
             {
                m_statusColumn = col;
@@ -53,11 +48,10 @@ namespace adjsw.F12026
             }
          }
 
-         if ((m_leaderDeltaColumn == null) || (m_playerDeltaColumn == null))
-            throw new Exception("PersonalLeaderboard m_leaderDeltaColumn or m_playerDeltaColumn null");
+         if (m_leaderDeltaColumn == null)
+            throw new Exception("PersonalLeaderboard m_leaderDeltaColumn null");
 
          LeaderVisible = true;
-         DeltaVisible = true;
 
          // trigger correct cell size
          Quali = true;
@@ -92,22 +86,6 @@ namespace adjsw.F12026
             else
             {
                m_leaderDeltaColumn.Visibility = System.Windows.Visibility.Collapsed;
-            }
-         }
-      }
-
-      public bool DeltaVisible
-      {
-         get { return m_playerDeltaColumn.Visibility == System.Windows.Visibility.Visible; }
-         set
-         {
-            if (value)
-            {
-               m_playerDeltaColumn.Visibility = System.Windows.Visibility.Visible;
-            }
-            else
-            {
-               m_playerDeltaColumn.Visibility = System.Windows.Visibility.Collapsed;
             }
          }
       }
@@ -217,7 +195,6 @@ namespace adjsw.F12026
          }
       }
 
-      private DataGridColumn m_playerDeltaColumn;
       private DataGridColumn m_leaderDeltaColumn;
       private DataGridColumn m_statusColumn;
       private DataGridColumn m_fastestLapS1Column;
