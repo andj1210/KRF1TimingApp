@@ -319,6 +319,13 @@ namespace adjsw::F12026
       AttributeAssigned // (???)
    };
 
+   public enum class CarDetailErsMode
+   {
+      None,
+      Med,
+      Hot,
+      Boost
+   };
 
    public ref class SessionEvent
    {
@@ -491,6 +498,11 @@ namespace adjsw::F12026
       property int TempBrakeRearLeft{int get() { return m_tempBrakeRearLeft; } void set(int val) { m_tempBrakeRearLeft = val; } };
       property int TempBrakeRearRight {int get() { return m_tempBrakeRearRight; } void set(int val) { m_tempBrakeRearRight = val; } };
 
+      property CarDetailErsMode ErsMode { CarDetailErsMode get() { return m_ersMode; } void set(CarDetailErsMode val) { m_ersMode = val; } };
+      property float ErsAvailPercent{ float get() { return m_ersAvailable; } void set(float val) { m_ersAvailable = val; } }
+
+      property bool OvertakeAvailable { bool get() { return m_overtakeAvailable; } void set(bool val) { m_overtakeAvailable = val; } }
+
    private:
       int m_dmgFrontLeft{ 0 };
       int m_dmgFrontRight{ 0 };
@@ -514,6 +526,10 @@ namespace adjsw::F12026
       int m_tempBrakeFrontRight{ 0 };
       int m_tempBrakeRearLeft{ 0 };
       int m_tempBrakeRearRight{ 0 };
+      float m_ersAvailable{0.5f};
+      bool m_overtakeAvailable{ false };
+
+      CarDetailErsMode m_ersMode{CarDetailErsMode::None};
    };
 
    public ref class DriverPos3d
@@ -571,9 +587,9 @@ namespace adjsw::F12026
          if (strcmp(pName, m_driverNameNative))
          {
             strncpy_s(m_driverNameNative, 32, pName, 32);
-            unsigned sz = strlen(m_driverNameNative);
+            int sz = static_cast<int>(strlen(m_driverNameNative));
             array<Byte>^ arr = gcnew array<Byte>(sz);
-            for (unsigned i = 0; i < sz; ++i)
+            for (int i = 0; i < sz; ++i)
                arr[i] = m_driverNameNative[i];
 
             TelemetryName = System::Text::Encoding::UTF8->GetString(arr);
@@ -677,7 +693,7 @@ namespace adjsw::F12026
          array<String^>^ mappings = nullptr;
          if (driverNameList->TryGetValue(driverNumber, mappings))
          {
-            for (unsigned i = 0; i < mappings->Length; ++i)
+            for (int i = 0; i < mappings->Length; ++i)
             {
                if (String::Equals(mappings[i], name))
                   return; // already existent!
@@ -687,7 +703,7 @@ namespace adjsw::F12026
             {
                array<String^>^ mappingsNew = gcnew array<String^>(mappings->Length + 1);
                mappingsNew[0] = name;
-               for (unsigned i = 0; i < mappings->Length; ++i)
+               for (int i = 0; i < mappings->Length; ++i)
                {
                   mappingsNew[i + 1] = mappings[i];
                }

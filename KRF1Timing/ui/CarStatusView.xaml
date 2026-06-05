@@ -16,7 +16,21 @@
             <Setter Property="IsReadOnly" Value="True"/>
          </Style>
       </Canvas.Resources>
-      <TextBox x:FieldModifier="public" Name="txt_driver_name" Canvas.Left="10" Canvas.Top="445" Width="337" Height="35" FontSize="32" FontWeight="Bold" Foreground="White" Background="Transparent" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Center">DRIVER</TextBox>
+      <TextBox x:FieldModifier="public" Name="txt_driver_name" Canvas.Left="10" Canvas.Top="465" Width="337" Height="35" FontSize="32" FontWeight="Bold" Foreground="White" Background="Transparent" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Left" VerticalAlignment="Center">DRIVER</TextBox>
+
+      <!-- ERS row: deployment-mode box + remaining-energy bar (above driver name) -->
+      <Border x:Name="ers_box" Canvas.Left="10" Canvas.Top="442" Width="30" Height="20"
+              Background="#FF444444" BorderBrush="#FF555555" BorderThickness="1"
+              HorizontalAlignment="Left" VerticalAlignment="Center">
+         <TextBlock x:Name="ers_letter" Text="N" Foreground="#FFCCCCCC"
+                    FontFamily="Courier New" FontSize="18" FontWeight="Bold"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      </Border>
+      <Border x:Name="ers_bar_track" Canvas.Left="46" Canvas.Top="442" Width="301" Height="20"
+              Background="#22FFFFFF" BorderBrush="#FF555555" BorderThickness="1"
+              HorizontalAlignment="Left" VerticalAlignment="Center">
+         <Rectangle x:Name="ers_bar_fill" Fill="#FF0DBF41" HorizontalAlignment="Left" Width="0"/>
+      </Border>
       <local:TyreView x:FieldModifier="public" x:Name="tyre_compound" Canvas.Left="275" Canvas.Top="202" HorizontalAlignment="Left" VerticalAlignment="Center">
          <local:TyreView.RenderTransform>
             <ScaleTransform ScaleX="2.0" ScaleY="2.0"/>

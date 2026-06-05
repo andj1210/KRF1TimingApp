@@ -265,6 +265,7 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="F1PacketExtractor.cpp" />
     <ClCompile Include="F1UdpClrMapper.cpp" />
+    <ClCompile Include="RelayPacketFilter.cpp" />
     <ClCompile Include="RelayProtocolClr.cpp" />
   </ItemGroup>
   <ItemGroup>

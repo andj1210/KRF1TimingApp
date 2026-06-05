@@ -21,6 +21,7 @@ struct F12026_PacketExtractor
    PacketParticipantsData participants{};
    PacketCarSetupData setups{};
    PacketCarTelemetryData telemetry{};
+   PacketCarTelemetry2Data telemetry2{};
    PacketCarStatusData status{};
    PacketFinalClassificationData classification{};
    PacketLobbyInfoData lobby{};

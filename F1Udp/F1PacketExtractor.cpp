@@ -187,6 +187,15 @@ unsigned F12026_PacketExtractor::ProceedPacket(const uint8_t* pData, unsigned le
           return len;
        break;
 
+    case 16:
+       if (CopyBytesToStruct(pData, len, &telemetry2))
+       {
+          type = PacketType::PacketCarTelemetry2Data;
+       }
+       else
+          return len;
+       break;
+
    }
 
    if (pType)

@@ -32,7 +32,8 @@ namespace adjsw::F12026
 {
    void RelayPacketFilter::SetUdpMapper(adjsw::F12026::F1UdpClrMapper^ mapper)
    {
-      SetExtractor(mapper->GetExtractor());
+      m_mapper = mapper;
+      m_SetExtractor(mapper->GetExtractor());
    }
 
    F1UdpClrMapper::F1UdpClrMapper()
@@ -49,6 +50,7 @@ namespace adjsw::F12026
       UdpAction = gcnew array<bool>(12);
 
       Drivers = gcnew array<DriverData^>(cs_maxNumCarsInUDPData);
+      m_arrDriverHistoryDirty = gcnew array<volatile bool>(cs_maxNumCarsInUDPData);
 
       for (int i = 0; i < Drivers->Length; ++i)
          Drivers[i] = gcnew DriverData(SessionInfo);
@@ -123,6 +125,13 @@ namespace adjsw::F12026
             for (int i = 0; i < Drivers->Length; ++i)
             {
                m_UpdateTelemetry(i);
+            }
+            break;
+
+         case PacketType::PacketCarTelemetry2Data:
+            for (int i = 0; i < Drivers->Length; ++i)
+            {
+               m_UpdateTelemetry2(i);
             }
             break;
 
@@ -203,7 +212,7 @@ namespace adjsw::F12026
          // On a participants packet re-resolve the secondary driver index.
          if (tp == PacketType::PacketParticipantsData)
          {
-            uint8_t sec_team    = s_TELEMETRY_TEAM_ID_REMAP(m_parserSecondary->participants.m_participants[sec_idx].m_teamId);
+            uint16_t sec_team    = s_TELEMETRY_TEAM_ID_REMAP(m_parserSecondary->participants.m_participants[sec_idx].m_teamId);
             uint8_t sec_race_nr = m_parserSecondary->participants.m_participants[sec_idx].m_raceNumber;
 
             // 1st pass -- exact match on team + race number.
@@ -275,10 +284,10 @@ namespace adjsw::F12026
                const auto& dmg = m_parserSecondary->cardamage.m_carDamageData[sec_idx];
 
                // Tyre wear
-               driver->WearDetail->WearFrontLeft  = dmg.m_tyresWear[2];
-               driver->WearDetail->WearFrontRight = dmg.m_tyresWear[3];
-               driver->WearDetail->WearRearLeft   = dmg.m_tyresWear[0];
-               driver->WearDetail->WearRearRight  = dmg.m_tyresWear[1];
+               driver->WearDetail->WearFrontLeft  = static_cast<int>(dmg.m_tyresWear[2]);
+               driver->WearDetail->WearFrontRight = static_cast<int>(dmg.m_tyresWear[3]);
+               driver->WearDetail->WearRearLeft   = static_cast<int>(dmg.m_tyresWear[0]);
+               driver->WearDetail->WearRearRight  = static_cast<int>(dmg.m_tyresWear[1]);
 
                // Wing damage
                driver->WearDetail->DamageFrontLeft  = dmg.m_frontLeftWingDamage;
@@ -314,8 +323,28 @@ namespace adjsw::F12026
             break;
          }
 
+         case PacketType::PacketCarTelemetry2Data:
+         {
+            DriverData^ driver = Drivers[m_secondaryDriverIndex];
+            if (driver->Present)
+            {
+               const auto& tel = m_parserSecondary->telemetry2.m_carTelemetry2Data[sec_idx];
+
+               driver->WearDetail->OvertakeAvailable = tel.m_overtakeAvailable;
+            }
+            break;
+         }
+
          case PacketType::PacketCarStatusData:
-            // reserved -- tyres are maintained by the primary stream
+         {
+            DriverData^ driver = Drivers[m_secondaryDriverIndex];
+            if (driver->Present)
+            {
+               const auto& tel = m_parserSecondary->status.m_carStatusData[sec_idx];
+               driver->WearDetail->ErsMode = CarDetailErsMode(tel.m_ersDeployMode);
+               driver->WearDetail->ErsAvailPercent = tel.m_ersStoreEnergy / 4000000.f; // 4 MJ max store = 100%
+            }
+         }
             break;
 
          default:
@@ -461,7 +490,7 @@ namespace adjsw::F12026
       m_parser->classification.m_numCars = 0;
       m_udpButtonPreviousMask = 0;
 
-      for (unsigned i = 0; i < Drivers->Length; ++i)
+      for (int i = 0; i < Drivers->Length; ++i)
       {
          Drivers[i]->Reset();
          Drivers[i]->Id = i;
@@ -800,14 +829,14 @@ namespace adjsw::F12026
 
          if (lappedCount > 0)
          {
-            opponent->TimedeltaToLeader = (-lappedCount); // special meaning for negative numbers: lapped count
+            opponent->TimedeltaToLeader = static_cast<float>(-lappedCount); // special meaning for negative numbers: lapped count
          }
          else
          {
             System::UInt32 telemetryDelta = m_parser->lap.m_lapData[i].m_deltaToRaceLeaderMSPart;
             telemetryDelta += 60000 * m_parser->lap.m_lapData[i].m_deltaToRaceLeaderMinutesPart;
 
-            opponent->TimedeltaToLeader = telemetryDelta / 1000.0;
+            opponent->TimedeltaToLeader = telemetryDelta / 1000.0f;
          }
 
          System::UInt32 telemetryDelta = m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart;
@@ -819,7 +848,7 @@ namespace adjsw::F12026
          opponent->TimedeltaToNext = 
             m_parser->lap.m_lapData[i].m_deltaToCarInFrontMSPart > 59999 ? 
             0 :                        // delta to next car not available
-            telemetryDelta / 1000.0;   // actual delta available
+            telemetryDelta / 1000.0f;   // actual delta available
       }
    }
 
@@ -829,7 +858,7 @@ namespace adjsw::F12026
       if (!opponent->Present)
          return;
 
-      float newDelta = Drivers[i]->FastestLap->Lap - reference->FastestLap->Lap;
+      float newDelta = static_cast<float>(Drivers[i]->FastestLap->Lap - reference->FastestLap->Lap);
       if ((newDelta != opponent->TimedeltaToLeader) && (reference->FastestLap->Lap != 0))
       {
          if (newDelta > 0)
@@ -964,7 +993,7 @@ namespace adjsw::F12026
                currentLap->Lap = 0;
             }
 
-            if (lapNative.m_currentLapInvalid != currentLap->Invalid)
+            if ((lapNative.m_currentLapInvalid > 0) != currentLap->Invalid)
             {
                currentLap->Invalid = lapNative.m_currentLapInvalid;
                change = true;
@@ -976,7 +1005,7 @@ namespace adjsw::F12026
             }
          }
 
-         if (lapNumCurrent > SessionInfo->CurrentLap)
+         if (lapNumCurrent > static_cast<unsigned>(SessionInfo->CurrentLap))
          {
             SessionInfo->CurrentLap = std::min<int>(lapNumCurrent, SessionInfo->TotalLaps); // clamp to TotalLaps to prevent the post race lap to count behind maximum
          }
@@ -1022,7 +1051,7 @@ namespace adjsw::F12026
             if (driver->CurrentLap->Sector1Ms || driver->CurrentLap->Sector2Ms || driver->CurrentLap->Lap)
             {
                bool found = false;
-               for (unsigned i = 0; i < driver->Laps->Length; ++i)
+               for (int i = 0; i < driver->Laps->Length; ++i)
                {
                   LapData^ lap = driver->Laps[i];
                   if (driver->CurrentLap->Sector1Ms || driver->CurrentLap->Sector2Ms || driver->CurrentLap->Lap)
@@ -1061,7 +1090,7 @@ namespace adjsw::F12026
                driver->FastestLap->CopyFrom(driver->CurrentLap);
 
             // setup the next lap
-            for (unsigned i = 0; i < driver->Laps->Length; ++i)
+            for (int i = 0; i < driver->Laps->Length; ++i)
             {
                LapData^ lap = driver->Laps[i];
                if (lap->Sector1Ms || lap->Sector2Ms || lap->Lap)
@@ -1104,7 +1133,7 @@ namespace adjsw::F12026
                currentLap->Lap = 0;
             }
 
-            if (lapNative.m_currentLapInvalid != currentLap->Invalid)
+            if ((lapNative.m_currentLapInvalid > 0) != currentLap->Invalid)
             {
                currentLap->Invalid = lapNative.m_currentLapInvalid;
                change = true;
@@ -1338,10 +1367,10 @@ namespace adjsw::F12026
       driver->WearDetail->DamageFrontRight = m_parser->cardamage.m_carDamageData[i].m_frontRightWingDamage;
 
       auto tyres = m_parser->cardamage.m_carDamageData[i].m_tyresWear;
-      driver->WearDetail->WearFrontLeft = m_parser->cardamage.m_carDamageData[i].m_tyresWear[2];
-      driver->WearDetail->WearFrontRight = m_parser->cardamage.m_carDamageData[i].m_tyresWear[3];
-      driver->WearDetail->WearRearLeft = m_parser->cardamage.m_carDamageData[i].m_tyresWear[0];
-      driver->WearDetail->WearRearRight = m_parser->cardamage.m_carDamageData[i].m_tyresWear[1];
+      driver->WearDetail->WearFrontLeft = static_cast<int>(m_parser->cardamage.m_carDamageData[i].m_tyresWear[2]);
+      driver->WearDetail->WearFrontRight = static_cast<int>(m_parser->cardamage.m_carDamageData[i].m_tyresWear[3]);
+      driver->WearDetail->WearRearLeft = static_cast<int>(m_parser->cardamage.m_carDamageData[i].m_tyresWear[0]);
+      driver->WearDetail->WearRearRight = static_cast<int>(m_parser->cardamage.m_carDamageData[i].m_tyresWear[1]);
    }
 
    void F1UdpClrMapper::m_UpdateTelemetry(int i)
@@ -1367,6 +1396,9 @@ namespace adjsw::F12026
       driver->WearDetail->TempBrakeFrontRight = m_parser->telemetry.m_carTelemetryData[i].m_brakesTemperature[3];
       driver->WearDetail->TempBrakeRearLeft = m_parser->telemetry.m_carTelemetryData[i].m_brakesTemperature[0];
       driver->WearDetail->TempBrakeRearRight = m_parser->telemetry.m_carTelemetryData[i].m_brakesTemperature[1];
+
+      driver->WearDetail->ErsMode = CarDetailErsMode(m_parser->status.m_carStatusData[i].m_ersDeployMode);
+      driver->WearDetail->ErsAvailPercent = m_parser->status.m_carStatusData[i].m_ersStoreEnergy / 4000000.f; // 4 MJ max store = 100%
 
       driver->WearDetail->TempEngine = m_parser->telemetry.m_carTelemetryData[i].m_engineTemperature;
    }
@@ -1417,7 +1449,7 @@ namespace adjsw::F12026
       // classification available, apply:
       Classification = gcnew array<ClassificationData^>(m_parser->classification.m_numCars);
 
-      for (unsigned i = 0; i < Classification->Length; ++i)
+      for (int i = 0; i < Classification->Length; ++i)
       {
          ClassificationData^ pClr = gcnew ClassificationData();
          Classification[i] = pClr;
@@ -1449,7 +1481,7 @@ namespace adjsw::F12026
       bool wasUpdate = false;
       if (driver->LapNr > 0)
       {
-         for (unsigned i = 0; i < driver->LapNr; ++i)
+         for (int i = 0; i < driver->LapNr; ++i)
          {
             LapData^ lap = driver->Laps[i];
             if ((lap->Lap < 1.0) || (lap->Sector1 < 1.0) || (lap->Sector2 < 1.0))
@@ -1466,7 +1498,7 @@ namespace adjsw::F12026
 
       if (wasUpdate)
       {
-         for (unsigned i = 0; i < driver->LapNr; ++i)
+         for (int i = 0; i < driver->LapNr; ++i)
          {
             LapData^ lap = driver->Laps[i];
             double accumulated = 0.0;
@@ -1500,31 +1532,38 @@ namespace adjsw::F12026
       if (m_parser->history.m_tyreStintsHistoryData[0].m_tyreVisualCompound != 0)
       {
          bool changed = false;
+         List<F1VisualTyre>^ newTyreSets = gcnew List<F1VisualTyre>();
          // we have valid data in the history, check if it is in line with our clr data:
-         for (unsigned i = 0; i < cs_maxTyreStints; ++i)
+         uint8_t cntTyresInPacket = 0;
+         for (int i = 0; i < cs_maxTyreStints; ++i)
          {
             uint8 c = m_parser->history.m_tyreStintsHistoryData[i].m_tyreVisualCompound;
             if (c)
             {
                F1VisualTyre t = F1VisualTyre(c);
+               newTyreSets->Add(t);
+               ++cntTyresInPacket;
                if (driver->VisualTyres->Count < (i + 1))
                {
                   changed = true;
-                  driver->VisualTyres->Add(t);
                }
                else if (driver->VisualTyres[i] != t)
                {
                   changed = true;
-                  driver->VisualTyres[i] = t;
                }
             }
          }
 
+         if (cntTyresInPacket && (driver->VisualTyres->Count != cntTyresInPacket))
+            changed = true;
+
          if (changed)
          {
+            driver->VisualTyres = newTyreSets;
             driver->VisualTyre = driver->VisualTyres[driver->VisualTyres->Count - 1];
             driver->NPC("VisualTyres");
             driver->LastTyreUpdateByHistory = m_parser->history.m_header.m_sessionTime;
+            DriverHistoryDirty[m_parser->history.m_carIdx] = true;
          }
       }
    }
@@ -1599,7 +1638,7 @@ namespace adjsw::F12026
 
    void F1UdpClrMapper::m_UpdateCarPositions3d()
    {
-      for (unsigned i = 0; i < cs_maxNumCarsInUDPData; ++i)
+      for (int i = 0; i < cs_maxNumCarsInUDPData; ++i)
       {
          const CarMotionData& dat = m_parser->motion.m_carMotionData[i];
          if (i > Drivers->Length)
@@ -1611,4 +1650,17 @@ namespace adjsw::F12026
          driver->TrackPosition3d->z = dat.m_worldPositionZ;
       }
    }
+
+   void F1UdpClrMapper::m_UpdateTelemetry2(int i)
+   {
+      DriverData^ driver = Drivers[i];
+      if (!driver->Present)
+         return;
+
+      if (driver->IsSecondaryDriver)
+         return; // data comes from second telemetry channel
+
+      driver->WearDetail->OvertakeAvailable = m_parser->telemetry2.m_carTelemetry2Data[i].m_overtakeAvailable;
+   }
+
 }

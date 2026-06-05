@@ -229,8 +229,7 @@ namespace adjsw.F12026
                {
                   try
                   {
-                     RelayProtocol.SendMessage(m_stream, RelayProtocol.MSG_F1_PACKET, packet);
-                     
+                     RelayProtocol.SendMessage(m_stream, RelayProtocol.MSG_F1_PACKET, packet);                     
                   }
                   catch
                   {

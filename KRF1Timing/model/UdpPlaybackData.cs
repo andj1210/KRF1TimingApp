@@ -46,7 +46,7 @@ public class UdpPlaybackData
          }
          m_data = l.ToArray();
       }
-      catch (Exception e)
+      catch (Exception)
       { }
    }
 

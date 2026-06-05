@@ -42,15 +42,28 @@ if not errorlevel 1 (
    goto waitloop
 )
 
-rem -- plain overwrite copy; exclude the runnable .bat so the install folder never
-rem    receives a clickable updater (only the inert .ba_ is ever shipped there)
-robocopy "%SRC%" "%DST%" /E /R:3 /W:1 /XF kr1timing-update.bat >nul
+rem -- main copy: plain overwrite. Leave "cars" alone here (handled below) and
+rem    never ship a clickable updater into the install folder
+robocopy "%SRC%" "%DST%" /E /R:3 /W:1 /XF kr1timing-update.bat /XD "%SRC%\cars" >nul
 set "RC=%ERRORLEVEL%"
 
 rem robocopy success = exit codes 0..7; 8 and above means a real failure
 if %RC% GEQ 8 (
    echo.
    echo ERROR: file copy failed ^(robocopy code %RC%^). Update aborted.
+   echo.
+   pause
+   exit /b 1
+)
+
+rem -- cars: copy only files that do NOT already exist, so user-customised
+rem    car images are never overwritten (/XC /XN /XO = skip every existing file)
+robocopy "%SRC%\cars" "%DST%\cars" /E /R:3 /W:1 /XC /XN /XO >nul
+set "RC=%ERRORLEVEL%"
+
+if %RC% GEQ 8 (
+   echo.
+   echo ERROR: cars copy failed ^(robocopy code %RC%^). Update aborted.
    echo.
    pause
    exit /b 1

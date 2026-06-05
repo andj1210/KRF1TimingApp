@@ -43,7 +43,7 @@ namespace adjsw.F12026
                     if (ReceiveEvent != null)
                         ReceiveEvent(this, new UdpEventClientEventArgs(data));
                 }
-                catch(Exception ex)
+                catch(Exception)
                 {
 
                 }

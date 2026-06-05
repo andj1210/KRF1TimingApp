@@ -237,7 +237,7 @@ bool DriverSession::HandleF1Packet(const uint8_t* payload, uint16_t len)
       return false;
 
    uint8_t pktId = m_extractor.lastHeader.m_packetId;
-   if (pktId >= kNumF1PacketTypes)
+   if (pktId >= static_cast<uint8_t>(PacketType::numPacketTypes))
       return false;
 
    m_lastPacketTime = OsSeconds();

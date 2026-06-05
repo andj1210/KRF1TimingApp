@@ -138,7 +138,7 @@ namespace adjsw.F12026
 
       private void MainWindow_Loaded(object sender, RoutedEventArgs e)
       {
-         UpdateLayout();
+         _UpdateLayout();
       }
 
       private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
@@ -163,10 +163,10 @@ namespace adjsw.F12026
          if (m_viewType == ViewType.Count)
             m_viewType = ViewType.Board;
 
-         UpdateLayout();
+         _UpdateLayout();
       }
 
-      private void UpdateLayout()
+      private void _UpdateLayout()
       {
          // we try to make it look about right on 4:3 1280x1024, 1080 & 1440 both in horizontal and vertical mode.
 
@@ -472,6 +472,8 @@ namespace adjsw.F12026
 
          view.txt_temp_engine.Text = "" + driver.WearDetail.TempEngine + "°C";
          view.txt_temp_engine.Background = EngineToColor(driver.WearDetail.TempEngine);
+
+         view.SetErs(driver.WearDetail.ErsMode, driver.WearDetail.ErsAvailPercent, driver.WearDetail.OvertakeAvailable);
       }
 
       private void UpdateTrackmap(bool motionUpdate = false)
@@ -692,7 +694,7 @@ namespace adjsw.F12026
          m_board.SessionSource = m_mapper.SessionInfo;
          UpdateDriverGrid();
          UpdateCarStatus();
-         UpdateLayout();
+         _UpdateLayout();
 
          if (m_mapper.SessionInfo.Session == SessionType.Race ||
             m_mapper.SessionInfo.Session == SessionType.Race2 ||

@@ -70,6 +70,12 @@ namespace adjsw::F12026
          void set(int value) { m_secondaryDriverIndex = value; }
       }
 
+      // a history dirty flag, exclusive for the Relay System
+      // it marks a history dirty to communicate it changed. The relay uplink will based on the dirty flag
+      // prioritize packets with dirty flag over the regular schedule. This is to accomplish a rapid feedback
+      // when a car changed its tyres.
+      property array<volatile bool>^ DriverHistoryDirty { array<volatile bool>^ get() { return m_arrDriverHistoryDirty; } }
+
    private:
       void m_Clear();
       
@@ -84,6 +90,7 @@ namespace adjsw::F12026
       void m_UpdateParticipants();
       void m_UpdateDamage(int i);
       void m_UpdateTelemetry(int i);
+      void m_UpdateTelemetry2(int i);
       void m_UpdateDriverName(int i);
       void m_UpdateClassification();
       void m_UpdateHistoryDataRace();
@@ -98,6 +105,7 @@ namespace adjsw::F12026
       F12026_PacketExtractor* m_parser;
       F12026_PacketExtractor* m_parserSecondary;
       array<Byte>^ arr;
+      array<volatile bool>^ m_arrDriverHistoryDirty;
       IntPtr pUnmanaged;
       IntPtr m_pUnmanagedSecondary;
       int len;

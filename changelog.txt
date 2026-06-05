@@ -1,3 +1,9 @@
+V0.99.1
+- Add Ers / Overtake indicators (UI + relay support)
+- Improve remote telemetry tyre update
+- fix missing car 10 picture
+- fix compiler warnings
+
 V0.99.0
 - Switch to F1-25 Season pack (26) telemetry
 - Add new track Madrid to trackmap

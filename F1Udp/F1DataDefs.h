@@ -846,6 +846,7 @@ enum class PacketType : uint8_t
    PacketTimeTrialData,
    PacketLapPositions,
    PacketCarTelemetry2Data,
+   numPacketTypes,
 
    UnknownOrIllformed = 0xff
 };

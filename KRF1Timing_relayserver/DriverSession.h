@@ -36,10 +36,6 @@
 
 static constexpr double kDriverTimeoutSec = 30.0;
 
-// ---- Number of F1 packet types (PacketType enum has 16 valid entries) ----
-
-static constexpr size_t kNumF1PacketTypes = 16;
-
 // ---- Engineer connection (lives inside DriverSession) ----
 
 struct EngineerConn
@@ -152,7 +148,7 @@ private:
 
    // ---- Packet buffers (session thread only) ----
    // Raw packet bytes, stored for history burst to late-joining engineers.
-   std::vector<uint8_t>              m_lastPacket[kNumF1PacketTypes];
+   std::vector<uint8_t>              m_lastPacket[static_cast<uint8_t>(PacketType::numPacketTypes)];
    std::vector<std::vector<uint8_t>> m_eventHistory;
    std::vector<uint8_t>              m_sessionHistory[cs_maxNumCarsInUDPData];
 };

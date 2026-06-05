@@ -53,5 +53,8 @@
     <ClCompile Include="RelayProtocolClr.cpp">
       <Filter>Quelldateien</Filter>
     </ClCompile>
+    <ClCompile Include="RelayPacketFilter.cpp">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
