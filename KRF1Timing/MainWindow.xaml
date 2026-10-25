@@ -98,19 +98,27 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <Grid Height="Auto">
-        <Border Grid.Column="1" Grid.ColumnSpan="2" x:Name="m_infoBox" HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" BorderBrush="Black" BorderThickness="3" Panel.ZIndex="1" MouseDown="m_infoBox_MouseDown">
+    <Grid x:Name="m_clientRoot" SizeChanged="ClientRoot_SizeChanged">
+        <Border x:Name="m_infoBox" HorizontalAlignment="Center" VerticalAlignment="Center" Background="White" BorderBrush="Black" BorderThickness="3" Panel.ZIndex="1" MouseDown="m_infoBox_MouseDown">
             <StackPanel>
                 <Image x:Name="m_imgInfo" Margin="10" Height="150" Source="/img/krf1.png"></Image>
                 <TextBlock Margin="5" x:Name="m_infoTxt"  Foreground="Black" FontSize="16" FontWeight="Bold">LICENSE</TextBlock>
             </StackPanel>
         </Border>
-        <Canvas x:Name="m_rootCanvas">
-            <local:PersonalLeaderboard x:Name="m_board" Visibility="Collapsed" HorizontalAlignment="Left" HorizontalContentAlignment="Left"></local:PersonalLeaderboard>
-            <local:CarStatusView Margin="20, 0, 0, 0" x:Name="m_carStatus" Width="450"></local:CarStatusView>
-            <local:CarStatusView Margin="20, 0, 0, 0" x:Name="m_carStatus2" Width="450" Visibility="Collapsed"></local:CarStatusView>
-            <local:Trackmap x:Name="m_trackmap"></local:Trackmap>
-        </Canvas>
+        <!-- Canonical design canvas (1920x1080, 1280x1024 or the portrait variants), uniformly
+             scaled into the client area: never cropped, letterboxed instead. -->
+        <Viewbox Stretch="Uniform">
+            <Grid>
+                <Canvas x:Name="m_rootCanvas" Width="1920" Height="1080" ClipToBounds="True">
+                    <local:PersonalLeaderboard x:Name="m_board" Visibility="Collapsed" HorizontalAlignment="Left" HorizontalContentAlignment="Left"></local:PersonalLeaderboard>
+                    <local:CarStatusView x:Name="m_carStatus"></local:CarStatusView>
+                    <local:CarStatusView x:Name="m_carStatus2" Visibility="Collapsed"></local:CarStatusView>
+                    <local:Trackmap x:Name="m_trackmap"></local:Trackmap>
+                </Canvas>
+                <!-- Visual help: outline of the design canvas, toggled with [B] -->
+                <Border x:Name="m_designFrame" BorderBrush="#FF3A5A8A" BorderThickness="2" IsHitTestVisible="False" Visibility="Collapsed"/>
+            </Grid>
+        </Viewbox>
 
         <!-- Status overlay (bottom-right) — rows are added/removed from code-behind -->
         <Border x:Name="m_statusOverlay"
@@ -175,6 +183,12 @@
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Right" Text="[F11]" Foreground="#FF666666" Margin="4,0,0,0"/>
                         <TextBlock Text="Fullscreen"/>
+                    </DockPanel>
+                </Button>
+                <Button Style="{StaticResource SidebarButton}" Click="OnSidebar_ToggleFrame">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="[B]" Foreground="#FF666666" Margin="4,0,0,0"/>
+                        <TextBlock Text="Layout Frame"/>
                     </DockPanel>
                 </Button>
 

@@ -1,16 +1,45 @@
+# Builds KRF1 Timing and uploads the distribution zip as the artifact
+# "krf1-timing-dist".
+#
+# Runs on its own (Actions tab, "Run workflow") or is called by release.yml,
+# which passes the exact commit to build in "ref". Without "ref" the selected
+# branch is built.
+#
+# Only one build runs at a time: standalone builds and the build inside a
+# release share the "krf1-build" queue and wait for each other.
 name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit, branch or tag to build (empty = selected branch)
+        type: string
+        default: ""
   workflow_call:
+    inputs:
+      ref:
+        description: Commit, branch or tag to build (empty = calling ref)
+        type: string
+        default: ""
+
+permissions:
+  contents: read
 
 jobs:
   build:
     runs-on: windows-latest
+    # Job level, not workflow level: release.yml holds its own group while it
+    # calls this workflow, and sharing one group would deadlock.
+    concurrency:
+      group: krf1-build
+      cancel-in-progress: false
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
 
       - name: Setup NuGet
         uses: nuget/setup-nuget@v2
@@ -23,7 +52,9 @@ jobs:
         shell: pwsh
 
       - name: Upload distribution zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: krf1-timing-dist
           path: _dist/*.zip
+          if-no-files-found: error
+          retention-days: 7

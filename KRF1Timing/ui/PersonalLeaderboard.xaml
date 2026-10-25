@@ -208,28 +208,39 @@
                   </MultiBinding>
                </DataGridTextColumn.Binding>
             </DataGridTextColumn>
-            <DataGridTextColumn Header="Pit Penalty" CanUserSort="False" CanUserReorder="False" IsReadOnly="True" Width="*">
-               <DataGridTextColumn.ElementStyle>
-                  <Style TargetType="{x:Type TextBlock}">
-                     <Setter Property="Foreground">
-                        <Setter.Value>
-                           <SolidColorBrush Color="Red"></SolidColorBrush>
-                        </Setter.Value>
-                     </Setter>
-                     <Setter Property="Background">
-                        <Setter.Value>
-                           <SolidColorBrush Color="Transparent"></SolidColorBrush>
-                        </Setter.Value>
-                     </Setter>
-                  </Style>
-               </DataGridTextColumn.ElementStyle>
-               <DataGridTextColumn.Binding >
-                  <MultiBinding Converter="{StaticResource PitPenaltyConverter}">
-                     <Binding Path="PitPenalties" />
-                     <Binding Path="" />
-                  </MultiBinding>
-               </DataGridTextColumn.Binding>
-            </DataGridTextColumn>
+            <DataGridTemplateColumn Header="Pit Penalty" CanUserSort="False" CanUserReorder="False" IsReadOnly="True" Width="*" MinWidth="130">
+               <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                     <ItemsControl Background="Transparent">
+                        <ItemsControl.ItemsSource>
+                           <MultiBinding Converter="{StaticResource PitPenaltyConverter}">
+                              <Binding Path="PitPenalties" />
+                              <Binding Path="" />
+                           </MultiBinding>
+                        </ItemsControl.ItemsSource>
+                        <ItemsControl.ItemsPanel>
+                           <ItemsPanelTemplate>
+                              <StackPanel Orientation="Horizontal" />
+                           </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                           <DataTemplate>
+                              <StackPanel Orientation="Horizontal" Margin="0,0,14,0">
+                                 <TextBlock x:Name="m_label" Text="{Binding Label}" Foreground="Red" />
+                                 <TextBlock x:Name="m_check" Text="&#x2713;" Margin="3,0,0,0" Foreground="Red" Visibility="Collapsed" />
+                              </StackPanel>
+                              <DataTemplate.Triggers>
+                                 <DataTrigger Binding="{Binding Served}" Value="True">
+                                    <Setter TargetName="m_label" Property="TextDecorations" Value="Strikethrough" />
+                                    <Setter TargetName="m_check" Property="Visibility" Value="Visible" />
+                                 </DataTrigger>
+                              </DataTemplate.Triggers>
+                           </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                     </ItemsControl>
+                  </DataTemplate>
+               </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
          </DataGrid.Columns>
       </DataGrid>
    </StackPanel>

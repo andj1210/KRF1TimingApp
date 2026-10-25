@@ -126,6 +126,7 @@ namespace adjsw.F12026
          Closing += MainWindow_Closing;
 
          m_board.DataGridRightClick += OnGridClick;
+         m_board.NaturalSizeChanged += Board_NaturalSizeChanged;
          m_driverCtxMenu.NameChosen += OnDriverNameChosen;
 
          m_recorder.StatusChanged  += s => UpdateRecordingStatus();
@@ -138,6 +139,7 @@ namespace adjsw.F12026
 
       private void MainWindow_Loaded(object sender, RoutedEventArgs e)
       {
+         m_designSize = _SelectDesignSize(m_clientRoot.ActualWidth, m_clientRoot.ActualHeight, m_designSize);
          _UpdateLayout();
       }
 
@@ -166,112 +168,75 @@ namespace adjsw.F12026
          _UpdateLayout();
       }
 
+      // -- canonical layout ---------------------------------------------------
+      //
+      // Every view is laid out once on a fixed design canvas. The Viewbox in MainWindow.xaml scales
+      // that canvas uniformly into the client area, so nothing is ever cropped (letterboxed instead).
+      // The canvas is chosen by which design size fills the most of the current client area.
+
+      private static Size _SelectDesignSize(double clientW, double clientH, Size current)
+      {
+         if ((clientW <= 0) || (clientH <= 0))
+            return current;
+
+         Size best     = current;
+         double bestFill = -1.0;
+         foreach (Size design in s_designSizes)
+         {
+            double scale = Math.Min(clientW / design.Width, clientH / design.Height);
+            double fill  = (design.Width * scale) * (design.Height * scale) / (clientW * clientH);
+            if (fill > bestFill + 1e-6) // first entry wins on ties
+            {
+               best     = design;
+               bestFill = fill;
+            }
+         }
+         return best;
+      }
+
       private void _UpdateLayout()
       {
-         // we try to make it look about right on 4:3 1280x1024, 1080 & 1440 both in horizontal and vertical mode.
-
-         bool verticalLayout = ActualWidth <= ActualHeight;
+         double w = m_designSize.Width;
+         double h = m_designSize.Height;
+         bool portrait = h > w;
          bool dualMode = m_twoDriverMode;
 
-         Canvas.SetTop(m_rootCanvas, 0);
-         Canvas.SetLeft(m_rootCanvas, 0);
-         m_rootCanvas.Height = ActualHeight;
-         m_rootCanvas.Width = ActualWidth;
+         m_layoutDualMode    = dualMode;
+         m_rootCanvas.Width  = w;
+         m_rootCanvas.Height = h;
 
-         // Clear any leftover ScaleTransform from the trackmap
-         m_trackmap.RenderTransform = Transform.Identity;
-
-         // Default: hide second car; branches below re-show it in dual mode
+         // Default: hide second car; _PlaceCars re-shows it in dual mode
          m_carStatus2.Visibility = Visibility.Collapsed;
 
          switch (m_viewType)
          {
             case ViewType.Board:
-               m_board.Visibility = Visibility.Visible;
+               m_board.Visibility     = Visibility.Visible;
                m_carStatus.Visibility = Visibility.Collapsed;
-               m_trackmap.Visibility = Visibility.Collapsed;
+               m_trackmap.Visibility  = Visibility.Collapsed;
 
-               m_board.MaxHeight = ActualHeight;
-               m_board.MaxWidth = ActualWidth;
-
+               _PlaceBoard(new Rect(0, 0, w, h));
                break;
 
             case ViewType.BoardAndCarMap:
-               m_board.Visibility    = Visibility.Visible;
+               m_board.Visibility     = Visibility.Visible;
                m_carStatus.Visibility = Visibility.Visible;
-               m_trackmap.Visibility = Visibility.Visible;
+               m_trackmap.Visibility  = Visibility.Visible;
 
-               if (verticalLayout)
+               if (portrait)
                {
-                  double y1  = ActualHeight / 2.0;
-                  double tmH = ActualHeight - y1;
-
-                  m_board.MaxHeight = y1;
-                  m_board.MaxWidth  = ActualWidth;
-
-                  // Trackmap: left half of bottom area
-                  m_trackmap.Width  = ActualWidth / 2;
-                  m_trackmap.Height = tmH;
-                  Canvas.SetTop(m_trackmap,  y1);
-                  Canvas.SetLeft(m_trackmap, 0);
-
-                  if (dualMode)
-                  {
-                     double scale    = Math.Min(Math.Min(ActualWidth / 2.05 / (2 * 365.0), tmH / 500.0), 1.0);
-                     double car1Left = ActualWidth / 2;
-                     double car1Top  = y1 + 30;
-                     Canvas.SetTop(m_carStatus,   car1Top);
-                     Canvas.SetLeft(m_carStatus,  car1Left);
-                     Canvas.SetTop(m_carStatus2,  car1Top);
-                     Canvas.SetLeft(m_carStatus2, car1Left + 362 * scale);
-                     m_carStatus2.Visibility = Visibility.Visible;
-                     UpdateScaleCarMap(scale);
-                  }
-                  else
-                  {
-                     Canvas.SetTop(m_carStatus,  y1 + 60);
-                     Canvas.SetLeft(m_carStatus, ActualWidth / 2);
-                  }
+                  // board on top, trackmap + cars side by side below
+                  _PlaceBoard   (new Rect(0,     0,     w,     h / 2));
+                  _PlaceTrackmap(new Rect(0,     h / 2, w / 2, h / 2));
+                  _PlaceCars    (new Rect(w / 2, h / 2, w / 2, h / 2), dualMode, 1.0);
                }
                else
                {
-                  double x1 = dualMode ? ActualWidth * 0.75 : ActualWidth * 0.75;
-
-                  m_board.MaxHeight = ActualHeight;
-                  m_board.MaxWidth  = x1;
-
-                  // Trackmap: top half of right panel
-                  double tmW = ActualWidth - x1;
-                  m_trackmap.Width  = tmW;
-                  m_trackmap.Height = ActualHeight / 2;
-                  Canvas.SetTop(m_trackmap,  0);
-                  Canvas.SetLeft(m_trackmap, x1);
-
-                  if (dualMode)
-                  {
-                     double scale    = Math.Min(
-                        Math.Min(tmW / (2.05 * 365.0), ActualHeight / 2.0 / 500.0), 
-                        1.0);
-
-                     double leftBleed  = 100.0 * (1.0 - scale) * (1.0 - scale);
-                     double visualSpan = (362.0 + 345.0) * scale;   // car2 offset + rightmost content pixel
-                     double car1Left   = x1 - 20.0 + (tmW - visualSpan) / 2.0 + leftBleed - 12.0;
-                     double car1Top   = ActualHeight / 2;
-                     Canvas.SetTop(m_carStatus,   car1Top);
-                     Canvas.SetLeft(m_carStatus,  car1Left);
-                     Canvas.SetTop(m_carStatus2,  car1Top);
-                     Canvas.SetLeft(m_carStatus2, car1Left + 362 * scale);
-                     m_carStatus2.Visibility = Visibility.Visible;
-                     UpdateScaleCarMap(scale);
-                  }
-                  else
-                  {
-                     Canvas.SetTop(m_carStatus,  ActualHeight / 2);
-                     Canvas.SetLeft(m_carStatus, x1 + 10);
-
-                     // for 1280×1024 4:3 screens
-                     UpdateScaleCarMap(ActualWidth < 1350 ? 0.75 : 1.0);
-                  }
+                  // board left, trackmap above cars on the right
+                  double x1 = w * 0.75;
+                  _PlaceBoard   (new Rect(0,  0,     x1,     h));
+                  _PlaceTrackmap(new Rect(x1, 0,     w - x1, h / 2));
+                  _PlaceCars    (new Rect(x1, h / 2, w - x1, h / 2), dualMode, 1.0);
                }
                break;
 
@@ -280,62 +245,15 @@ namespace adjsw.F12026
                m_carStatus.Visibility = Visibility.Visible;
                m_trackmap.Visibility  = Visibility.Visible;
 
-               if (verticalLayout)
+               if (portrait)
                {
-                  double tmH = ActualHeight / 2;
-                  m_trackmap.Width  = ActualWidth;
-                  m_trackmap.Height = tmH;
-                  Canvas.SetTop(m_trackmap,  0);
-                  Canvas.SetLeft(m_trackmap, 0);
-
-                  if (dualMode)
-                  {
-                     double scale    = Math.Min(Math.Min(ActualWidth / (2 * 365.0), tmH / 500.0), 1.25);
-                     double totalW   = 2 * 365 * scale;
-                     double car1Left = (ActualWidth - totalW) / 2;
-                     double car1Top  = tmH + 30;
-                     Canvas.SetTop(m_carStatus,   car1Top);
-                     Canvas.SetLeft(m_carStatus,  car1Left);
-                     Canvas.SetTop(m_carStatus2,  car1Top);
-                     Canvas.SetLeft(m_carStatus2, car1Left + 365 * scale);
-                     m_carStatus2.Visibility = Visibility.Visible;
-                     UpdateScaleCarMap(scale);
-                  }
-                  else
-                  {
-                     Canvas.SetTop(m_carStatus,  tmH + 30);
-                     Canvas.SetLeft(m_carStatus, (ActualWidth - 365) / 2);
-                     UpdateScaleCarMap(1.25);
-                  }
+                  _PlaceTrackmap(new Rect(0, 0,     w, h / 2));
+                  _PlaceCars    (new Rect(0, h / 2, w, h / 2), dualMode, 2.0);
                }
                else
                {
-                  double tmW = ActualWidth / 2;
-                  m_trackmap.Width  = tmW;
-                  m_trackmap.Height = ActualHeight;
-                  Canvas.SetTop(m_trackmap,  0);
-                  Canvas.SetLeft(m_trackmap, 0);
-
-                  if (dualMode)
-                  {
-                     double scale     = Math.Min(Math.Min(tmW / (2.05 * 365.0), ActualHeight / 500.0), 1.5);
-                     double leftBleed  = 100.0 * (1.0 - scale) * (1.0 - scale);
-                     double visualSpan = (365.0 + 345.0) * scale;   // car2 offset + rightmost content pixel
-                     double car1Left   = ActualWidth / 2.0 - 20.0 + (tmW - visualSpan) / 2.0 + leftBleed - 12.0;
-                     double car1Top   = (ActualHeight - 500 * scale) / 2;
-                     Canvas.SetTop(m_carStatus,   car1Top);
-                     Canvas.SetLeft(m_carStatus,  car1Left);
-                     Canvas.SetTop(m_carStatus2,  car1Top);
-                     Canvas.SetLeft(m_carStatus2, car1Left + 365 * scale);
-                     m_carStatus2.Visibility = Visibility.Visible;
-                     UpdateScaleCarMap(scale);
-                  }
-                  else
-                  {
-                     Canvas.SetTop(m_carStatus,  150);
-                     Canvas.SetLeft(m_carStatus, ActualWidth / 2);
-                     UpdateScaleCarMap(ActualWidth > 1920 ? 2.0 : 1.5);
-                  }
+                  _PlaceTrackmap(new Rect(0,     0, w / 2, h));
+                  _PlaceCars    (new Rect(w / 2, 0, w / 2, h), dualMode, 2.0);
                }
                break;
 
@@ -344,16 +262,9 @@ namespace adjsw.F12026
                m_carStatus.Visibility = Visibility.Collapsed;
                m_trackmap.Visibility  = Visibility.Visible;
 
-               // Reset the car-map transform so it does not interfere
-               UpdateScaleCarMap(1.0);
-
-               // Give the trackmap the full window area (minus small border)
                {
                   const double border = 20;
-                  m_trackmap.Width  = Math.Max(100, ActualWidth  - border * 2);
-                  m_trackmap.Height = Math.Max(100, ActualHeight - border * 2);
-                  Canvas.SetLeft(m_trackmap, border);
-                  Canvas.SetTop (m_trackmap, border);
+                  _PlaceTrackmap(new Rect(border, border, w - border * 2, h - border * 2));
                }
                break;
 
@@ -362,13 +273,52 @@ namespace adjsw.F12026
          }
       }
 
-      private void UpdateScaleCarMap(double scale)
+      // The board is shrunk whenever its natural size (long multiplayer names, sector columns,
+      // driver count) exceeds the region, and laid out at region / scale so the DataGrid never
+      // has to squeeze columns. Re-run from Board_NaturalSizeChanged.
+      private void _PlaceBoard(Rect region)
       {
-         m_ApplyCarStatusScale(m_carStatus, scale);
-         m_ApplyCarStatusScale(m_carStatus2, scale);
+         m_boardRegion = region;
+
+         Size natural = m_board.NaturalSize;
+         double scale = Math.Min(1.0, Math.Min(region.Width / natural.Width, region.Height / natural.Height));
+
+         m_board.RenderTransform = new ScaleTransform(scale, scale);
+         m_board.Width     = region.Width  / scale;
+         m_board.MaxHeight = region.Height / scale;
+         Canvas.SetLeft(m_board, region.Left);
+         Canvas.SetTop (m_board, region.Top);
       }
 
-      private void m_ApplyCarStatusScale(CarStatusView view, double scale)
+      private void _PlaceTrackmap(Rect region)
+      {
+         m_trackmap.Width  = Math.Max(100, region.Width);
+         m_trackmap.Height = Math.Max(100, region.Height);
+         Canvas.SetLeft(m_trackmap, region.Left);
+         Canvas.SetTop (m_trackmap, region.Top);
+      }
+
+      // Fits one (or two side-by-side) car views into region, centered, scale capped at maxScale.
+      private void _PlaceCars(Rect region, bool dualMode, double maxScale)
+      {
+         const double pad = 10;
+         int count    = dualMode ? 2 : 1;
+         double availW = Math.Max(1, region.Width  - pad * 2);
+         double availH = Math.Max(1, region.Height - pad * 2);
+         double scale  = Math.Min(maxScale, Math.Min(availW / (count * s_carBoxWidth), availH / s_carBoxHeight));
+
+         double left = region.Left + (region.Width  - count * s_carBoxWidth * scale) / 2;
+         double top  = region.Top  + (region.Height - s_carBoxHeight * scale) / 2;
+
+         _PlaceCar(m_carStatus, left, top, scale);
+         if (dualMode)
+         {
+            _PlaceCar(m_carStatus2, left + s_carBoxWidth * scale, top, scale);
+            m_carStatus2.Visibility = Visibility.Visible;
+         }
+      }
+
+      private static void _PlaceCar(CarStatusView view, double left, double top, double scale)
       {
          var transform = view.RenderTransform as ScaleTransform;
          if (transform == null)
@@ -379,7 +329,8 @@ namespace adjsw.F12026
 
          transform.ScaleX = scale;
          transform.ScaleY = scale;
-         transform.CenterX = -100 + 100 * scale;
+         Canvas.SetLeft(view, left);
+         Canvas.SetTop (view, top);
       }
 
       private void UpdateDriverGrid()
@@ -694,7 +645,8 @@ namespace adjsw.F12026
          m_board.SessionSource = m_mapper.SessionInfo;
          UpdateDriverGrid();
          UpdateCarStatus();
-         _UpdateLayout();
+         if (m_twoDriverMode != m_layoutDualMode)
+            _UpdateLayout();
 
          if (m_mapper.SessionInfo.Session == SessionType.Race ||
             m_mapper.SessionInfo.Session == SessionType.Race2 ||
@@ -763,6 +715,7 @@ namespace adjsw.F12026
          if (e.Key == Key.L)      ActionToggleLeader();
          if (e.Key == Key.D)      ActionToggleStatus();
          if (e.Key == Key.Space)  ToggleView();
+         if (e.Key == Key.B)      ActionToggleFrame();
 
 #if DEBUG || RELEASEDEV
          if (e.Key == Key.R) ActionToggleRecording();
@@ -779,15 +732,51 @@ namespace adjsw.F12026
 
       private void ActionToggleFullscreen()
       {
+         // Go through Normal first: changing the style of an already maximized window keeps the
+         // taskbar visible. NoResize avoids the resize border overhanging the screen edges.
          if (WindowStyle == WindowStyle.None)
          {
-            WindowStyle = WindowStyle.SingleBorderWindow;
             WindowState = WindowState.Normal;
+            WindowStyle = WindowStyle.SingleBorderWindow;
+            ResizeMode  = ResizeMode.CanResize;
+            WindowState = m_preFullscreenState;
          }
          else
          {
+            m_preFullscreenState = WindowState;
+            WindowState = WindowState.Normal;
             WindowStyle = WindowStyle.None;
+            ResizeMode  = ResizeMode.NoResize;
             WindowState = WindowState.Maximized;
+         }
+      }
+
+      private void ActionToggleFrame()
+      {
+         bool show = m_designFrame.Visibility != Visibility.Visible;
+         m_designFrame.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+         if (show)
+         {
+            double scale = Math.Min(m_clientRoot.ActualWidth / m_designSize.Width, m_clientRoot.ActualHeight / m_designSize.Height);
+            ShowInfoBox("Layout " + m_designSize.Width + "x" + m_designSize.Height
+               + "\r\nClient " + Math.Round(m_clientRoot.ActualWidth) + "x" + Math.Round(m_clientRoot.ActualHeight)
+               + "\r\nScale " + scale.ToString("0.000"), TimeSpan.FromSeconds(3));
+         }
+      }
+
+      private void Board_NaturalSizeChanged()
+      {
+         if (!m_boardRegion.IsEmpty)
+            _PlaceBoard(m_boardRegion);
+      }
+
+      private void ClientRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+      {
+         Size design = _SelectDesignSize(m_clientRoot.ActualWidth, m_clientRoot.ActualHeight, m_designSize);
+         if (design != m_designSize)
+         {
+            m_designSize = design;
+            _UpdateLayout();
          }
       }
 
@@ -796,6 +785,11 @@ namespace adjsw.F12026
       private void ActionToggleRecording()
       {
          m_recorder.Toggle();
+
+         // session already running: open the file now, otherwise it waits for the next session change
+         if (m_recorder.IsRecording && (m_lastSessionUID != 0))
+            m_recorder.NotifySessionChanged(m_lastSessionUID);
+
          if (m_recorder.IsRecording)
             ShowInfoBox("UDP Recording started.\r\nFiles -> recordings/<sessionId>.pkl", TimeSpan.FromSeconds(3));
          else
@@ -1085,6 +1079,7 @@ namespace adjsw.F12026
       private void OnSidebar_ToggleStatus(object sender, RoutedEventArgs e)         => ActionToggleStatus();
       private void OnSidebar_SaveReport(object sender, RoutedEventArgs e)           => ActionSaveReport();
       private void OnSidebar_ToggleFullscreen(object sender, RoutedEventArgs e)     => ActionToggleFullscreen();
+      private void OnSidebar_ToggleFrame(object sender, RoutedEventArgs e)          => ActionToggleFrame();
       private void OnSidebar_ToggleRecording(object sender, RoutedEventArgs e)      => ActionToggleRecording();
       private void OnSidebar_ToggleTrackLearning(object sender, RoutedEventArgs e)  => ActionToggleTrackLearning();
       private void OnSidebar_ToggleRelayUplink(object sender, RoutedEventArgs e)       => ActionToggleRelayUplink();
@@ -1206,6 +1201,21 @@ namespace adjsw.F12026
       private bool m_autosave = true;
       private DriverNameContextMenu m_driverCtxMenu = new DriverNameContextMenu();
       private ViewType m_viewType = ViewType.BoardAndCarMap; // on startup will toggle to next view, which will be board only
+
+      // Canonical layout
+      private static readonly Size[] s_designSizes =
+      {
+         new Size(1920, 1080),   // 16:9 landscape (preferred on ties)
+         new Size(1280, 1024),   // 5:4 landscape
+         new Size(1080, 1920),   // 16:9 portrait
+         new Size(1024, 1280),   // 5:4 portrait
+      };
+      private static readonly double s_carBoxWidth       = 360;               // CarStatusView content incl. small gap
+      private static readonly double s_carBoxHeight      = 500;
+      private Size        m_designSize      = s_designSizes[0];
+      private Rect        m_boardRegion     = Rect.Empty;
+      private bool        m_layoutDualMode  = false;
+      private WindowState m_preFullscreenState = WindowState.Normal;
 
 
       private static string s_splashText =

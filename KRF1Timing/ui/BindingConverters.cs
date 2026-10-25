@@ -527,55 +527,44 @@ namespace adjsw.F12026
       }
    }
 
+   /// <summary>One entry of the pit penalty column, served ones are drawn struck through with a check mark.</summary>
+   public class PitPenaltyItem
+   {
+      public string Label { get; set; }
+      public bool Served { get; set; }
+   }
+
+   /// <summary>
+   /// Converts the pit penalties of a driver to a new list of PitPenaltyItem.
+   /// A new list per call is required, the ItemsControl would not refresh on the same list instance.
+   /// </summary>
    public class PitPenaltyConverter : IMultiValueConverter
    {
       public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
       {
+         var items = new List<PitPenaltyItem>();
          var dat = values?[1] as DriverData;
 
          if (null == dat)
-            return "";
-
-         string penaltyStr = "";
+            return items;
 
          foreach (var penalty in dat.PitPenalties)
          {
+            string label = null;
             switch (penalty.PenaltyType)
             {
-               case PenaltyTypes.DriveThrough:
-                  if (!string.IsNullOrEmpty(penaltyStr))
-                     penaltyStr += ";";
-
-                  penaltyStr = penaltyStr + (penalty.PenaltyServed ? "(" : "") + "DT" + (penalty.PenaltyServed ? ")" : "");
-                  break;
-               case PenaltyTypes.StopGo:
-                  if (!string.IsNullOrEmpty(penaltyStr))
-                     penaltyStr += ";";
-
-                  penaltyStr = penaltyStr + (penalty.PenaltyServed ? "(" : "") + "SG" + (penalty.PenaltyServed ? ")" : "");
-                  break;
-               case PenaltyTypes.GridPenalty:
-                  if (!string.IsNullOrEmpty(penaltyStr))
-                     penaltyStr += ";";
-
-                  penaltyStr = penaltyStr + "GRD";
-                  break;
-               case PenaltyTypes.Disqualified:
-                  if (!string.IsNullOrEmpty(penaltyStr))
-                     penaltyStr += ";";
-
-                  penaltyStr = penaltyStr + "DSQ";
-                  break;
-               case PenaltyTypes.Retired:
-                  if (!string.IsNullOrEmpty(penaltyStr))
-                     penaltyStr += ";";
-
-                  penaltyStr = penaltyStr + "DNF";
-                  break;
+               case PenaltyTypes.DriveThrough:  label = "DT";  break;
+               case PenaltyTypes.StopGo:        label = "SG";  break;
+               case PenaltyTypes.GridPenalty:   label = "GRD"; break;
+               case PenaltyTypes.Disqualified:  label = "DSQ"; break;
+               case PenaltyTypes.Retired:       label = "DNF"; break;
             }
+
+            if (label != null)
+               items.Add(new PitPenaltyItem { Label = label, Served = penalty.PenaltyServed });
          }
 
-         return penaltyStr;
+         return items;
       }
 
       public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

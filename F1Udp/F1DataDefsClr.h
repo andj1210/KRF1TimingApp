@@ -341,7 +341,11 @@ namespace adjsw::F12026
       property int TimeGained; // Time gained, or time spent doing action in seconds
       property int LapNum;
       property int PlacesGained;
-      property bool PenaltyServed; // not present in actual telemetry, deduced from race telemetry
+      property double ServedTimeCode { double get() { return m_servedTimeCode; } void set(double val) { m_servedTimeCode = val; } }; // session time the penalty was served, < 0 = not served
+      property bool PenaltyServed { bool get() { return m_servedTimeCode >= 0.0; } }; // not present in actual telemetry, deduced from race telemetry
+
+   private:
+      double m_servedTimeCode{ -1.0 };
    };
 
 

@@ -28,8 +28,12 @@ namespace adjsw.F12026
 
       private const string Owner = "andj1210";
       private const string Repo  = "KRF1TimingApp";
-      private const string ApiLatest =
-         "https://api.github.com/repos/" + Owner + "/" + Repo + "/releases/latest";
+      private const string ApiReleases =
+         "https://api.github.com/repos/" + Owner + "/" + Repo + "/releases?per_page=100";
+
+      // The minor version is bound to the game release (V1.26.x, V2.26.x -> game 26).
+      // Only releases for this game are offered, a later game version is installed separately.
+      private const int GameMinor = 26;
 
       // Subfolder (under the install dir) the release is extracted into.
       private const string UpdateDirName     = "_update";
@@ -57,40 +61,40 @@ namespace adjsw.F12026
       /// <summary>Local (running) version, taken from the build-stamped VERSION file.</summary>
       public Version LocalVersion => _ParseVersion(BuildVersion.Value);
 
-      /// <summary>Queries GitHub for the latest release. Network call -- user-triggered only.</summary>
+      /// <summary>
+      /// Queries GitHub for the highest release of this game version (minor == GameMinor),
+      /// or null if there is none. Network call -- user-triggered only.
+      /// </summary>
       public async Task<ReleaseInfo> CheckAsync()
       {
-         string json = await s_http.GetStringAsync(ApiLatest);
-         JObject rel = JObject.Parse(json);
+         string json = await s_http.GetStringAsync(ApiReleases);
+         JArray releases = JArray.Parse(json);
 
-         string zipUrl = null;
-         JToken assets = rel["assets"];
-         if (assets != null)
+         JObject best = null;
+         Version bestVersion = null;
+         foreach (JObject rel in releases)
          {
-            foreach (JToken asset in assets)
+            // same as /releases/latest: ignore drafts and pre-releases
+            if ((bool?)rel["draft"] == true || (bool?)rel["prerelease"] == true)
+               continue;
+
+            Version v = _ParseVersion((string)rel["tag_name"]);
+            if (v == null || v.Minor != GameMinor)
+               continue;
+
+            if (bestVersion == null || v > bestVersion)
             {
-               string name = (string)asset["name"];
-               if (!string.IsNullOrEmpty(name) && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-               {
-                  zipUrl = (string)asset["browser_download_url"];
-                  break;
-               }
+               best = rel;
+               bestVersion = v;
             }
          }
 
-         string tag = (string)rel["tag_name"];
-         return new ReleaseInfo
-         {
-            Tag     = tag,
-            Version = _ParseVersion(tag),
-            ZipUrl  = zipUrl,
-            HtmlUrl = (string)rel["html_url"]
-         };
+         return best == null ? null : _ToReleaseInfo(best);
       }
 
       public bool IsNewer(ReleaseInfo rel)
       {
-         return rel != null && rel.Version != null && rel.Version > LocalVersion;
+         return rel != null && rel.Version != null && rel.Version.Minor == GameMinor && rel.Version > LocalVersion;
       }
 
       /// <summary>
@@ -157,6 +161,33 @@ namespace adjsw.F12026
       }
 
       // -- helpers ------------------------------------------------------------
+
+      private static ReleaseInfo _ToReleaseInfo(JObject rel)
+      {
+         string zipUrl = null;
+         JToken assets = rel["assets"];
+         if (assets != null)
+         {
+            foreach (JToken asset in assets)
+            {
+               string name = (string)asset["name"];
+               if (!string.IsNullOrEmpty(name) && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+               {
+                  zipUrl = (string)asset["browser_download_url"];
+                  break;
+               }
+            }
+         }
+
+         string tag = (string)rel["tag_name"];
+         return new ReleaseInfo
+         {
+            Tag     = tag,
+            Version = _ParseVersion(tag),
+            ZipUrl  = zipUrl,
+            HtmlUrl = (string)rel["html_url"]
+         };
+      }
 
       private static HttpClient _CreateClient()
       {

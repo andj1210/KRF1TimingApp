@@ -55,8 +55,44 @@ namespace adjsw.F12026
 
          // trigger correct cell size
          Quali = true;
-         Quali = false; 
+         Quali = false;
+
+         m_grid.LayoutUpdated += Grid_LayoutUpdated;
       }
+
+      /// <summary>
+      /// Size the board needs without squeezing any column: auto columns at their content width
+      /// (e.g. long multiplayer names), star columns at MinWidth, all rows.
+      /// </summary>
+      public Size NaturalSize
+      {
+         get
+         {
+            double w = 4; // small slack for grid borders / rounding
+            foreach (var col in m_grid.Columns)
+            {
+               if (col.Visibility != Visibility.Visible)
+                  continue;
+
+               double colW = col.MinWidth;
+               if (!col.Width.IsStar)
+               {
+                  if (col.Width.IsAbsolute)
+                     colW = Math.Max(colW, col.Width.Value);
+                  if (!double.IsNaN(col.Width.DesiredValue))
+                     colW = Math.Max(colW, col.Width.DesiredValue);
+               }
+               w += colW;
+            }
+
+            double titleH = m_textpanel.ActualHeight > 1 ? m_textpanel.ActualHeight : 44;
+            double h = titleH + m_grid.ColumnHeaderHeight + m_grid.Items.Count * m_grid.RowHeight + 4;
+            return new Size(w, h);
+         }
+      }
+
+      /// <summary>Fires when NaturalSize changed, e.g. a longer name appeared or columns were toggled.</summary>
+      public event Action NaturalSizeChanged;
 
       public System.Collections.IEnumerable ItemsSource
       {
@@ -127,18 +163,10 @@ namespace adjsw.F12026
 
                if (m_isQuali)
                {
-                  if (ActualWidth > 950)
-                  {
-                     m_fastestLapS1Column.Visibility = System.Windows.Visibility.Visible;
-                     m_fastestLapS2Column.Visibility = System.Windows.Visibility.Visible;
-                     m_fastestLapS3Column.Visibility = System.Windows.Visibility.Visible;
-                  }
-                  else
-                  {
-                     m_fastestLapS1Column.Visibility = System.Windows.Visibility.Collapsed;
-                     m_fastestLapS2Column.Visibility = System.Windows.Visibility.Collapsed;
-                     m_fastestLapS3Column.Visibility = System.Windows.Visibility.Collapsed;
-                  }
+                  // always shown: MainWindow scales the board down to fit instead of cropping
+                  m_fastestLapS1Column.Visibility = System.Windows.Visibility.Visible;
+                  m_fastestLapS2Column.Visibility = System.Windows.Visibility.Visible;
+                  m_fastestLapS3Column.Visibility = System.Windows.Visibility.Visible;
                   m_statusColumn.Width = 100;
                }
                else
@@ -195,6 +223,17 @@ namespace adjsw.F12026
          }
       }
 
+      private void Grid_LayoutUpdated(object sender, EventArgs e)
+      {
+         Size natural = NaturalSize;
+         if ((Math.Abs(natural.Width - m_lastNaturalSize.Width) < 0.5) && (Math.Abs(natural.Height - m_lastNaturalSize.Height) < 0.5))
+            return;
+
+         m_lastNaturalSize = natural;
+         NaturalSizeChanged?.Invoke();
+      }
+
+      private Size m_lastNaturalSize = new Size(0, 0);
       private DataGridColumn m_leaderDeltaColumn;
       private DataGridColumn m_statusColumn;
       private DataGridColumn m_fastestLapS1Column;

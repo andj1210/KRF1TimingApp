@@ -108,7 +108,13 @@ namespace adjsw::F12026
             if (m_IsQualifyingOrPractice())
                m_UpdateLapQuali();
             else
+            {
+               if (m_lapRebuildPending)
+                  m_RebuildLapsAfterFlashback();
+
                m_UpdateLapRace();
+            }
+            m_lapRebuildPending = false;
 
             m_UpdateDrivers();
             break;
@@ -489,6 +495,7 @@ namespace adjsw::F12026
       Classification = nullptr;
       m_parser->classification.m_numCars = 0;
       m_udpButtonPreviousMask = 0;
+      m_lapRebuildPending = false;
 
       for (int i = 0; i < Drivers->Length; ++i)
       {
@@ -1242,7 +1249,6 @@ namespace adjsw::F12026
             e->InfringementType = InfringementTypes(m_parser->event.m_eventDetails.Penalty.infringementType);
             e->TimeGained = m_parser->event.m_eventDetails.Penalty.time;
             e->PlacesGained = m_parser->event.m_eventDetails.Penalty.placesGained;
-            e->PenaltyServed = false;
             EventList->Events->Add(e);
 
             if (e->LapNum < Drivers[e->CarIndex]->Laps->Length)
@@ -1278,7 +1284,7 @@ namespace adjsw::F12026
                {
                   if ((penalty->PenaltyType == PenaltyTypes::DriveThrough) && (!penalty->PenaltyServed))
                   {
-                     penalty->PenaltyServed = true;
+                     penalty->ServedTimeCode = m_parser->sessionTime;
                      car->NPC("PitPenalties");
                      break;
                   }
@@ -1296,7 +1302,7 @@ namespace adjsw::F12026
                   {
                      if (!penalty->PenaltyServed)
                      {
-                        penalty->PenaltyServed = true;
+                        penalty->ServedTimeCode = m_parser->sessionTime;
                         car->NPC("PitPenalties");
                         break;
                      }
@@ -1313,6 +1319,10 @@ namespace adjsw::F12026
             // TODO add parameters
             EventList->Events->Add(e);
          }
+         else if (!strncmp((const char*)m_parser->event.m_eventStringCode, "FLBK", 4))
+         {
+            m_HandleFlashback(m_parser->event.m_eventDetails.Flashback.flashbackSessionTime);
+         }
          else if (!strncmp(reinterpret_cast<const char*>(&m_parser->event.m_eventStringCode[0]), "BUTN", 4))
          {
             uint32_t udpButtonMask = (m_parser->event.m_eventDetails.Buttons.buttonStatus >> 20);
@@ -1326,6 +1336,109 @@ namespace adjsw::F12026
             }
          }
       }
+   }
+
+   void F1UdpClrMapper::m_HandleFlashback(float flashbackTime)
+   {
+      // the game rewinds without telling which events were undone, so drop everything stamped at or after the
+      // flashback time. Events sent again by the game after the rewind will be added again.
+
+      // ---- event list ----
+      for (int i = EventList->Events->Count - 1; i >= 0; --i)
+      {
+         SessionEvent^ e = EventList->Events[i];
+         if ((e->TimeCode >= flashbackTime) && (e->Type != EventType::SessionStarted))
+            EventList->Events->RemoveAt(i);
+      }
+      EventList->NPC("Events");
+
+      for (int i = 0; i < Drivers->Length; ++i)
+      {
+         DriverData^ driver = Drivers[i];
+
+         // ---- pit penalties (drive through, stop go, dsq, retired) ----
+         bool penalties_changed = false;
+         for (int j = driver->PitPenalties->Count - 1; j >= 0; --j)
+         {
+            SessionEvent^ penalty = driver->PitPenalties[j];
+            if (penalty->TimeCode >= flashbackTime)
+            {
+               driver->PitPenalties->RemoveAt(j);
+               penalties_changed = true;
+            }
+            else if (penalty->ServedTimeCode >= flashbackTime)
+            {
+               penalty->ServedTimeCode = -1.0; // served after the flashback point -> unserved again
+               penalties_changed = true;
+            }
+         }
+
+         if (penalties_changed)
+            driver->NPC("PitPenalties");
+
+         // ---- incidents per lap (report) ----
+         for each (LapData^ lap in driver->Laps)
+         {
+            for (int j = lap->Incidents->Count - 1; j >= 0; --j)
+            {
+               if (lap->Incidents[j]->TimeCode >= flashbackTime)
+                  lap->Incidents->RemoveAt(j);
+            }
+         }
+
+         // session time jumped back, a marker from the future would block the tyre heuristic until the game time catches up
+         if (driver->LastTyreUpdateByHistory > flashbackTime)
+            driver->LastTyreUpdateByHistory = 0.f;
+      }
+
+      if (m_sessionConnectTime > flashbackTime)
+         m_sessionConnectTime = flashbackTime;
+
+      // the lap number of the rewound state is not known before the next lap data packet
+      m_lapRebuildPending = true;
+   }
+
+   void F1UdpClrMapper::m_RebuildLapsAfterFlashback()
+   {
+      // lap data reflects the rewound state: drop the current lap and all laps after it,
+      // m_UpdateLapRace() will fill the sectors of the current lap again
+      int session_lap = 1;
+      for (int i = 0; i < Drivers->Length; ++i)
+      {
+         DriverData^ driver = Drivers[i];
+         int lap_nr = m_parser->lap.m_lapData[i].m_currentLapNum;
+         if ((lap_nr < 1) || (lap_nr > driver->Laps->Length))
+            continue;
+
+         for (int j = lap_nr - 1; j < driver->Laps->Length; ++j)
+         {
+            LapData^ lap = driver->Laps[j];
+            lap->Sector1 = 0;
+            lap->Sector2 = 0;
+            lap->Lap = 0;
+            lap->LapsAccumulated = 0;
+            lap->Invalid = false;
+         }
+
+         // set the lap nr here, otherwise m_UpdateLapRace() takes the rewind as lap change and writes a laptime into the cleared lap
+         driver->LapNr = lap_nr;
+         driver->CurrentLap = driver->Laps[lap_nr - 1];
+
+         // fastest lap from the remaining laps, never alias a lap of the array (CopyFrom would overwrite it)
+         LapData^ fastest = gcnew LapData();
+         for (int j = 0; j < lap_nr - 1; ++j)
+         {
+            LapData^ lap = driver->Laps[j];
+            if ((lap->Lap > 0.0) && !lap->Invalid && ((fastest->Lap == 0.0) || (lap->Lap < fastest->Lap)))
+               fastest->CopyFrom(lap);
+         }
+         driver->FastestLap = fastest;
+
+         if (driver->Present && (lap_nr > session_lap))
+            session_lap = lap_nr;
+      }
+
+      SessionInfo->CurrentLap = std::min<int>(session_lap, SessionInfo->TotalLaps);
    }
 
    void F1UdpClrMapper::m_UpdateParticipants()
@@ -1524,7 +1637,7 @@ namespace adjsw::F12026
          if (!lapTime)
             return;
 
-         driver->FastestLap = driver->Laps[m_parser->history.m_bestLapTimeLapNum - 1];
+         driver->FastestLap->CopyFrom(driver->Laps[m_parser->history.m_bestLapTimeLapNum - 1]); // copy, a reference would be overwritten by the next fastest lap
          driver->NPC("FastestLap");
       }
 

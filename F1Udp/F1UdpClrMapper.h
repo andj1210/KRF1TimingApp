@@ -99,6 +99,10 @@ namespace adjsw::F12026
       void m_UpdateCarPositions();
       void m_UpdateCarPositions3d();
 
+      // single player flashback: undo everything that happened at or after flashbackTime
+      void m_HandleFlashback(float flashbackTime);
+      void m_RebuildLapsAfterFlashback();
+
       bool m_IsQualifyingOrPractice();
 
       uint32_t m_udpButtonPreviousMask{ 0 };
@@ -113,6 +117,7 @@ namespace adjsw::F12026
       uint64_t m_sessionId{};
       PacketType m_lastPacketType = PacketType::UnknownOrIllformed;
       float m_sessionConnectTime{ 0 };
+      bool m_lapRebuildPending{ false }; // set by flashback, laps are rebuilt with the next lap data packet
       int        m_secondaryDriverIndex{ -1 };
       MapperMode m_mode{ MapperMode::Direct };
    };

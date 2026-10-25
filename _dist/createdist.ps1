@@ -1,7 +1,12 @@
-# createdist.ps1 - Build KRF1 Timing App Release and create distribution zip
+# createdist.ps1 - Build KRF1 Timing App and create distribution zip
+#
+# -Configuration Release     (default) user build, dev tools hidden
+# -Configuration ReleaseDev  dev tools (UDP recording, track learning) enabled, zip gets a "_dev" postfix
 
 param(
-    [string]$PlatformToolset = ""
+    [string]$PlatformToolset = "",
+    [ValidateSet("Release", "ReleaseDev")]
+    [string]$Configuration = "Release"
 )
 
 Set-StrictMode -Version Latest
@@ -11,7 +16,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $repoRoot = Resolve-Path "$scriptDir\.."
 
 # --- Build Release ---
-Write-Host "Building Release configuration..."
+Write-Host "Building $Configuration configuration..."
 
 # Locate MSBuild via vswhere
 $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -36,7 +41,7 @@ $solutionFile = Join-Path $repoRoot "Krf1Timing.sln"
 Write-Host "Using MSBuild: $msbuild"
 Write-Host "Building: $solutionFile"
 
-$msbuildArgs = @($solutionFile, "/p:Configuration=Release", '/p:Platform=Any CPU', "/m", "/verbosity:minimal")
+$msbuildArgs = @($solutionFile, "/p:Configuration=$Configuration", '/p:Platform=Any CPU', "/m", "/verbosity:minimal")
 if ($PlatformToolset) {
     Write-Host "Overriding PlatformToolset: $PlatformToolset"
     $msbuildArgs += "/p:PlatformToolset=$PlatformToolset"
@@ -64,16 +69,9 @@ try {
     $version = (Get-Content $versionFile -Raw).Trim()
     Write-Host "Version: $version"
 
-    # Generate filename: <date>_krf1_timing_v<version>.zip
-    $dateStr = Get-Date -Format "yyyy-MM-dd"
-    $baseName = "${dateStr}_krf1_timing_v${version}"
-    $fnam = "$baseName.zip"
-    $nr = 0
-
-    while (Test-Path $fnam) {
-        $nr++
-        $fnam = "${baseName}-${nr}.zip"
-    }
+    # Generate filename: krf1_timing_v<version>[_dev].zip (an existing zip of the same name is replaced)
+    $postfix = if ($Configuration -eq "ReleaseDev") { "_dev" } else { "" }
+    $fnam = "krf1_timing_v${version}${postfix}.zip"
 
     Write-Host "Output: $fnam"
 
@@ -85,7 +83,8 @@ try {
     New-Item -ItemType Directory -Path "$tempFolder\krf1timing" | Out-Null
 
     # Copy build artifacts
-    $buildBin = Join-Path $repoRoot "_build\bin"
+    # Release builds into _build\bin, ReleaseDev into _build\ReleaseDev (see KRF1Timing.csproj OutputPath)
+    $buildBin = if ($Configuration -eq "ReleaseDev") { Join-Path $repoRoot "_build\ReleaseDev" } else { Join-Path $repoRoot "_build\bin" }
     $resDir = Join-Path $repoRoot "res"
     Copy-Item "$buildBin\Krf1Timing.exe"          "$tempFolder\krf1timing\"
     Copy-Item "$buildBin\adjsw.F1Udp.26.dll"      "$tempFolder\krf1timing\"

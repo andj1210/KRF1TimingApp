@@ -1,38 +1,175 @@
+# Builds KRF1 Timing and publishes a GitHub release.
+#
+# Manual only: start it from the Actions tab ("Run workflow") or with
+#   gh workflow run release.yml [-f draft=false] [-f prerelease=true]
+#
+# Work happens on develop; master only ever points at the latest release. A
+# run releases the current tip of develop: it is built, and only when that
+# passes is master fast-forwarded to it and the release tagged on it. master
+# never gets a merge commit and never moves to an unbuilt commit. If master
+# has commits that develop lacks, the run fails -- merge master into develop
+# by hand once, then rerun.
+#
+# The version is taken from the VERSION file on develop and becomes the tag
+# v{version}. Bump it, commit, push develop, then run this workflow (from
+# develop or master). A run whose tag or release already exists fails before
+# anything is built.
+#
+# Jobs:
+#   prepare  -- ref guard, develop/master ancestry check, version, duplicate check
+#   build    -- build.yml on the resolved develop commit (Windows runner)
+#   release  -- checksums, fast-forward master, create the release
 name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      draft:
+        description: Create the release as a draft (publish it by hand on GitHub)
+        type: boolean
+        default: true
+      prerelease:
+        description: Mark the release as a pre-release
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# Never run two releases at once; a second run waits for the first.
+concurrency:
+  group: krf1-release
+  cancel-in-progress: false
 
 jobs:
-  build:
-    uses: ./.github/workflows/build.yml
-
-  release:
-    needs: build
+  prepare:
     runs-on: ubuntu-latest
+    # Write access only so the release listing below includes drafts.
     permissions:
       contents: write
+    outputs:
+      sha:     ${{ steps.source.outputs.sha }}
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      # The selected ref only decides which copy of this workflow runs; what
+      # gets released is always the tip of develop.
+      - name: Require develop or master
+        if: github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/master'
+        run: |
+          echo "::error::Start the release from develop or master (selected: $GITHUB_REF)."
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Resolve develop and check master can fast-forward
+        id: source
+        run: |
+          if ! git rev-parse --verify --quiet origin/develop > /dev/null; then
+            echo "::error::Branch develop does not exist on origin."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor origin/master origin/develop; then
+            echo "::error::master has commits that develop does not -- merge master into develop, push, and rerun."
+            git log --oneline origin/develop..origin/master
+            exit 1
+          fi
+          sha="$(git rev-parse origin/develop)"
+          echo "Releasing develop @ $sha ($(git rev-list --count origin/master..origin/develop) commit(s) ahead of master)"
+          git checkout --quiet --detach "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Read version
         id: version
-        shell: bash
-        run: echo "value=$(cat VERSION | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+        run: |
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [ -z "$version" ]; then
+            echo "::error::VERSION is empty."
+            exit 1
+          fi
+          echo "Version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      # Drafts have no git tag yet, so check the release list as well as tags.
+      - name: Refuse an existing tag or release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v${{ steps.version.outputs.version }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::error::Tag $TAG already exists -- bump VERSION."
+            exit 1
+          fi
+          releases="$(gh release list --limit 1000 --json tagName --jq '.[].tagName')"
+          if grep -Fxq "$TAG" <<< "$releases"; then
+            echo "::error::A release (possibly a draft) for $TAG already exists -- bump VERSION or delete it."
+            exit 1
+          fi
+
+  build:
+    needs: prepare
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.prepare.outputs.sha }}
+
+  release:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      SHA:     ${{ needs.prepare.outputs.sha }}
+    steps:
+      - uses: actions/download-artifact@v8
         with:
           name: krf1-timing-dist
           path: dist
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.version.outputs.value }}
-          name: v${{ steps.version.outputs.value }}
-          draft: false
-          prerelease: false
-          files: dist/*.zip
-          fail_on_unmatched_files: true
+      - name: Check the distribution zip
+        run: |
+          archive="dist/krf1_timing_v${VERSION}.zip"
+          test -f "$archive" || { echo "::error::Missing $archive"; ls -l dist; exit 1; }
+
+      - name: Checksums
+        working-directory: dist
+        run: |
+          sha256sum krf1_timing_* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      # Only now, with the build green, does master move. force=false makes
+      # GitHub reject anything but a fast-forward, so a master that changed
+      # during the run stops the release instead of being overwritten.
+      #
+      # GITHUB_TOKEN may not move a branch across changes to .github/workflows/.
+      # For releases that include such changes, either push master to develop
+      # by hand before the run (git push origin origin/develop:master), or add
+      # a fine-grained PAT as the secret RELEASE_PUSH_TOKEN (this repo only;
+      # Contents + Workflows: read and write). Otherwise such a run stops here,
+      # before any release exists.
+      - name: Fast-forward master to the released commit
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PUSH_TOKEN || github.token }}
+        run: |
+          if ! gh api --method PATCH "repos/${GITHUB_REPOSITORY}/git/refs/heads/master" \
+                 -f sha="$SHA" -F force=false --jq '"master -> " + .object.sha'; then
+            echo "::error::Could not fast-forward master to $SHA. Either master moved during the run, or the release changes .github/workflows/ (see the comment in release.yml)."
+            exit 1
+          fi
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DRAFT: ${{ inputs.draft }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          flags=()
+          if [ "$DRAFT" = "true" ]; then flags+=(--draft); fi
+          if [ "$PRERELEASE" = "true" ]; then flags+=(--prerelease); fi
+          gh release create "v${VERSION}" dist/* \
+            --target "$SHA" \
+            --title "KRF1 Timing v${VERSION}" \
+            --generate-notes \
+            "${flags[@]}"
